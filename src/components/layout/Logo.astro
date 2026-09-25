@@ -1,0 +1,30 @@
+---
+// Logo : SVG déclaré dans config/site.json (versions claire et sombre), sinon mot-symbole temporaire
+// (pictogramme « la règle dans la grille » et nom du site en Manrope 800 ; DA, section 7).
+import { getConfig } from '../../lib/config/index.ts';
+
+interface Props {
+  inverse?: boolean;
+}
+
+const { site } = getConfig();
+const { inverse = false } = Astro.props;
+---
+
+{
+  site.logo.light ? (
+    <span class="inline-flex items-center">
+      <img src={site.logo.light} alt={site.name} height="32" class:list={['h-8 w-auto', site.logo.dark && 'logo-for-light']} />
+      {site.logo.dark && <img src={site.logo.dark} alt={site.name} height="32" class="logo-for-dark h-8 w-auto" />}
+    </span>
+  ) : (
+    <span class:list={['inline-flex items-center gap-2 font-heading text-lg font-extrabold tracking-tight', inverse ? 'text-white' : 'text-primary']}>
+      <svg viewBox="0 0 16 16" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1">
+        <rect x="0.5" y="0.5" width="15" height="15" rx="1.5" />
+        <path d="M4.5 0.5v15M8 0.5v15M11.5 0.5v15M0.5 4.5h15M0.5 8h15M0.5 11.5h15" stroke-opacity="0.45" />
+        <rect x="8" y="4.5" width="3.5" height="3.5" fill="currentColor" stroke="none" />
+      </svg>
+      <span>{site.name}</span>
+    </span>
+  )
+}

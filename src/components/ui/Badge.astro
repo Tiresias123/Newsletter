@@ -1,0 +1,23 @@
+---
+// Puce générique : toujours un libellé texte, jamais une couleur seule (DA, section 1).
+// Les couleurs viennent des classes badge--… et status--…, générées depuis config/theme.json.
+import type { IconName } from '../../lib/icons.ts';
+import Icon from './Icon.astro';
+
+interface Props {
+  label: string;
+  styleClass?: string;
+  href?: string;
+  icon?: IconName;
+  dot?: boolean;
+  class?: string;
+}
+
+const { label, styleClass, href, icon, dot = false, class: className } = Astro.props;
+const Tag = href ? 'a' : 'span';
+---
+
+<Tag href={href} class:list={['badge', styleClass, { 'badge-dot': dot }, className]}>
+  {icon && <Icon name={icon} size={14} />}
+  <span class="truncate">{label}</span>
+</Tag>

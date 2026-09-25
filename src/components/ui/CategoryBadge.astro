@@ -1,0 +1,15 @@
+---
+// Puce de catégorie : le style (liste fermée) est lu dans le fichier de taxonomie.
+import type { BadgeModel } from '../../lib/content/cards.ts';
+import Badge from './Badge.astro';
+
+interface Props {
+  category: BadgeModel;
+  link?: boolean;
+  class?: string;
+}
+
+const { category, link = false, class: className } = Astro.props;
+---
+
+<Badge label={category.label} styleClass={`badge--${category.style}`} href={link ? category.url : undefined} class={className} />

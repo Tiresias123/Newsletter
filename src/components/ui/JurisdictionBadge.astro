@@ -1,0 +1,19 @@
+---
+// Puce de juridiction : plein, contour ou contour avec point, selon la fiche juridiction.
+import type { BadgeModel } from '../../lib/content/cards.ts';
+import Badge from './Badge.astro';
+
+interface Props {
+  jurisdiction: BadgeModel;
+  link?: boolean;
+}
+
+const { jurisdiction, link = false } = Astro.props;
+---
+
+<Badge
+  label={jurisdiction.label}
+  styleClass={`badge--${jurisdiction.style}`}
+  dot={jurisdiction.style === 'contour-point'}
+  href={link ? jurisdiction.url : undefined}
+/>

@@ -1,0 +1,21 @@
+---
+// Couverture générée quand l'auteur n'en fournit pas : dégradé bleu roi, grille, puce en style inversé.
+// Décorative (aria-hidden) : le titre figure déjà dans le texte de la carte.
+import type { BadgeModel } from '../../lib/content/cards.ts';
+import { getConfig } from '../../lib/config/index.ts';
+
+interface Props {
+  category?: BadgeModel;
+  mark?: string;
+  class?: string;
+}
+
+const { category, mark, class: className } = Astro.props;
+const siteName = getConfig().site.name;
+---
+
+<div aria-hidden="true" class:list={['generated-cover relative flex aspect-[2/1] flex-col justify-between overflow-hidden rounded-image p-3 text-white', className]}>
+  {category ? <span class="badge self-start border-white bg-white text-brand-900">{category.label}</span> : <span />}
+  {mark && <span class="font-heading text-4xl font-extrabold tracking-tight">{mark}</span>}
+  <span class="font-heading text-xs font-bold opacity-80">{siteName}</span>
+</div>

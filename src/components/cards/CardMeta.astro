@@ -1,0 +1,40 @@
+---
+// Ligne de métadonnées d'une carte : auteur, date, temps de lecture ; niveau et durée pour un guide.
+import type { CardModel } from '../../lib/content/cards.ts';
+import { enumLabel, t } from '../../lib/i18n.ts';
+import Avatar from '../ui/Avatar.astro';
+import RelativeTime from '../ui/RelativeTime.astro';
+
+interface Props {
+  card: CardModel;
+  showAuthor?: boolean;
+  avatar?: boolean;
+  inverse?: boolean;
+}
+
+const { card, showAuthor = false, avatar = false, inverse = false } = Astro.props;
+const isGuide = card.kind === 'guide' && card.level;
+---
+
+<p class:list={['flex flex-wrap items-center gap-x-2 gap-y-1 text-sm', inverse ? 'text-meta-inverse' : 'text-meta']}>
+  {
+    showAuthor && card.author && (
+      <span class="inline-flex items-center gap-2">
+        {avatar && <Avatar name={card.author.name} src={card.author.avatar} />}
+        <span>{card.author.name}</span>
+      </span>
+    )
+  }
+  {showAuthor && card.author && card.date && <span aria-hidden="true">·</span>}
+  {card.date && <RelativeTime date={card.date} instant={card.instant} />}
+  <span aria-hidden="true">·</span>
+  {
+    isGuide ? (
+      <span>
+        {enumLabel('level', card.level ?? '')} · {t('cards.guideDuration', { count: card.duration ?? card.readingTime })}
+      </span>
+    ) : (
+      <span>{t('cards.readingTimeShort', { count: card.readingTime })}</span>
+    )
+  }
+</p>

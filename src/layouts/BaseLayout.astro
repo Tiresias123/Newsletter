@@ -1,0 +1,77 @@
+---
+// Gabarit commun : en-tête, bandeau d'annonce, contenu, pied de page, thème clair ou sombre sans clignotement.
+import 'virtual:theme.css';
+import '../styles/global.css';
+import { Font } from 'astro:assets';
+import AnnouncementBar from '../components/layout/AnnouncementBar.astro';
+import Footer from '../components/layout/Footer.astro';
+import Header from '../components/layout/Header.astro';
+import PreviewBanner from '../components/layout/PreviewBanner.astro';
+import SeoHead from '../components/layout/SeoHead.astro';
+import SkipLink from '../components/layout/SkipLink.astro';
+import { getConfig } from '../lib/config/index.ts';
+import { relativeDateMessages } from '../lib/i18n.ts';
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+  type?: 'website' | 'article';
+}
+
+type FontVariable = '--font-manrope' | '--font-inter' | '--font-source-serif-4';
+const FONT_VARIABLES: Record<string, FontVariable> = {
+  Manrope: '--font-manrope',
+  Inter: '--font-inter',
+  'Source Serif 4': '--font-source-serif-4',
+};
+
+const { fonts } = getConfig().theme;
+const headingFont = FONT_VARIABLES[fonts.heading] ?? '--font-manrope';
+const bodyFont = FONT_VARIABLES[fonts.body] ?? '--font-inter';
+---
+
+<!doctype html>
+<html lang="fr-CA">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script is:inline>
+      try {
+        var choice = localStorage.getItem('theme');
+        if (choice === 'dark' || choice === 'light') document.documentElement.dataset.theme = choice;
+      } catch (e) {}
+    </script>
+    <Font cssVariable={headingFont} preload />
+    {bodyFont !== headingFont && <Font cssVariable={bodyFont} preload />}
+    <SeoHead {...Astro.props} />
+    <script type="application/json" id="messages-dates" set:html={JSON.stringify(relativeDateMessages)} />
+  </head>
+  <body class="min-h-dvh bg-bg text-text antialiased">
+    <SkipLink />
+    <PreviewBanner />
+    <Header />
+    <AnnouncementBar />
+    <main id="contenu" tabindex="-1" class="outline-none">
+      <slot />
+    </main>
+    <Footer />
+    <script>
+      // Dates relatives (« Il y a 3 heures ») calculées dans le navigateur : une page statique ne vieillit pas.
+      import { formatRelative, type RelativeMessages } from '../lib/format.ts';
+
+      const source = document.getElementById('messages-dates')?.textContent;
+      if (source) {
+        const messages = JSON.parse(source) as RelativeMessages;
+        const now = new Date();
+        for (const el of document.querySelectorAll<HTMLTimeElement>('time[data-relative]')) {
+          const label = formatRelative(new Date(el.dateTime), now, messages);
+          if (label) {
+            el.title = el.textContent ?? '';
+            el.textContent = label;
+          }
+        }
+      }
+    </script>
+  </body>
+</html>

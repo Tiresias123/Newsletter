@@ -1,0 +1,106 @@
+---
+// Carte d'article ou de guide : un seul composant, six variantes, un seul objet en entrée (brief, point 3.3).
+// La carte entière est cliquable par un lien étendu sur le titre ; les puces ne sont pas des liens imbriqués.
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+import type { CardModel } from '../../lib/content/cards.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import CategoryBadge from '../ui/CategoryBadge.astro';
+import GeneratedCover from '../ui/GeneratedCover.astro';
+import JurisdictionBadge from '../ui/JurisdictionBadge.astro';
+import Badge from '../ui/Badge.astro';
+import PreviewBadge from '../ui/PreviewBadge.astro';
+import CardMeta from './CardMeta.astro';
+
+export type CardVariant = 'featured' | 'large' | 'medium' | 'small' | 'horizontal' | 'compact';
+
+interface Props {
+  card: CardModel;
+  variant?: CardVariant;
+  level?: 2 | 3 | 4;
+  // « plain » : sans cadre (rangées d'une liste), « card » : carte bordée.
+  surface?: 'card' | 'plain';
+  inverse?: boolean;
+}
+
+const { card, variant = 'medium', level = 3, surface = 'card', inverse = false } = Astro.props;
+const Heading = `h${level}` as const;
+const withImage = variant !== 'compact';
+const withDek = variant === 'featured' || variant === 'large';
+const title = frenchTypography(card.title);
+
+const TITLE_SIZES: Record<CardVariant, string> = {
+  featured: 'text-3xl lg:text-4xl font-extrabold',
+  large: 'text-xl lg:text-2xl',
+  medium: 'text-lg',
+  small: 'text-base',
+  horizontal: 'text-base',
+  compact: 'text-base',
+};
+const IMAGE_WIDTHS: Record<CardVariant, number[]> = {
+  featured: [640, 960, 1280],
+  large: [480, 800],
+  medium: [400, 800],
+  small: [320, 640],
+  horizontal: [240, 480],
+  compact: [],
+};
+const IMAGE_SIZES: Record<CardVariant, string> = {
+  featured: '(min-width: 1024px) 720px, 100vw',
+  large: '(min-width: 1024px) 560px, 100vw',
+  medium: '(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw',
+  small: '(min-width: 1024px) 280px, 50vw',
+  horizontal: '144px',
+  compact: '',
+};
+const categoryClass = card.category ? `badge--${card.category.style}` : undefined;
+const horizontal = variant === 'horizontal';
+---
+
+<article
+  class:list={[
+    'group relative flex',
+    surface === 'card' ? 'card p-4' : 'py-3',
+    horizontal ? 'flex-row items-start gap-4' : 'flex-col gap-3',
+    categoryClass,
+    inverse && surface === 'plain' && 'text-inverse',
+  ]}
+>
+  {
+    withImage && (
+      <div class:list={['relative shrink-0 overflow-hidden rounded-image', horizontal ? 'w-36' : 'w-full']}>
+        {card.cover ? (
+          <Image
+            src={card.cover.src as ImageMetadata}
+            alt={card.cover.alt}
+            widths={IMAGE_WIDTHS[variant]}
+            sizes={IMAGE_SIZES[variant]}
+            class="aspect-[2/1] w-full object-cover"
+            loading={variant === 'featured' ? 'eager' : 'lazy'}
+          />
+        ) : (
+          <GeneratedCover category={horizontal ? undefined : card.category} />
+        )}
+        {card.cover && card.category && !horizontal && <CategoryBadge category={card.category} class="absolute bottom-2 left-2 z-[2]" />}
+      </div>
+    )
+  }
+  <div class="flex min-w-0 flex-1 flex-col gap-2">
+    {
+      (variant === 'compact' || card.jurisdictions.length > 0 || card.preview || card.breaking) && (
+        <div class="flex flex-wrap items-center gap-1.5">
+          {variant === 'compact' && card.category && <CategoryBadge category={card.category} />}
+          {card.breaking && <Badge label={t('cards.breaking')} styleClass="status--consultation" />}
+          {(variant === 'featured' || variant === 'large') && card.jurisdictions.map((j) => <JurisdictionBadge jurisdiction={j} />)}
+          {card.preview && <PreviewBadge state={card.preview} />}
+        </div>
+      )
+    }
+    <Heading class:list={['rule-left', TITLE_SIZES[variant]]}>
+      <a href={card.url} class="stretched-link decoration-2 underline-offset-4 group-hover:underline">{title}</a>
+    </Heading>
+    {withDek && <p class:list={['text-secondary', variant === 'featured' ? 'text-lg' : 'line-clamp-3 text-base']}>{frenchTypography(card.dek)}</p>}
+    <CardMeta card={card} showAuthor={variant === 'featured' || variant === 'large' || variant === 'compact'} avatar={variant === 'featured'} inverse={inverse && surface === 'plain'} />
+  </div>
+</article>

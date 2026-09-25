@@ -1,0 +1,13 @@
+---
+// Bandeau d'aperçu : rappelle que les brouillons sont visibles (développement, branches de prévisualisation).
+import { isPreview } from '../../lib/content/astro.ts';
+import { t } from '../../lib/i18n.ts';
+---
+
+{
+  isPreview() && (
+    <aside aria-label={t('preview.label')} class="bg-gold-bg px-4 py-1.5 text-center text-xs font-semibold text-gold-fg">
+      <p>{t('preview.banner')}</p>
+    </aside>
+  )
+}

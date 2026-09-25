@@ -1,0 +1,34 @@
+---
+// Bouton ou lien d'action : primaire, secondaire, fantôme, pastille de lien, inversé (fonds bleu foncé).
+import type { HTMLAttributes } from 'astro/types';
+import type { IconName } from '../../lib/icons.ts';
+import Icon from './Icon.astro';
+
+type Props = {
+  href?: string;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'pill' | 'inverse';
+  type?: 'button' | 'submit';
+  icon?: IconName;
+  iconAfter?: IconName;
+  class?: string;
+} & Omit<HTMLAttributes<'button'>, 'type' | 'class'>;
+
+const { href, variant = 'primary', type = 'button', icon, iconAfter, class: className, ...attrs } = Astro.props;
+const classes = ['btn', `btn-${variant}`, className];
+---
+
+{
+  href ? (
+    <a href={href} class:list={classes}>
+      {icon && <Icon name={icon} size={16} />}
+      <slot />
+      {iconAfter && <Icon name={iconAfter} size={16} />}
+    </a>
+  ) : (
+    <button type={type} class:list={classes} {...attrs}>
+      {icon && <Icon name={icon} size={16} />}
+      <slot />
+      {iconAfter && <Icon name={iconAfter} size={16} />}
+    </button>
+  )
+}

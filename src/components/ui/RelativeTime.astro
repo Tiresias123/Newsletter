@@ -1,0 +1,15 @@
+---
+// Date absolue dans le HTML (toujours exacte, lisible sans JavaScript) ;
+// un petit script la convertit en date relative jusqu'à sept jours (BaseLayout).
+import { formatDate } from '../../lib/format.ts';
+
+interface Props {
+  date: string;
+  instant?: string;
+  class?: string;
+}
+
+const { date, instant, class: className } = Astro.props;
+---
+
+<time datetime={instant ?? date} data-relative={instant ? '' : undefined} class={className}>{formatDate(date)}</time>

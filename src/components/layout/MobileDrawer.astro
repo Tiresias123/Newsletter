@@ -1,0 +1,87 @@
+---
+// Tiroir mobile (élément dialog) : recherche, entrées avec icône, libellé et description,
+// sous-menus en accordéon, bascule de thème et abonnement. Ouvert et fermé par Header.astro.
+import { getConfig } from '../../lib/config/index.ts';
+import { t } from '../../lib/i18n.ts';
+import Button from '../ui/Button.astro';
+import Icon from '../ui/Icon.astro';
+import { newTabAttributes } from '../../lib/urls.ts';
+import Logo from './Logo.astro';
+import NavLabel from './NavLabel.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+const { navigation } = getConfig();
+const items = navigation.header.filter((item) => item.enabled);
+---
+
+<dialog id="menu-mobile" class="drawer" aria-label={t('header.menu')} data-drawer>
+  <div class="flex h-full flex-col">
+    <div class="flex h-[var(--header-h-mobile)] shrink-0 items-center justify-between border-b border-subtle px-4">
+      <a href="/"><Logo /></a>
+      <button type="button" class="inline-flex size-10 items-center justify-center rounded-button" data-drawer-close>
+        <Icon name="x" size={24} />
+        <span class="sr-only">{t('header.closeMenu')}</span>
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto px-4 py-4">
+      <form action="/recherche/" method="get" role="search" class="mb-4">
+        <label for="tiroir-recherche" class="sr-only">{t('header.search')}</label>
+        <input id="tiroir-recherche" name="q" type="search" class="input" placeholder={t('header.searchPlaceholder')} />
+      </form>
+      <nav aria-label={t('header.mainNav')}>
+        <ul class="divide-y divide-subtle">
+          {
+            items.map((item) => {
+              const children = item.children.filter((c) => c.enabled);
+              const head = (
+                <span class="flex items-start gap-3">
+                  {item.icon && <Icon name={item.icon} class="mt-0.5 text-primary" />}
+                  <span class="min-w-0 flex-1">
+                    <span class:list={['block font-semibold', item.highlight && 'text-primary']}>
+                      <NavLabel label={item.label} badge={item.badge} newTab={item.openInNewTab && children.length === 0} />
+                    </span>
+                    {item.description && <span class="block text-sm text-meta">{item.description}</span>}
+                  </span>
+                </span>
+              );
+              return (
+                <li class="py-3">
+                  {children.length > 0 ? (
+                    <details>
+                      <summary class="flex cursor-pointer list-none items-start justify-between gap-2">
+                        {head}
+                        <Icon name="chevron-down" class="drawer-chevron mt-0.5 text-meta transition-transform" />
+                      </summary>
+                      <ul class="mt-2 space-y-1 pl-8">
+                        <li>
+                          <a href={item.url} class="block py-1.5 text-sm font-semibold text-link" {...newTabAttributes(item.openInNewTab)}>
+                            <NavLabel label={t('sections.seeAll')} newTab={item.openInNewTab} />
+                          </a>
+                        </li>
+                        {children.map((child) => (
+                          <li>
+                            <a href={child.url} class:list={['block py-1.5 text-sm', child.highlight && 'font-semibold text-primary']} {...newTabAttributes(child.openInNewTab)}>
+                              <NavLabel label={child.label} badge={child.badge} newTab={child.openInNewTab} />
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  ) : (
+                    <a href={item.url} class="block" {...newTabAttributes(item.openInNewTab)}>
+                      {head}
+                    </a>
+                  )}
+                </li>
+              );
+            })
+          }
+        </ul>
+      </nav>
+    </div>
+    <div class="shrink-0 space-y-3 border-t border-subtle p-4">
+      <ThemeToggle showLabel />
+      {navigation.subscribeButton.enabled && <Button href={navigation.subscribeButton.url} class="w-full">{navigation.subscribeButton.label}</Button>}
+    </div>
+  </div>
+</dialog>

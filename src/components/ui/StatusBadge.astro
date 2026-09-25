@@ -1,0 +1,26 @@
+---
+// Statut réglementaire : libellé, icône et couleur, jamais la couleur seule (DA, section 3.7).
+import type { LegalStatus } from '../../lib/content/enums.ts';
+import { enumLabel } from '../../lib/i18n.ts';
+import type { IconName } from '../../lib/icons.ts';
+import Badge from './Badge.astro';
+
+interface Props {
+  status: LegalStatus;
+}
+
+const ICONS: Record<LegalStatus, IconName> = {
+  projet: 'file-pen',
+  consultation: 'messages-square',
+  adopte: 'stamp',
+  'en-vigueur': 'circle-check',
+  'partiellement-en-vigueur': 'circle-dashed',
+  modifie: 'pencil-line',
+  abroge: 'archive',
+  retire: 'circle-slash',
+};
+
+const { status } = Astro.props;
+---
+
+<Badge label={enumLabel('legalStatus', status)} styleClass={`status--${status}`} icon={ICONS[status]} />

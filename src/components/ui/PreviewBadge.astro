@@ -1,0 +1,14 @@
+---
+// Pastille « Brouillon » ou « Programmé » : n'existe qu'en mode aperçu (les brouillons sont absents du site public).
+import type { CardModel } from '../../lib/content/cards.ts';
+import { t } from '../../lib/i18n.ts';
+import Badge from './Badge.astro';
+
+interface Props {
+  state: NonNullable<CardModel['preview']>;
+}
+
+const { state } = Astro.props;
+---
+
+<Badge label={state === 'programme' ? t('enums.status.programme') : t('preview.draft')} styleClass="status--projet" />

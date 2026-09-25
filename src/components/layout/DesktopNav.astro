@@ -1,0 +1,61 @@
+---
+// Navigation principale sur ordinateur (config/navigation.json) : sous-menus au survol,
+// et au clavier par un bouton dédié (aria-expanded). Le script est dans Header.astro.
+import { getConfig } from '../../lib/config/index.ts';
+import { t } from '../../lib/i18n.ts';
+import { newTabAttributes } from '../../lib/urls.ts';
+import Icon from '../ui/Icon.astro';
+import NavLabel from './NavLabel.astro';
+
+const items = getConfig().navigation.header.filter((item) => item.enabled);
+const path = Astro.url.pathname;
+const bare = (url: string) => url.split('#')[0] ?? url;
+const isCurrent = (url: string) => bare(url) === path;
+const isActive = (url: string) => bare(url) !== '/' && path.startsWith(bare(url));
+---
+
+<nav aria-label={t('header.mainNav')} class="site-nav hidden lg:block" data-site-nav>
+  <ul class="flex items-center gap-0.5">
+    {
+      items.map((item, i) => {
+        const children = item.children.filter((c) => c.enabled);
+        return (
+          <li class="nav-item relative" data-nav-item>
+            <div class="flex items-center">
+              <a
+                href={item.url}
+                class:list={['nav-link rounded-button px-2.5 py-2 text-sm font-semibold hover:text-primary', item.highlight && 'text-primary']}
+                aria-current={isCurrent(item.url) ? 'page' : undefined}
+                data-active={!isCurrent(item.url) && isActive(item.url) ? '' : undefined}
+                {...newTabAttributes(item.openInNewTab)}
+              >
+                <NavLabel label={item.label} badge={item.badge} newTab={item.openInNewTab} />
+              </a>
+              {children.length > 0 && (
+                <button type="button" class="-ml-1.5 rounded-button p-1.5 text-meta hover:text-primary" aria-expanded="false" aria-controls={`sous-menu-${i}`} data-nav-toggle>
+                  <span class="sr-only">{t('header.submenu', { label: item.label })}</span>
+                  <Icon name="chevron-down" size={16} />
+                </button>
+              )}
+            </div>
+            {children.length > 0 && (
+              <ul id={`sous-menu-${i}`} class="nav-submenu">
+                {children.map((child) => (
+                  <li>
+                    <a
+                      href={child.url}
+                      class:list={['block rounded-button px-3 py-2 text-sm hover:bg-muted', child.highlight && 'font-semibold text-primary']}
+                      {...newTabAttributes(child.openInNewTab)}
+                    >
+                      <NavLabel label={child.label} badge={child.badge} newTab={child.openInNewTab} />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        );
+      })
+    }
+  </ul>
+</nav>

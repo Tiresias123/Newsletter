@@ -1,0 +1,86 @@
+---
+// En-tête collant : logo, navigation, recherche, bascule de thème, abonnement ; tiroir sur mobile.
+import { getConfig } from '../../lib/config/index.ts';
+import { t } from '../../lib/i18n.ts';
+import Button from '../ui/Button.astro';
+import Icon from '../ui/Icon.astro';
+import DesktopNav from './DesktopNav.astro';
+import Logo from './Logo.astro';
+import MobileDrawer from './MobileDrawer.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+const { site, navigation } = getConfig();
+const subscribe = navigation.subscribeButton;
+---
+
+<header class="site-header sticky top-0 z-40 border-b border-subtle bg-surface transition-shadow" data-header>
+  <div class="page-container flex h-[var(--header-h-mobile)] items-center gap-4 lg:h-[var(--header-h)]">
+    <a href="/" class="shrink-0" aria-label={t('site.logoHome', { site: site.name })}><Logo /></a>
+    <DesktopNav />
+    <div class="ml-auto flex items-center gap-1">
+      <a href="/recherche/" class="hidden min-h-10 items-center gap-2 rounded-pill border border-control px-3 text-sm text-meta hover:border-primary xl:inline-flex">
+        <Icon name="search" size={16} />
+        <span>{t('header.searchPlaceholder')}</span>
+      </a>
+      <a href="/recherche/" class="inline-flex size-10 items-center justify-center rounded-button text-secondary hover:text-text xl:hidden">
+        <Icon name="search" />
+        <span class="sr-only">{t('header.search')}</span>
+      </a>
+      <div class="hidden lg:block"><ThemeToggle /></div>
+      {subscribe.enabled && <Button href={subscribe.url} class="hidden lg:inline-flex">{subscribe.label}</Button>}
+      <button type="button" class="inline-flex size-10 items-center justify-center rounded-button lg:hidden" aria-haspopup="dialog" aria-controls="menu-mobile" data-drawer-open>
+        <Icon name="menu" size={24} />
+        <span class="sr-only">{t('header.openMenu')}</span>
+      </button>
+    </div>
+  </div>
+</header>
+<MobileDrawer />
+
+<script>
+  // Tiroir mobile : ouverture modale (focus retenu, Échap natif), fermeture par le bouton ou le fond.
+  const drawer = document.querySelector<HTMLDialogElement>('[data-drawer]');
+  document.querySelector('[data-drawer-open]')?.addEventListener('click', () => drawer?.showModal());
+  drawer?.querySelector('[data-drawer-close]')?.addEventListener('click', () => drawer.close());
+  drawer?.addEventListener('click', (event) => {
+    if (event.target === drawer) drawer.close();
+  });
+
+  // Sous-menus : bouton, Échap, clic à l'extérieur, sortie du focus.
+  const nav = document.querySelector<HTMLElement>('[data-site-nav]');
+  if (nav) nav.dataset.js = '';
+  const items = [...document.querySelectorAll<HTMLElement>('[data-nav-item]')];
+  const close = (item: HTMLElement) => {
+    delete item.dataset.open;
+    item.querySelector('[data-nav-toggle]')?.setAttribute('aria-expanded', 'false');
+  };
+  for (const item of items) {
+    const toggle = item.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+    toggle?.addEventListener('click', () => {
+      const open = item.dataset.open === undefined;
+      items.forEach(close);
+      if (open) {
+        item.dataset.open = '';
+        toggle.setAttribute('aria-expanded', 'true');
+      }
+    });
+    item.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && item.dataset.open !== undefined) {
+        close(item);
+        toggle?.focus();
+      }
+    });
+    item.addEventListener('focusout', (event) => {
+      if (!item.contains(event.relatedTarget as Node | null)) close(item);
+    });
+  }
+  document.addEventListener('click', (event) => {
+    for (const item of items) if (!item.contains(event.target as Node)) close(item);
+  });
+
+  // Ombre fine sous l'en-tête après défilement.
+  const header = document.querySelector<HTMLElement>('[data-header]');
+  const onScroll = () => header?.toggleAttribute('data-scrolled', window.scrollY > 4);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+</script>

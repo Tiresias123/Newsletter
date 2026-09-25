@@ -1,0 +1,36 @@
+---
+// Balises d'en-tête : titre, description, canonique, robots, hreflang, Open Graph, couleur de thème.
+import { getConfig } from '../../lib/config/index.ts';
+import { isPreview } from '../../lib/content/astro.ts';
+import { t } from '../../lib/i18n.ts';
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+  type?: 'website' | 'article';
+}
+
+const { site, theme } = getConfig();
+const { title, description = site.description, noindex = false, type = 'website' } = Astro.props;
+const fullTitle = title ? t('site.pageTitle', { title, site: site.name }) : t('site.homeTitle', { site: site.name, baseline: site.baseline });
+const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).href;
+const robots = noindex || isPreview() ? 'noindex, nofollow' : 'index, follow, max-image-preview:large';
+---
+
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+<meta name="robots" content={robots} />
+<link rel="alternate" hreflang="fr-CA" href={canonical} />
+<link rel="alternate" hreflang="x-default" href={canonical} />
+<meta property="og:locale" content="fr_CA" />
+<meta property="og:site_name" content={site.name} />
+<meta property="og:type" content={type} />
+<meta property="og:title" content={title ?? site.name} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="theme-color" content={theme.colors.neutral.canvas} media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content={theme.colors.dark.bg} media="(prefers-color-scheme: dark)" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />

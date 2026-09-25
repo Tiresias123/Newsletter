@@ -1,0 +1,46 @@
+---
+// Bascule clair/sombre à deux états : premier affichage selon le système, puis choix mémorisé.
+// Le script en tête de page (BaseLayout) applique le choix avant l'affichage, sans clignotement.
+import { t } from '../../lib/i18n.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  showLabel?: boolean;
+}
+
+const { showLabel = false } = Astro.props;
+---
+
+<button
+  type="button"
+  data-theme-toggle
+  aria-pressed="false"
+  class:list={['theme-toggle inline-flex min-h-10 items-center gap-2 rounded-button px-2.5 text-secondary hover:text-text', showLabel && 'w-full border border-border px-3']}
+>
+  <Icon name="moon" class="theme-icon-moon" />
+  <Icon name="sun" class="theme-icon-sun" />
+  <span class:list={[!showLabel && 'sr-only', 'text-sm font-semibold']}>{t('theme.dark')}</span>
+</button>
+
+<script>
+  // Synchronise toutes les bascules (en-tête et tiroir) et mémorise le choix.
+  const root = document.documentElement;
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  const current = () => root.dataset.theme ?? (media.matches ? 'dark' : 'light');
+  const buttons = document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]');
+  const sync = () => buttons.forEach((b) => b.setAttribute('aria-pressed', String(current() === 'dark')));
+  buttons.forEach((button) =>
+    button.addEventListener('click', () => {
+      const next = current() === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = next;
+      try {
+        localStorage.setItem('theme', next);
+      } catch {
+        // Stockage indisponible (navigation privée) : le choix vaut pour la page seulement.
+      }
+      sync();
+    }),
+  );
+  media.addEventListener('change', sync);
+  sync();
+</script>

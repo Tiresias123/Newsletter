@@ -1,0 +1,15 @@
+---
+// Libellé d'une entrée de menu : texte, pastille facultative (« Nouveau ») et mention, pour les lecteurs
+// d'écran, de l'ouverture dans un nouvel onglet. Partagé par le menu ordinateur et le tiroir mobile.
+import { t } from '../../lib/i18n.ts';
+
+interface Props {
+  label: string;
+  badge?: string;
+  newTab?: boolean;
+}
+
+const { label, badge, newTab = false } = Astro.props;
+---
+
+{label}{badge && <span class="badge badge--plein-500 ml-1.5 align-middle">{badge}</span>}{newTab && <span class="sr-only"> {t('a11y.newTab')}</span>}

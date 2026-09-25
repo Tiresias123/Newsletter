@@ -1,0 +1,21 @@
+---
+// En-tête de section : titre (H2), sous-titre et pastille « Tout voir → » alignée à droite.
+import Button from './Button.astro';
+
+interface Props {
+  title: string;
+  id: string;
+  subtitle?: string;
+  cta?: { label: string; url: string };
+}
+
+const { title, id, subtitle, cta } = Astro.props;
+---
+
+<div class="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+  <div class="min-w-0">
+    <h2 id={id} class="text-2xl lg:text-3xl">{title}</h2>
+    {subtitle && <p class="mt-1 text-sm text-meta">{subtitle}</p>}
+  </div>
+  {cta?.label && cta.url && <Button href={cta.url} variant="pill" iconAfter="arrow-right">{cta.label}</Button>}
+</div>
