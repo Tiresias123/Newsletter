@@ -1,0 +1,33 @@
+---
+// Termes du lexique mis en avant, avec leur définition courte.
+import type { LexiqueItem } from '../../lib/content/home.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import HomeSection from './HomeSection.astro';
+
+interface Props {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  items: LexiqueItem[];
+  cta?: { label: string; url: string };
+}
+
+const { id, title, subtitle, items, cta } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <HomeSection id={id} title={title} subtitle={subtitle} cta={cta}>
+      <ul class="grid grid-cols-1 gap-6 md:grid-cols-3">
+        {items.map((item) => (
+          <li class="card gap-2 p-4">
+            <h3 class="text-lg">{item.term}</h3>
+            <p class="text-secondary">{frenchTypography(item.definition)}</p>
+            {item.url && <a href={item.url} class="text-link mt-auto text-sm">{t('lexique.readMore')}</a>}
+          </li>
+        ))}
+      </ul>
+    </HomeSection>
+  )
+}

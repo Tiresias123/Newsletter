@@ -1,0 +1,24 @@
+---
+// Section libre : le contenu est affiché comme du texte (échappé), sans aucun script exécuté.
+import HomeSection from './HomeSection.astro';
+
+interface Props {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  content: string;
+}
+
+const { id, title, subtitle, content } = Astro.props;
+const paragraphs = content.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+---
+
+{
+  paragraphs.length > 0 && (
+    <HomeSection id={id} title={title} subtitle={subtitle}>
+      <div class="max-w-[var(--reading-w)] space-y-4 text-lg">
+        {paragraphs.map((p) => <p>{p}</p>)}
+      </div>
+    </HomeSection>
+  )
+}

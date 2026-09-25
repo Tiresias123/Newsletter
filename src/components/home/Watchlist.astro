@@ -1,0 +1,80 @@
+---
+// « À surveiller » : échéances de l'agenda (puce d'échéance, or si activé) et dossiers en consultation.
+import type { CardModel } from '../../lib/content/cards.ts';
+import type { LegalStatus } from '../../lib/content/enums.ts';
+import type { AgendaItem } from '../../lib/content/home.ts';
+import type { CalendarDate } from '../../lib/dates.ts';
+import { formatChipDate } from '../../lib/format.ts';
+import { enumLabel, t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import JurisdictionBadge from '../ui/JurisdictionBadge.astro';
+import StatusBadge from '../ui/StatusBadge.astro';
+import HomeSection from './HomeSection.astro';
+
+interface Props {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  agenda: AgendaItem[];
+  consultations: CardModel[];
+  // Date du jour (fuseau du site) : l'année n'est affichée que pour les échéances d'une autre année.
+  today: CalendarDate;
+  cta?: { label: string; url: string };
+}
+
+const { id, title, subtitle, agenda, consultations, today, cta } = Astro.props;
+const twoColumns = agenda.length > 0 && consultations.length > 0;
+---
+
+{
+  (agenda.length > 0 || consultations.length > 0) && (
+    <HomeSection id={id} title={title} subtitle={subtitle} cta={cta}>
+      <div class:list={['grid grid-cols-1 gap-8', twoColumns ? 'lg:grid-cols-2' : 'max-w-reading']}>
+        {agenda.length > 0 && (
+          <div>
+            <h3 class="mb-3 text-lg">{t('watchlist.agenda')}</h3>
+            <ul class="divide-y divide-subtle">
+              {agenda.map((item) => (
+                <li class="relative flex items-start gap-3 py-3">
+                  <time
+                    datetime={item.date}
+                    class:list={[
+                      'badge w-28 shrink-0 justify-center',
+                      item.type === 'echeance-fiscale' ? 'border-gold-border bg-gold-bg text-gold-fg' : 'status--consultation',
+                    ]}
+                  >
+                    {formatChipDate(item.date, today)}
+                  </time>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-sm text-meta">
+                      {enumLabel('agendaType', item.type)}
+                      {item.jurisdiction && <span class="ml-1 inline-block align-middle"><JurisdictionBadge jurisdiction={item.jurisdiction} /></span>}
+                    </p>
+                    {item.url ? (
+                      <a href={item.url} class="stretched-link font-semibold hover:underline">{frenchTypography(item.title)}</a>
+                    ) : (
+                      <p class="font-semibold">{frenchTypography(item.title)}</p>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {consultations.length > 0 && (
+          <div>
+            <h3 class="mb-3 text-lg">{t('watchlist.consultations')}</h3>
+            <ul class="divide-y divide-subtle">
+              {consultations.map((card) => (
+                <li class="relative py-3">
+                  {card.legalStatus && <p class="mb-1"><StatusBadge status={card.legalStatus as LegalStatus} /></p>}
+                  <a href={card.url} class="stretched-link font-semibold hover:underline">{frenchTypography(card.title)}</a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </HomeSection>
+  )
+}

@@ -1,0 +1,16 @@
+---
+// Accueil : entièrement composé depuis config/homepage.json.
+import HomeSections from '../components/home/HomeSections.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getConfig } from '../lib/config/index.ts';
+import { getGraph } from '../lib/content/astro.ts';
+import { t } from '../lib/i18n.ts';
+
+const graph = await getGraph();
+const { site } = getConfig();
+---
+
+<BaseLayout>
+  <h1 class="sr-only">{t('site.homeTitle', { site: site.name, baseline: site.baseline })}</h1>
+  <HomeSections graph={graph} />
+</BaseLayout>

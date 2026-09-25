@@ -1,0 +1,76 @@
+---
+// Bloc de contenus générique (liste, grille, compact, horizontal, vedette), filtré dans config/homepage.json.
+import type { CardModel } from '../../lib/content/cards.ts';
+import ArticleCard from '../cards/ArticleCard.astro';
+import HomeSection from './HomeSection.astro';
+
+interface Props {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  items: CardModel[];
+  layout: 'featured' | 'grid' | 'list' | 'compact' | 'horizontal';
+  background: 'default' | 'brand' | 'muted';
+  cta?: { label: string; url: string };
+}
+
+const { id, title, subtitle, items, layout, background, cta } = Astro.props;
+const [first, ...rest] = items;
+---
+
+{
+  items.length > 0 && (
+    <HomeSection id={id} title={title} subtitle={subtitle} background={background} cta={cta}>
+      {layout === 'list' && (
+        <ul class="grid grid-cols-1 gap-x-10 md:grid-cols-2">
+          {items.map((card) => (
+            <li class="border-b border-subtle">
+              <ArticleCard card={card} variant="compact" surface="plain" inverse={background === 'brand'} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {layout === 'grid' && (
+        <ul class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((card) => (
+            <li class="flex">
+              <ArticleCard card={card} variant="medium" />
+            </li>
+          ))}
+        </ul>
+      )}
+      {layout === 'compact' && (
+        <ul class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((card) => (
+            <li class="flex">
+              <ArticleCard card={card} variant="compact" />
+            </li>
+          ))}
+        </ul>
+      )}
+      {layout === 'horizontal' && (
+        <ul class="grid grid-cols-1 gap-x-10 divide-y divide-subtle md:grid-cols-2 md:divide-y-0">
+          {items.map((card) => (
+            <li>
+              <ArticleCard card={card} variant="horizontal" surface="plain" inverse={background === 'brand'} />
+            </li>
+          ))}
+        </ul>
+      )}
+      {layout === 'featured' && first && (
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div class="lg:col-span-7">
+            <ArticleCard card={first} variant="large" />
+          </div>
+          <ul class="grid grid-cols-1 gap-4 lg:col-span-5">
+            {rest.map((card) => (
+              <li class="flex">
+                <ArticleCard card={card} variant="compact" />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </HomeSection>
+  )
+}

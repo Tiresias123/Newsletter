@@ -1,0 +1,30 @@
+---
+// « Les essentiels » : guides en cartes, avec niveau et durée (« Facile · 12 min »).
+import type { CardModel } from '../../lib/content/cards.ts';
+import ArticleCard from '../cards/ArticleCard.astro';
+import HomeSection from './HomeSection.astro';
+
+interface Props {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  items: CardModel[];
+  cta?: { label: string; url: string };
+}
+
+const { id, title, subtitle, items, cta } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <HomeSection id={id} title={title} subtitle={subtitle} cta={cta}>
+      <ul class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {items.map((card) => (
+          <li class="flex">
+            <ArticleCard card={card} variant="small" />
+          </li>
+        ))}
+      </ul>
+    </HomeSection>
+  )
+}

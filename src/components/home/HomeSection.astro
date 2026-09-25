@@ -1,0 +1,29 @@
+---
+// Cadre commun d'une section d'accueil : fond (normal, marque, atténué), titre H2, pastille « Tout voir ».
+import SectionHeader from '../ui/SectionHeader.astro';
+
+interface Props {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  background?: 'default' | 'brand' | 'muted';
+  cta?: { label: string; url: string };
+}
+
+const { id, title, subtitle, background = 'default', cta } = Astro.props;
+const headingId = `${id}-titre`;
+---
+
+<section
+  aria-labelledby={title ? headingId : undefined}
+  class:list={[
+    'py-8 lg:py-10',
+    background === 'brand' && 'on-brand bg-brand-section text-white',
+    background === 'muted' && 'bg-muted',
+  ]}
+>
+  <div class="page-container">
+    {title && <SectionHeader id={headingId} title={title} subtitle={subtitle} cta={cta} />}
+    <slot />
+  </div>
+</section>

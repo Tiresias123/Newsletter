@@ -1,0 +1,67 @@
+---
+// Dossiers : une carte principale (statut, « Vérifié le ») et trois liens (DA, maquette 12.1).
+import type { CardModel } from '../../lib/content/cards.ts';
+import type { LegalStatus } from '../../lib/content/enums.ts';
+import { formatDate } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import GeneratedCover from '../ui/GeneratedCover.astro';
+import Icon from '../ui/Icon.astro';
+import PreviewBadge from '../ui/PreviewBadge.astro';
+import StatusBadge from '../ui/StatusBadge.astro';
+import HomeSection from './HomeSection.astro';
+
+interface Props {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  items: CardModel[];
+  cta?: { label: string; url: string };
+}
+
+const { id, title, subtitle, items, cta } = Astro.props;
+const [first, ...rest] = items;
+---
+
+{
+  first && (
+    <HomeSection id={id} title={title} subtitle={subtitle} cta={cta}>
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <article class="card gap-3 p-4 lg:col-span-5">
+          <GeneratedCover mark={first.jurisdictions[0]?.label} />
+          {(first.legalStatus || first.preview) && (
+            <div class="flex flex-wrap items-center gap-1.5">
+              {first.legalStatus && <StatusBadge status={first.legalStatus as LegalStatus} />}
+              {first.preview && <PreviewBadge state={first.preview} />}
+            </div>
+          )}
+          <h3 class="rule-left text-xl">
+            <a href={first.url} class="stretched-link hover:underline">{frenchTypography(first.title)}</a>
+          </h3>
+          <p class="line-clamp-3 text-secondary">{frenchTypography(first.dek)}</p>
+          {first.asOf && <p class="text-sm text-meta">{t('cards.verifiedOn', { date: formatDate(first.asOf) })}</p>}
+        </article>
+        {rest.length > 0 && (
+          <ul class="divide-y divide-subtle self-start lg:col-span-7">
+            {rest.map((card) => (
+              <li class="relative flex items-center gap-3 py-4">
+                <div class="min-w-0 flex-1">
+                  {(card.legalStatus || card.preview) && (
+                    <div class="mb-1.5 flex flex-wrap items-center gap-1.5">
+                      {card.legalStatus && <StatusBadge status={card.legalStatus as LegalStatus} />}
+                      {card.preview && <PreviewBadge state={card.preview} />}
+                    </div>
+                  )}
+                  <h3 class="text-base">
+                    <a href={card.url} class="stretched-link hover:underline">{frenchTypography(card.title)}</a>
+                  </h3>
+                </div>
+                <Icon name="arrow-right" class="shrink-0 text-meta" />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </HomeSection>
+  )
+}

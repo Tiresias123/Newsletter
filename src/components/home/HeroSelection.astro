@@ -1,0 +1,36 @@
+---
+// « Sélection de la rédaction » : une grande carte et quatre cartes horizontales (DA, maquette 12.1).
+import type { CardModel } from '../../lib/content/cards.ts';
+import ArticleCard from '../cards/ArticleCard.astro';
+import HomeSection from './HomeSection.astro';
+
+interface Props {
+  id: string;
+  title: string;
+  items: CardModel[];
+}
+
+const { id, title, items } = Astro.props;
+const [first, ...rest] = items;
+---
+
+{
+  first && (
+    <HomeSection id={id} title={title}>
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div class="lg:col-span-7">
+          <ArticleCard card={first} variant="featured" surface="plain" />
+        </div>
+        {rest.length > 0 && (
+          <ul class="divide-y divide-subtle lg:col-span-5">
+            {rest.map((card) => (
+              <li>
+                <ArticleCard card={card} variant="horizontal" surface="plain" />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </HomeSection>
+  )
+}

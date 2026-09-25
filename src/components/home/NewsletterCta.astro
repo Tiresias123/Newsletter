@@ -1,0 +1,27 @@
+---
+// Bandeau d'abonnement à l'infolettre (fond bleu, textes de config/newsletter.json).
+import { getConfig } from '../../lib/config/index.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import NewsletterForm from '../newsletter/NewsletterForm.astro';
+
+interface Props {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  list: string;
+}
+
+const { id, title, subtitle, list } = Astro.props;
+const texts = getConfig().newsletter.texts;
+const headingId = `${id}-titre`;
+---
+
+<section aria-labelledby={headingId} class="on-brand bg-brand-800 py-12 text-white">
+  <div class="page-container grid gap-6 lg:grid-cols-2 lg:items-center">
+    <div>
+      <h2 id={headingId} class="text-2xl lg:text-3xl">{frenchTypography(title || texts.title)}</h2>
+      {(subtitle || texts.subtitle) && <p class="mt-2 text-meta-inverse">{frenchTypography(subtitle || texts.subtitle)}</p>}
+    </div>
+    <NewsletterForm id={id} variant="band" inverse list={list} />
+  </div>
+</section>

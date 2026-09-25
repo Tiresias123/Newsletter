@@ -1,0 +1,43 @@
+---
+// « Veille officielle » : publications externes des autorités, en frise datée (organisme, titre, lien sortant).
+import type { VeilleItem } from '../../lib/content/veille.ts';
+import { calendarDateInZone } from '../../lib/dates.ts';
+import { t } from '../../lib/i18n.ts';
+import Icon from '../ui/Icon.astro';
+import RelativeTime from '../ui/RelativeTime.astro';
+import HomeSection from './HomeSection.astro';
+
+interface Props {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  items: Array<VeilleItem & { organismeLabel: string }>;
+  timezone: string;
+  cta?: { label: string; url: string };
+}
+
+const { id, title, subtitle, items, timezone, cta } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <HomeSection id={id} title={title} subtitle={subtitle} cta={cta}>
+      <ol class="grid grid-cols-1 gap-x-10 md:grid-cols-2">
+        {items.map((item) => (
+          <li class="relative border-l-2 border-subtle py-3 pl-5">
+            <span aria-hidden="true" class="absolute top-4 -left-[7px] size-3 rounded-full border-2 border-surface bg-primary" />
+            <p class="text-sm text-meta">
+              <RelativeTime date={calendarDateInZone(new Date(item.publishedAt), timezone)} instant={item.publishedAt} />
+              {item.organismeLabel && <span> · {item.organismeLabel}</span>}
+            </p>
+            <a href={item.url} class="inline-flex items-start gap-1 font-semibold hover:underline" rel="noopener">
+              <span>{item.title}</span>
+              <Icon name="arrow-up-right" size={16} class="mt-1 shrink-0" />
+              <span class="sr-only">{t('a11y.externalLink')}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </HomeSection>
+  )
+}

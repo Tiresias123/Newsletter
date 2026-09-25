@@ -1,0 +1,69 @@
+---
+// Accueil composé depuis config/homepage.json : chaque section active, dans l'ordre, vers son composant.
+// Les sections de marché (market-brief, trending-assets) n'affichent rien tant que leurs données n'existent pas (phase 4).
+import type { Graph } from '../../lib/content/graph.ts';
+import {
+  contentBlockItems,
+  dossierItems,
+  essentialItems,
+  heroItems,
+  lexiqueItems,
+  mostReadItems,
+  veilleLatestItems,
+  watchlistItems,
+} from '../../lib/content/home.ts';
+import ContentBlock from './ContentBlock.astro';
+import CustomText from './CustomText.astro';
+import DossiersStrip from './DossiersStrip.astro';
+import Essentials from './Essentials.astro';
+import HeroSelection from './HeroSelection.astro';
+import LexiqueSpotlight from './LexiqueSpotlight.astro';
+import MostRead from './MostRead.astro';
+import NewsletterCta from './NewsletterCta.astro';
+import PartnerBlock from './PartnerBlock.astro';
+import VeilleLatest from './VeilleLatest.astro';
+import Watchlist from './Watchlist.astro';
+
+interface Props {
+  graph: Graph;
+}
+
+const { graph } = Astro.props;
+const sections = graph.config.homepage.sections.filter((s) => s.enabled);
+const cta = (value: { label: string; url: string }) => (value.label && value.url ? value : undefined);
+---
+
+{
+  sections.map((section, i) => {
+    const id = `section-${i + 1}`;
+    const common = { id, title: section.title, subtitle: section.subtitle };
+    switch (section.type) {
+      case 'hero-selection':
+        return <HeroSelection id={id} title={section.title} items={heroItems(graph, section)} />;
+      case 'content-block':
+        return <ContentBlock {...common} items={contentBlockItems(graph, section)} layout={section.layout} background={section.background} cta={cta(section.cta)} />;
+      case 'dossiers-strip':
+        return <DossiersStrip {...common} items={dossierItems(graph, section)} cta={cta(section.cta)} />;
+      case 'essentials':
+        return <Essentials {...common} items={essentialItems(graph, section)} cta={cta(section.cta)} />;
+      case 'watchlist': {
+        const { agenda, consultations, today } = watchlistItems(graph, section);
+        return <Watchlist {...common} agenda={agenda} consultations={consultations} today={today} cta={cta(section.cta)} />;
+      }
+      case 'veille-latest':
+        return <VeilleLatest {...common} items={veilleLatestItems(graph, section)} timezone={graph.ctx.timezone} cta={cta(section.cta)} />;
+      case 'lexique-spotlight':
+        return <LexiqueSpotlight {...common} items={lexiqueItems(graph, section)} cta={cta(section.cta)} />;
+      case 'most-read':
+        return <MostRead {...common} items={mostReadItems(graph, section)} />;
+      case 'newsletter-cta':
+        return <NewsletterCta {...common} list={section.list} />;
+      case 'partner-block':
+        return <PartnerBlock id={id} partnerId={section.partnerId} placement="home" />;
+      case 'custom-html':
+        return <CustomText {...common} content={section.content} />;
+      default:
+        return null;
+    }
+  })
+}

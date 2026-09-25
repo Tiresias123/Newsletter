@@ -1,0 +1,30 @@
+---
+// « Les plus lus » : liste numérotée choisie à la main en v1 (branchée sur l'analytique en v2).
+import type { CardModel } from '../../lib/content/cards.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import HomeSection from './HomeSection.astro';
+
+interface Props {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  items: CardModel[];
+}
+
+const { id, title, subtitle, items } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <HomeSection id={id} title={title} subtitle={subtitle}>
+      <ol class="grid grid-cols-1 gap-x-10 md:grid-cols-2">
+        {items.map((card, i) => (
+          <li class="relative flex items-start gap-4 border-b border-subtle py-3">
+            <span class="font-heading text-3xl font-extrabold text-accent tabular" aria-hidden="true">{i + 1}</span>
+            <a href={card.url} class="stretched-link font-semibold hover:underline">{frenchTypography(card.title)}</a>
+          </li>
+        ))}
+      </ol>
+    </HomeSection>
+  )
+}
