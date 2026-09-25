@@ -1,21 +1,23 @@
 ---
-// Balises d'en-tête : titre, description, canonique, robots, hreflang, Open Graph, couleur de thème.
+// Balises d'en-tête : titre, description, canonique, robots, hreflang, Open Graph (y compris article:*),
+// cartes X, couleur de thème, favicon et données structurées (ARCHITECTURE, section 13).
+import type { Crumb } from '../../lib/content/breadcrumbs.ts';
 import { getConfig } from '../../lib/config/index.ts';
 import { isPreview } from '../../lib/content/astro.ts';
 import { t } from '../../lib/i18n.ts';
+import { absolute, breadcrumbJsonLd, organizationJsonLd, serializeJsonLd, websiteJsonLd, type JsonLd } from '../../lib/seo/json-ld.ts';
+import { ogImagePath, type SeoProps } from '../../lib/seo/meta.ts';
 
-interface Props {
-  title?: string;
-  description?: string;
-  noindex?: boolean;
-  type?: 'website' | 'article';
-}
+type Props = SeoProps & { crumbs?: Crumb[] };
 
-const { site, theme } = getConfig();
-const { title, description = site.description, noindex = false, type = 'website' } = Astro.props;
+const config = getConfig();
+const { site, theme } = config;
+const { title, description = site.description, noindex = false, type = 'website', canonical: canonicalOverride, image, imageAlt, article, labels = [], jsonLd = [], crumbs } = Astro.props;
 const fullTitle = title ? t('site.pageTitle', { title, site: site.name }) : t('site.homeTitle', { site: site.name, baseline: site.baseline });
-const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).href;
-const robots = noindex || isPreview() ? 'noindex, nofollow' : 'index, follow, max-image-preview:large';
+const canonical = canonicalOverride ?? absolute(site.url, Astro.url.pathname);
+const robots = isPreview() ? 'noindex, nofollow' : noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large';
+const ogImage = absolute(site.url, image ?? ogImagePath('/'));
+const graph: JsonLd[] = [organizationJsonLd(config), websiteJsonLd(config), ...(crumbs && crumbs.length > 1 ? [breadcrumbJsonLd(site.url, crumbs, Astro.url.pathname)] : []), ...jsonLd];
 ---
 
 <title>{fullTitle}</title>
@@ -24,13 +26,35 @@ const robots = noindex || isPreview() ? 'noindex, nofollow' : 'index, follow, ma
 <meta name="robots" content={robots} />
 <link rel="alternate" hreflang="fr-CA" href={canonical} />
 <link rel="alternate" hreflang="x-default" href={canonical} />
+<link rel="alternate" type="application/rss+xml" title={site.name} href="/rss.xml" />
 <meta property="og:locale" content="fr_CA" />
 <meta property="og:site_name" content={site.name} />
 <meta property="og:type" content={type} />
 <meta property="og:title" content={title ?? site.name} />
 <meta property="og:description" content={description} />
 <meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={imageAlt ?? title ?? site.name} />
+{article?.publishedTime && <meta property="article:published_time" content={article.publishedTime} />}
+{article?.modifiedTime && <meta property="article:modified_time" content={article.modifiedTime} />}
+{article?.author && <meta property="article:author" content={article.author} />}
+{article?.section && <meta property="article:section" content={article.section} />}
+{article?.tags?.map((tag) => <meta property="article:tag" content={tag} />)}
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title ?? site.name} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImage} />
+{
+  labels.slice(0, 2).map((item, i) => (
+    <>
+      <meta name={`twitter:label${i + 1}`} content={item.label} />
+      <meta name={`twitter:data${i + 1}`} content={item.value} />
+    </>
+  ))
+}
 <meta name="theme-color" content={theme.colors.neutral.canvas} media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content={theme.colors.dark.bg} media="(prefers-color-scheme: dark)" />
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<script type="application/ld+json" set:html={serializeJsonLd(graph)} />

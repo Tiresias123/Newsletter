@@ -11,13 +11,9 @@ import SeoHead from '../components/layout/SeoHead.astro';
 import SkipLink from '../components/layout/SkipLink.astro';
 import { getConfig } from '../lib/config/index.ts';
 import { relativeDateMessages } from '../lib/i18n.ts';
+import type { SeoProps } from '../lib/seo/meta.ts';
 
-interface Props {
-  title?: string;
-  description?: string;
-  noindex?: boolean;
-  type?: 'website' | 'article';
-}
+type Props = SeoProps;
 
 type FontVariable = '--font-manrope' | '--font-inter' | '--font-source-serif-4';
 const FONT_VARIABLES: Record<string, FontVariable> = {
@@ -44,6 +40,8 @@ const bodyFont = FONT_VARIABLES[fonts.body] ?? '--font-inter';
     </script>
     <Font cssVariable={headingFont} preload />
     {bodyFont !== headingFont && <Font cssVariable={bodyFont} preload />}
+    {/* Serif des citations juridiques : déclarée partout, téléchargée seulement là où un texte l'emploie. */}
+    {fonts.legalSerif && headingFont !== '--font-source-serif-4' && <Font cssVariable="--font-source-serif-4" />}
     <SeoHead {...Astro.props} />
     <script type="application/json" id="messages-dates" set:html={JSON.stringify(relativeDateMessages)} />
   </head>
