@@ -7,6 +7,18 @@
 
 ---
 
+## Réponses de l'auteur (25 septembre 2026)
+
+> « Oui tu peux continuer, fais les choix que tu estimes les plus judicieux, et éventuellement Brevo ou toute solution gratuite dans un premier temps. »
+
+- **Toutes les recommandations par défaut sont retenues**, y compris les points marqués [irréversible] : famille A (question 2), Cloudflare Workers (3), option d'URL C `/articles/[slug]/` (6), dépôt privé (14).
+- **Newsletter (4)** : Brevo, forfait gratuit, au lancement. Le lieu des données, le plafond du forfait gratuit et l'interface en français seront vérifiés en phase 4, avant l'ouverture du compte. Si l'un de ces points ne convient pas, l'abstraction `NewsletterProvider` permet de passer à une autre solution gratuite sans toucher au reste du site.
+- **Autres réponses par défaut** : anglais en v3 (5), or activé (7), ticker livré mais désactivé (8), aucune monétisation en v1 (9), mot-symbole temporaire (10), LinkedIn, X et RSS (11), 2 à 4 articles et une newsletter par semaine (12), Umami Cloud (13), catégories « Analyses » et « Opinion » créées mais absentes du menu (16), tableau statique des traitements fiscaux (17).
+- **Points annexes** : brief et références ajoutés au dépôt (A1), Keystatic en mode local (A2), habillage de Keystatic en anglais (A3), les dix choix de direction artistique par défaut (A4), « infolettre » dans les libellés visibles (A5).
+- **Restent à fournir avant la phase 4** : le nom du site et le domaine (1), les URL des comptes sociaux (11), le nom et le titre du responsable de la protection des renseignements personnels (15).
+
+---
+
 ### 1. Nom du site et nom de domaine **[irréversible]**
 
 **Recommandation** : garder le jeton `[NOM-DU-SITE]` pendant les phases 1 à 3 (il est centralisé dans `config/site.json`) et arrêter le nom et le domaine avant la phase 4, parce que l'adresse d'envoi de la newsletter et les images de partage en dépendent.
