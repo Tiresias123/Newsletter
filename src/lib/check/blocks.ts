@@ -9,6 +9,8 @@ export type BlockResolvers = {
   // « hidden » : le contenu existe mais n'est pas publié (le lien ou l'infobulle ne s'affichera pas).
   state: (collection: Target, id: string) => 'visible' | 'hidden' | 'missing';
   partner: (id: string) => boolean;
+  // Liste d'inscription de config/newsletter.json.
+  newsletterList: (id: string) => boolean;
   // Chemin relatif à content/images/.
   image: (src: string) => boolean;
 };
@@ -51,10 +53,11 @@ export function checkBlocks(body: string, resolve: BlockResolvers, options: { is
     if (spec.children === 'required' && use.selfClosing) add(`ce bloc entoure un texte : <${use.name} …>texte</${use.name}>.`);
     if (spec.children === 'none' && !use.selfClosing) add(`ce bloc s'écrit sans contenu, en balise autofermante : <${use.name} … />.`);
 
-    const { variant, href, id, src } = use.props;
+    const { variant, href, id, src, list } = use.props;
     if (use.name === 'Callout' && variant === 'pour-approfondir' && !href) add('la variante « pour-approfondir » exige un lien (href).');
     if (use.name === 'BlocPartenaire' && typeof id === 'string' && !resolve.partner(id)) add(`partenaire « ${id} » absent de config/ads.json.`);
     if (use.name === 'Image' && typeof src === 'string' && !resolve.image(src)) add(`image introuvable : content/images/${src}.`);
+    if (use.name === 'Newsletter' && typeof list === 'string' && !resolve.newsletterList(list)) add(`liste « ${list} » absente de config/newsletter.json.`);
   }
   return problems;
 }

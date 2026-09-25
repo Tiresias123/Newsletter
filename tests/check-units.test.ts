@@ -32,6 +32,7 @@ describe('blocs riches', () => {
     state: (collection: 'lexique' | 'dossiers' | 'auteurs', id: string) =>
       collection === 'lexique' && id === 'staking' ? ('visible' as const) : id === 'brouillon' ? ('hidden' as const) : ('missing' as const),
     partner: (id: string) => id === 'partenaire',
+    newsletterList: (id: string) => id === 'generale',
     image: (src: string) => src === 'ok.webp',
   };
   const problems = (body: string) => checkBlocks(body, resolvers).map((p) => `${p.line} ${p.message}`);
@@ -79,6 +80,8 @@ describe('blocs riches', () => {
     expect(problems('<Chronologie items="[]" />')[0]).toContain('attend une liste entre accolades');
     expect(problems('<Image src="absente.webp" alt="a" credit="c" />')[0]).toContain('image introuvable');
     expect(problems('<BlocPartenaire id="autre" />')[0]).toContain('absent de config/ads.json');
+    expect(checkBlocks('<Newsletter list="autre" />', resolvers, { isPage: true }).map((p) => p.message)).toEqual(['bloc Newsletter : liste « autre » absente de config/newsletter.json.']);
+    expect(checkBlocks('<Newsletter list="generale" />', resolvers, { isPage: true })).toEqual([]);
   });
 });
 
