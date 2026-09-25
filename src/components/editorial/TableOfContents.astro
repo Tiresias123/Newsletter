@@ -1,0 +1,68 @@
+---
+// Sommaire généré depuis les titres du corps (H2 et H3) : colonne collante sur ordinateur, bloc repliable
+// sur mobile (brief 7.2, étape 10). La section en cours est mise en évidence (amélioration progressive).
+import { t } from '../../lib/i18n.ts';
+
+type Heading = { depth: number; slug: string; text: string };
+
+interface Props {
+  headings: Heading[];
+  variant: 'sidebar' | 'inline';
+}
+
+const { headings, variant } = Astro.props;
+const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{
+  items.length > 1 &&
+    (variant === 'sidebar' ? (
+      <nav aria-label={t('editorial.toc.title')} class="toc text-sm" data-toc>
+        <p class="mb-2 font-heading font-bold">{t('editorial.toc.title')}</p>
+        <ol class="space-y-1 border-s border-border">
+          {items.map((h) => (
+            <li class:list={[h.depth === 3 && 'ps-3']}>
+              <a href={`#${h.slug}`} class="toc-link">
+                {h.text}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    ) : (
+      <details class="toc my-6 rounded-card border border-border bg-surface lg:hidden">
+        <summary class="flex cursor-pointer items-center justify-between p-4 font-heading font-bold">{t('editorial.toc.title')}</summary>
+        <nav aria-label={t('editorial.toc.title')} class="px-4 pb-4 text-sm">
+          <ol class="space-y-2">
+            {items.map((h) => (
+              <li class:list={[h.depth === 3 && 'ps-4']}>
+                <a href={`#${h.slug}`} class="text-link">
+                  {h.text}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      </details>
+    ))
+}
+
+<script>
+  // Section en cours : le dernier titre passé sous l'en-tête collant.
+  const nav = document.querySelector<HTMLElement>('[data-toc]');
+  const links = nav ? [...nav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')] : [];
+  const targets = links.map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1)))).filter((el): el is HTMLElement => el !== null);
+  if (targets.length > 0) {
+    const update = () => {
+      const offset = 120;
+      let current = targets[0];
+      for (const target of targets) if (target.getBoundingClientRect().top - offset <= 0) current = target;
+      for (const link of links) {
+        if (link.hash.slice(1) === current?.id) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      }
+    };
+    addEventListener('scroll', update, { passive: true });
+    update();
+  }
+</script>

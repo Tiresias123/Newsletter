@@ -1,0 +1,67 @@
+---
+// Bloc de confiance (brief 7.2, étape 6) : « Vérifié le », juridictions concernées, entrée en vigueur du
+// dossier lié, relecture et notes de correction datées.
+import type { BadgeModel } from '../../lib/content/cards.ts';
+import { formatDate } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+import JurisdictionBadge from '../ui/JurisdictionBadge.astro';
+
+interface Props {
+  asOf?: string;
+  jurisdictions?: BadgeModel[];
+  effectiveDate?: string;
+  reviewedBy?: string;
+  corrections?: Array<{ date: string; note: string }>;
+}
+
+const { asOf, jurisdictions = [], effectiveDate, reviewedBy, corrections = [] } = Astro.props;
+---
+
+<div class="space-y-2 rounded-card border border-border bg-surface p-4 text-sm" role="group" aria-label={t('editorial.trust.label')}>
+  {
+    asOf && (
+      <p class="flex items-center gap-2 font-semibold text-success">
+        <Icon name="badge-check" />
+        <time datetime={asOf}>{t('editorial.trust.verifiedOn', { date: formatDate(asOf) })}</time>
+      </p>
+    )
+  }
+  {
+    jurisdictions.length > 0 && (
+      <p class="flex flex-wrap items-center gap-2">
+        <span class="text-secondary">{t('editorial.trust.concerns')}</span>
+        {jurisdictions.map((j) => (
+          <JurisdictionBadge jurisdiction={j} link />
+        ))}
+      </p>
+    )
+  }
+  {
+    effectiveDate && (
+      <p class="flex items-center gap-2 text-secondary">
+        <Icon name="calendar-clock" size={18} />
+        <span>{t('editorial.trust.effectiveDate', { date: formatDate(effectiveDate) })}</span>
+      </p>
+    )
+  }
+  {
+    reviewedBy && (
+      <p class="flex items-center gap-2 text-secondary">
+        <Icon name="user" size={18} />
+        <span>{t('editorial.trust.reviewedBy', { name: reviewedBy })}</span>
+      </p>
+    )
+  }
+  {
+    corrections.map((c) => (
+      <p class="flex gap-2 text-secondary">
+        <Icon name="file-pen" size={18} class="mt-0.5 shrink-0" />
+        <span>
+          <strong class="font-semibold text-text">{t('editorial.trust.correction', { date: formatDate(c.date) })}</strong> {frenchTypography(c.note)}
+        </span>
+      </p>
+    ))
+  }
+</div>

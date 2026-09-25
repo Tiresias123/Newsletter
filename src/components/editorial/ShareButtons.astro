@@ -1,0 +1,105 @@
+---
+// Barre de partage (brief 7.2, étape 8 ; DA, section 8.2) : liens simples, sans script tiers ; copie du lien
+// avec retour « Lien copié » annoncé ; « Signaler une erreur » et « Suggérer un sujet » par courriel prérempli.
+import { getConfig } from '../../lib/config/index.ts';
+import { t } from '../../lib/i18n.ts';
+import { absolute } from '../../lib/seo/json-ld.ts';
+import Icon from '../ui/Icon.astro';
+import SocialIcon from '../ui/SocialIcon.astro';
+
+interface Props {
+  title: string;
+  rss?: string;
+  print?: boolean;
+}
+
+const { title, rss = '/rss.xml', print = false } = Astro.props;
+const { site } = getConfig();
+const pageUrl = absolute(site.url, Astro.url.pathname);
+const u = encodeURIComponent(pageUrl);
+const text = encodeURIComponent(title);
+const NETWORKS = [
+  { name: 'x', label: t('editorial.share.x'), href: `https://x.com/intent/post?url=${u}&text=${text}` },
+  { name: 'linkedin', label: t('editorial.share.linkedin'), href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
+  { name: 'facebook', label: t('editorial.share.facebook'), href: `https://www.facebook.com/sharer/sharer.php?u=${u}` },
+  { name: 'whatsapp', label: t('editorial.share.whatsapp'), href: `https://wa.me/?text=${text}%20${u}` },
+  { name: 'telegram', label: t('editorial.share.telegram'), href: `https://t.me/share/url?url=${u}&text=${text}` },
+] as const;
+const mail = (subject: string, body: string) =>
+  site.contactEmail ? `mailto:${site.contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}` : '/contact/';
+const reportHref = mail(t('editorial.share.reportSubject', { title }), t('editorial.share.reportBody', { url: pageUrl }));
+const suggestHref = mail(t('editorial.share.suggestSubject'), t('editorial.share.suggestBody', { url: pageUrl }));
+const button = 'inline-flex size-10 items-center justify-center rounded-button border border-border text-secondary hover:border-control hover:text-text';
+---
+
+<div class="space-y-2 print:hidden" data-pagefind-ignore>
+  <ul class="flex flex-wrap items-center gap-2" aria-label={t('editorial.share.label')}>
+    {
+      NETWORKS.map((n) => (
+        <li>
+          <a href={n.href} class={button} target="_blank" rel="noopener" title={n.label}>
+            <SocialIcon name={n.name} size={18} />
+            <span class="sr-only">{n.label} {t('a11y.newTab')}</span>
+          </a>
+        </li>
+      ))
+    }
+    <li>
+      <a href={`mailto:?subject=${text}&body=${u}`} class={button} title={t('editorial.share.email')}>
+        <Icon name="mail" size={18} />
+        <span class="sr-only">{t('editorial.share.email')}</span>
+      </a>
+    </li>
+    <li>
+      <button
+        type="button"
+        class:list={[button, 'w-auto gap-2 px-3 text-sm font-semibold']}
+        data-copy-link={pageUrl}
+        data-copied={t('editorial.share.copied')}
+      >
+        <Icon name="link" size={18} />
+        <span data-copy-label aria-live="polite">{t('editorial.share.copy')}</span>
+      </button>
+    </li>
+    <li>
+      <a href={rss} class={button} title={t('editorial.share.rss')}>
+        <Icon name="rss" size={18} />
+        <span class="sr-only">{t('editorial.share.rss')}</span>
+      </a>
+    </li>
+    {
+      print && (
+        <li>
+          <button type="button" class={button} title={t('editorial.share.print')} data-print>
+            <Icon name="printer" size={18} />
+            <span class="sr-only">{t('editorial.share.print')}</span>
+          </button>
+        </li>
+      )
+    }
+  </ul>
+  <p class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+    <a href={reportHref} class="text-link inline-flex items-center gap-1"><Icon name="flag" size={16} />{t('editorial.share.reportError')}</a>
+    <a href={suggestHref} class="text-link inline-flex items-center gap-1"><Icon name="lightbulb" size={16} />{t('editorial.share.suggest')}</a>
+  </p>
+</div>
+
+<script>
+  // Copie du lien : le libellé du bouton devient « Lien copié », annoncé aux lecteurs d'écran.
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-copy-link]')) {
+    const label = button.querySelector('[data-copy-label]');
+    const initial = label?.textContent ?? '';
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(button.dataset.copyLink ?? location.href);
+        if (label) label.textContent = button.dataset.copied ?? initial;
+        setTimeout(() => {
+          if (label) label.textContent = initial;
+        }, 3000);
+      } catch {
+        // Presse-papiers refusé : le lien reste copiable depuis la barre d'adresse.
+      }
+    });
+  }
+  for (const button of document.querySelectorAll('[data-print]')) button.addEventListener('click', () => window.print());
+</script>

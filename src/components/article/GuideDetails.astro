@@ -1,0 +1,72 @@
+---
+// Informations propres à un guide : niveau, durée, public, prérequis, puis les étapes numérotées.
+import type { Entry } from '../../lib/content/graph.ts';
+import { enumLabel, t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  guide: Entry<'guides'>;
+}
+
+const d = Astro.props.guide.data;
+const duration = d.duration ?? Astro.props.guide.readingTime;
+---
+
+<div class="mt-8 space-y-6">
+  <dl class="grid gap-4 rounded-card border border-border bg-surface p-5 text-sm sm:grid-cols-3">
+    <div>
+      <dt class="flex items-center gap-2 text-meta"><Icon name="graduation-cap" size={18} />{t('editorial.guide.level')}</dt>
+      <dd class="mt-1 font-semibold">{enumLabel('level', d.level)}</dd>
+    </div>
+    <div>
+      <dt class="flex items-center gap-2 text-meta"><Icon name="clock" size={18} />{t('editorial.guide.duration')}</dt>
+      <dd class="mt-1 font-semibold">{t('cards.guideDuration', { count: duration })}</dd>
+    </div>
+    {
+      d.audience.length > 0 && (
+        <div>
+          <dt class="flex items-center gap-2 text-meta"><Icon name="users" size={18} />{t('editorial.guide.audience')}</dt>
+          <dd class="mt-1 font-semibold">{d.audience.map((a) => enumLabel('audience', a)).join(', ')}</dd>
+        </div>
+      )
+    }
+  </dl>
+  {
+    d.prerequisites.length > 0 && (
+      <div class="callout callout--neutral">
+        <p class="callout-title"><Icon name="list-checks" /><span>{t('editorial.guide.prerequisites')}</span></p>
+        <div class="callout-body">
+          <ul>
+            {d.prerequisites.map((p) => (
+              <li>{frenchTypography(p)}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    )
+  }
+  {
+    d.steps.length > 0 && (
+      <div>
+        <h2 class="text-2xl">{t('editorial.guide.steps')}</h2>
+        <ol class="mt-4 space-y-4">
+          {d.steps.map((step, i) => (
+            <li class="flex gap-4 rounded-card border border-border bg-surface p-4">
+              <span class="grid size-8 shrink-0 place-items-center rounded-full bg-secondary-bg font-heading font-bold text-secondary-fg" aria-hidden="true">
+                {i + 1}
+              </span>
+              <div>
+                <p class="font-semibold">
+                  <span class="sr-only">{t('editorial.guide.step', { n: i + 1 })} </span>
+                  {frenchTypography(step.title)}
+                </p>
+                <p class="mt-1 text-secondary">{frenchTypography(step.content)}</p>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    )
+  }
+</div>

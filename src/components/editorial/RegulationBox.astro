@@ -1,0 +1,83 @@
+---
+// Bloc « Cette réglementation » (brief 7.2, étape 12) : quand un article est lié à un dossier, son statut,
+// ses autorités, ses juridictions, ses dates clés et ses sources officielles, sans ressaisie.
+import type { RegulationSummary } from '../../lib/content/views.ts';
+import { formatDate } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+import JurisdictionBadge from '../ui/JurisdictionBadge.astro';
+import StatusBadge from '../ui/StatusBadge.astro';
+
+interface Props {
+  regulation: RegulationSummary;
+}
+
+const { regulation: r } = Astro.props;
+---
+
+<section class="rounded-card border border-border bg-surface p-5" aria-labelledby="reglementation-titre">
+  <h2 id="reglementation-titre" class="text-xl">{t('editorial.regulation.title')}</h2>
+  <p class="mt-1 font-semibold">{frenchTypography(r.title)}</p>
+  <dl class="mt-4 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[max-content_1fr]">
+    <dt class="text-meta">{t('editorial.regulation.status')}</dt>
+    <dd><StatusBadge status={r.status} /></dd>
+    {
+      r.authorities.length > 0 && (
+        <>
+          <dt class="text-meta">{t('editorial.regulation.authorities')}</dt>
+          <dd class="flex flex-wrap gap-x-3">
+            {r.authorities.map((a) => (a.url ? <a href={a.url} class="text-link">{a.label}</a> : <span>{a.label}</span>))}
+          </dd>
+        </>
+      )
+    }
+    {
+      r.jurisdictions.length > 0 && (
+        <>
+          <dt class="text-meta">{t('editorial.regulation.jurisdictions')}</dt>
+          <dd class="flex flex-wrap gap-1.5">
+            {r.jurisdictions.map((j) => (
+              <JurisdictionBadge jurisdiction={j} link />
+            ))}
+          </dd>
+        </>
+      )
+    }
+    {
+      r.dates.map((d) => (
+        <>
+          <dt class="text-meta">{t(`editorial.dossierDates.${d.key}`)}</dt>
+          <dd>
+            <time datetime={d.date}>{formatDate(d.date)}</time>
+          </dd>
+        </>
+      ))
+    }
+  </dl>
+  {
+    r.officialSources.length > 0 && (
+      <div class="mt-4">
+        <p class="text-sm text-meta">{t('editorial.regulation.officialSources')}</p>
+        <ul class="mt-1 space-y-1 text-sm">
+          {r.officialSources.map((s) => (
+            <li class="flex gap-2">
+              <Icon name="landmark" size={16} class="mt-0.5 shrink-0 text-primary" />
+              <a href={s.url} class="text-link" rel="noopener">
+                {frenchTypography(s.title)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+  {
+    r.url && (
+      <a href={r.url} class="btn btn-secondary mt-5">
+        {t('editorial.regulation.seeDossier')}
+        <Icon name="arrow-right" size={16} />
+      </a>
+    )
+  }
+</section>

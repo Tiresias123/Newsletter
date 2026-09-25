@@ -1,0 +1,32 @@
+---
+// Frise de veille officielle : les dernières publications des autorités (toutes, ou celles d'un organisme),
+// chacune avec un lien sortant vers la source officielle.
+import { getGraph } from '../../lib/content/astro.ts';
+import type { VeilleItem } from '../../lib/content/veille.ts';
+import { t } from '../../lib/i18n.ts';
+import Timeline from '../editorial/Timeline.astro';
+import SidebarSection from './SidebarSection.astro';
+
+interface Props {
+  items: VeilleItem[];
+  count?: number;
+  id?: string;
+  showEmpty?: boolean;
+}
+
+const { items, count = 6, id = 'barre-veille', showEmpty = false } = Astro.props;
+const graph = await getGraph();
+const shown = items.slice(0, count).map((item) => {
+  const organisme = graph.get('organismes', item.organisme);
+  return { date: item.publishedAt, title: item.title, url: item.url, meta: organisme?.data.acronym || organisme?.data.name };
+});
+---
+
+{
+  (shown.length > 0 || showEmpty) && (
+    <SidebarSection id={id} title={t('sidebar.veille')}>
+      {shown.length > 0 ? <Timeline items={shown} compact /> : <p class="text-sm text-meta">{t('sidebar.veilleEmpty')}</p>}
+      <a href="/veille/" class="btn btn-pill mt-3">{t('sections.seeAll')}</a>
+    </SidebarSection>
+  )
+}

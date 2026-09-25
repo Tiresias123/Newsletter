@@ -1,0 +1,14 @@
+---
+// Module de barre latérale : un titre et son contenu.
+interface Props {
+  id: string;
+  title: string;
+}
+
+const { id, title } = Astro.props;
+---
+
+<section aria-labelledby={id} data-pagefind-ignore>
+  <h2 id={id} class="mb-3 text-lg">{title}</h2>
+  <slot />
+</section>

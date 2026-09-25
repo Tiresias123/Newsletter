@@ -1,0 +1,28 @@
+---
+// Encadré « L'essentiel » (brief 7.2, étape 9) : de trois à cinq points, masqué s'il est vide.
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+interface Props {
+  points: string[];
+}
+
+const { points } = Astro.props;
+---
+
+{
+  points.length > 0 && (
+    <section class="callout callout--info my-8" aria-labelledby="essentiel-titre">
+      <h2 id="essentiel-titre" class="callout-title text-lg">
+        {t('editorial.keyPoints')}
+      </h2>
+      <div class="callout-body">
+        <ul>
+          {points.map((point) => (
+            <li>{frenchTypography(point)}</li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}

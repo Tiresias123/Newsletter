@@ -1,0 +1,25 @@
+---
+// Bloc d'infolettre avec titre et promesse, lus dans config/newsletter.json : compact en barre latérale,
+// en ligne en fin d'article.
+import { getConfig } from '../../lib/config/index.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import NewsletterForm from '../newsletter/NewsletterForm.astro';
+
+interface Props {
+  id?: string;
+  variant?: 'compact' | 'inline';
+}
+
+const { id = 'barre-infolettre', variant = 'compact' } = Astro.props;
+const { newsletter } = getConfig();
+---
+
+<section
+  class:list={['rounded-card border border-border p-5 print:hidden', variant === 'inline' ? 'bg-muted sm:p-6' : 'bg-surface']}
+  aria-labelledby={`${id}-titre`}
+  data-pagefind-ignore
+>
+  <h2 id={`${id}-titre`} class:list={[variant === 'inline' ? 'text-xl' : 'text-lg']}>{frenchTypography(newsletter.texts.title)}</h2>
+  <p class="mb-4 mt-1 text-sm text-secondary">{frenchTypography(newsletter.texts.subtitle)}</p>
+  <NewsletterForm id={id} variant={variant} />
+</section>

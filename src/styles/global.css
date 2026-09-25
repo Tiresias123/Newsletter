@@ -1,6 +1,7 @@
 /* Feuille globale : Tailwind branché sur les jetons de config/theme.json (via virtual:theme.css).
    Aucune couleur ni taille en dur ici : tout passe par les variables générées. */
 @import "tailwindcss";
+@import "./prose.css";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
@@ -469,3 +470,40 @@
     box-shadow: var(--c-shadow-hover);
   }
 }
+
+@layer components {
+  /* Pages de contenu : colonne principale et barre latérale de 340 px en deux zones (DA, section 12.3). */
+  .layout-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 3rem;
+  }
+
+  @media (min-width: 64rem) {
+    .layout-grid {
+      grid-template-columns: minmax(0, 1fr) var(--sidebar-w);
+      grid-template-areas:
+        "main top"
+        "end bottom";
+      column-gap: 3rem;
+      row-gap: 3rem;
+    }
+
+    .layout-main {
+      grid-area: main;
+    }
+
+    .layout-top {
+      grid-area: top;
+    }
+
+    .layout-end {
+      grid-area: end;
+    }
+
+    .layout-bottom {
+      grid-area: bottom;
+    }
+  }
+}
+

@@ -1,0 +1,95 @@
+---
+// Page d'un article ou d'un guide (brief 7.2) : tête, corps MDX, blocs de fin, barre latérale en deux
+// zones et articles liés. Le guide ajoute ses informations propres par l'emplacement « intro ».
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph, renderEntry } from '../../lib/content/astro.ts';
+import type { Crumb } from '../../lib/content/breadcrumbs.ts';
+import type { Editorial } from '../../lib/content/relations.ts';
+import { articleView } from '../../lib/content/views.ts';
+import { t } from '../../lib/i18n.ts';
+import { absolute, articleJsonLd } from '../../lib/seo/json-ld.ts';
+import { ogImagePath } from '../../lib/seo/meta.ts';
+import ContentLayout from '../../layouts/ContentLayout.astro';
+import RelatedCards from '../editorial/RelatedCards.astro';
+import TableOfContents from '../editorial/TableOfContents.astro';
+import { mdxComponents } from '../mdx/index.ts';
+import EditorsPick from '../sidebar/EditorsPick.astro';
+import FeaturedDossiers from '../sidebar/FeaturedDossiers.astro';
+import NewsletterBox from '../sidebar/NewsletterBox.astro';
+import SiteIntro from '../sidebar/SiteIntro.astro';
+import ArticleEnd from './ArticleEnd.astro';
+import ArticleHeader from './ArticleHeader.astro';
+
+interface Props {
+  entry: Editorial;
+  crumbs: Crumb[];
+}
+
+const { entry, crumbs } = Astro.props;
+const { site } = getConfig();
+const graph = await getGraph();
+const view = articleView(graph, entry);
+const { Content, headings } = await renderEntry(entry.collection, entry.id);
+const d = entry.data;
+const isGuide = entry.collection === 'guides';
+const path = entry.url ?? '/';
+const published = entry.visibility.instant?.toISOString();
+// Type schema.org : celui du format pour un article (NewsArticle, AnalysisNewsArticle…), Article pour un guide.
+const jsonLd = [
+  articleJsonLd(site.url, {
+    type: isGuide ? 'Article' : (view.format?.data.schemaType ?? 'NewsArticle'),
+    path,
+    headline: d.title,
+    description: d.dek,
+    image: absolute(site.url, ogImagePath(path)),
+    datePublished: published,
+    dateModified: d.updatedAt ?? published,
+    author: view.author && { name: view.author.data.name, path: view.author.visibility.visible ? view.author.url : undefined },
+    section: view.category?.data.label,
+    keywords: d.tags,
+  }),
+];
+const searchType = t(isGuide ? 'search.types.guides' : 'search.types.articles');
+const seo = {
+  title: d.seo?.title || d.title,
+  description: d.seo?.description || d.dek,
+  canonical: d.seo?.canonical,
+  noindex: d.seo?.noindex,
+  type: 'article' as const,
+  image: ogImagePath(path),
+  imageAlt: d.title,
+  article: {
+    publishedTime: entry.visibility.instant?.toISOString(),
+    modifiedTime: d.updatedAt,
+    author: view.author?.data.name,
+    section: view.category?.data.label,
+    tags: d.tags,
+  },
+  labels: [
+    ...(view.author ? [{ label: t('seo.writtenBy'), value: view.author.data.name }] : []),
+    { label: t('seo.readingTime'), value: t('seo.readingTimeValue', { count: entry.readingTime }) },
+  ],
+  jsonLd,
+};
+---
+
+<ContentLayout crumbs={crumbs} seo={seo}>
+  <article data-pagefind-body data-pagefind-filter={`type:${searchType}`}>
+    <ArticleHeader entry={entry} view={view} headings={headings} timezone={site.timezone} />
+    <slot name="intro" />
+    <div class="prose mt-10">
+      <Content components={mdxComponents} />
+    </div>
+  </article>
+  <Fragment slot="aside-top">
+    <SiteIntro />
+    <TableOfContents headings={headings} variant="sidebar" />
+  </Fragment>
+  <ArticleEnd slot="end" entry={entry} view={view} />
+  <Fragment slot="aside-bottom">
+    <EditorsPick exclude={entry.url} />
+    <FeaturedDossiers />
+    <NewsletterBox />
+  </Fragment>
+  <RelatedCards slot="after" title={t('editorial.relatedArticles')} cards={view.relatedCards} />
+</ContentLayout>

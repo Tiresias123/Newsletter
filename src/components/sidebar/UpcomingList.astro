@@ -1,0 +1,25 @@
+---
+// « À surveiller » en barre latérale : prochaines échéances (toutes, ou celles d'un dossier ou d'une juridiction).
+import type { Entry } from '../../lib/content/graph.ts';
+import { t } from '../../lib/i18n.ts';
+import Timeline from '../editorial/Timeline.astro';
+import SidebarSection from './SidebarSection.astro';
+
+interface Props {
+  entries: Entry<'agenda'>[];
+  count?: number;
+  id?: string;
+}
+
+const { entries, count = 5, id = 'barre-agenda' } = Astro.props;
+const items = entries.slice(0, count).map((e) => ({ date: e.data.date, title: e.data.title, url: e.data.url }));
+---
+
+{
+  items.length > 0 && (
+    <SidebarSection id={id} title={t('sidebar.watchlist')}>
+      <Timeline items={items} compact />
+      <a href="/agenda/" class="btn btn-pill mt-3">{t('sections.seeAll')}</a>
+    </SidebarSection>
+  )
+}

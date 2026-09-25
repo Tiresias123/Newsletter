@@ -1,0 +1,18 @@
+---
+// Présentation du site en tête de barre latérale : nom, accroche et lien vers la méthodologie.
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph } from '../../lib/content/astro.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Logo from '../layout/Logo.astro';
+
+const { site } = getConfig();
+const graph = await getGraph();
+const methodology = graph.get('pages', 'methodologie');
+---
+
+<div class="rounded-card border border-border bg-surface p-5" data-pagefind-ignore>
+  <Logo />
+  <p class="mt-2 text-sm text-secondary">{frenchTypography(site.baseline)}</p>
+  {methodology?.visibility.visible && <a href={methodology.url} class="text-link mt-2 inline-block text-sm">{t('sidebar.aboutLink')}</a>}
+</div>

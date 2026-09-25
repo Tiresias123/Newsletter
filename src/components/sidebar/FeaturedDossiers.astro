@@ -1,0 +1,36 @@
+---
+// Dossiers en vedette (cochés « En vedette », sinon les plus récents), avec leur statut.
+import { getGraph } from '../../lib/content/astro.ts';
+import type { LegalStatus } from '../../lib/content/enums.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import StatusBadge from '../ui/StatusBadge.astro';
+import SidebarSection from './SidebarSection.astro';
+
+interface Props {
+  exclude?: string;
+}
+
+const graph = await getGraph();
+const listed = graph.listed('dossiers').filter((e) => e.url !== Astro.props.exclude);
+const dossiers = [...listed.filter((e) => e.data.featured), ...listed.filter((e) => !e.data.featured)].slice(0, 3);
+---
+
+{
+  dossiers.length > 0 && (
+    <SidebarSection id="barre-dossiers" title={t('sidebar.featuredDossiers')}>
+      <ul class="space-y-3">
+        {dossiers.map((d) => (
+          <li class="relative space-y-1">
+            <StatusBadge status={d.data.legalStatus as LegalStatus} />
+            <p class="font-semibold">
+              <a href={d.url} class="stretched-link hover:underline">
+                {frenchTypography(d.data.shortTitle || d.data.title)}
+              </a>
+            </p>
+          </li>
+        ))}
+      </ul>
+    </SidebarSection>
+  )
+}

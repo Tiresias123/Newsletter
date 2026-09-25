@@ -1,0 +1,23 @@
+---
+// Page d'un guide : le gabarit d'article, plus le niveau, la durée, le public, les prérequis et les étapes.
+import GuideDetails from '../../components/article/GuideDetails.astro';
+import EditorialPage from '../../components/article/EditorialPage.astro';
+import { getGraph } from '../../lib/content/astro.ts';
+import { breadcrumbs } from '../../lib/content/breadcrumbs.ts';
+
+export async function getStaticPaths() {
+  const graph = await getGraph();
+  return graph
+    .all('guides')
+    .filter((e) => e.visibility.visible)
+    .map((e) => ({ params: { slug: e.id } }));
+}
+
+const graph = await getGraph();
+const entry = graph.get('guides', Astro.params.slug);
+if (!entry) throw new Error(`Guide introuvable : ${Astro.params.slug}.`);
+---
+
+<EditorialPage entry={entry} crumbs={breadcrumbs.guide(entry)}>
+  <GuideDetails slot="intro" guide={entry} />
+</EditorialPage>

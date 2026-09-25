@@ -1,0 +1,36 @@
+---
+// Bloc « Textes, organismes et traitements liés » (brief 7.2, étape 14) : listes compactes ; un contenu non
+// publié garde son nom, sans lien. Les groupes vides et le bloc entier vide ne s'affichent pas.
+import type { LinkItem } from '../../lib/content/views.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+interface Props {
+  groups: { dossiers: LinkItem[]; textes: LinkItem[]; organismes: LinkItem[]; traitements: LinkItem[] };
+}
+
+const { groups } = Astro.props;
+const entries = (Object.entries(groups) as Array<[keyof typeof groups, LinkItem[]]>).filter(([, items]) => items.length > 0);
+---
+
+{
+  entries.length > 0 && (
+    <section aria-labelledby="lies-titre">
+      <h2 id="lies-titre" class="text-xl">
+        {t('editorial.related.title')}
+      </h2>
+      <div class="mt-4 grid gap-6 sm:grid-cols-2">
+        {entries.map(([group, items]) => (
+          <div>
+            <h3 class="text-base text-meta">{t(`editorial.related.${group}`)}</h3>
+            <ul class="mt-2 space-y-1.5">
+              {items.map((item) => (
+                <li>{item.url ? <a href={item.url} class="text-link">{frenchTypography(item.label)}</a> : <span>{frenchTypography(item.label)}</span>}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}

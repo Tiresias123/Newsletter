@@ -1,0 +1,55 @@
+---
+// Gabarit des pages de contenu (article, guide, dossier, fiches) : fil d'Ariane, colonne principale et barre
+// latérale de 340 px en deux zones (DA, section 12.3). La zone haute (présentation, sommaire collant) longe
+// le corps ; la zone basse longe les blocs de fin. Sur mobile, tout s'empile et la zone haute disparaît.
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import type { Crumb } from '../lib/content/breadcrumbs.ts';
+import { t } from '../lib/i18n.ts';
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  crumbs: Crumb[];
+  seo: Record<string, unknown>;
+}
+
+const { crumbs, seo } = Astro.props;
+const hasEnd = Astro.slots.has('end');
+const hasBottom = Astro.slots.has('aside-bottom');
+---
+
+<BaseLayout {...seo} crumbs={crumbs}>
+  <div class="page-container pb-16">
+    <Breadcrumb items={crumbs} />
+    <div class="layout-grid">
+      <div class="layout-main min-w-0">
+        <slot />
+      </div>
+      {
+        Astro.slots.has('aside-top') && (
+          <div class="layout-top hidden lg:block">
+            <div class="sticky top-[calc(var(--header-h)+1.5rem)] space-y-8">
+              <slot name="aside-top" />
+            </div>
+          </div>
+        )
+      }
+      {
+        hasEnd && (
+          <div class="layout-end min-w-0">
+            <slot name="end" />
+          </div>
+        )
+      }
+      {
+        hasBottom && (
+          <aside class="layout-bottom" aria-label={t('sidebar.label')}>
+            <div class="space-y-8">
+              <slot name="aside-bottom" />
+            </div>
+          </aside>
+        )
+      }
+    </div>
+    <slot name="after" />
+  </div>
+</BaseLayout>

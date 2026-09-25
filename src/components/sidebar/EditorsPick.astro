@@ -1,0 +1,33 @@
+---
+// Sélection de la rédaction (trois contenus cochés « Sélection de la rédaction », hors page courante).
+import { getGraph } from '../../lib/content/astro.ts';
+import { articleCard } from '../../lib/content/cards.ts';
+import { editorial } from '../../lib/content/relations.ts';
+import { t } from '../../lib/i18n.ts';
+import ArticleCard from '../cards/ArticleCard.astro';
+import SidebarSection from './SidebarSection.astro';
+
+interface Props {
+  exclude?: string;
+}
+
+const graph = await getGraph();
+const cards = editorial(graph)
+  .filter((e) => e.data.editorsPick && e.url !== Astro.props.exclude)
+  .slice(0, 3)
+  .map((e) => articleCard(graph, e));
+---
+
+{
+  cards.length > 0 && (
+    <SidebarSection id="barre-selection" title={t('sidebar.editorsPick')}>
+      <ul class="divide-y divide-subtle">
+        {cards.map((card) => (
+          <li>
+            <ArticleCard card={card} variant="compact" level={3} surface="plain" />
+          </li>
+        ))}
+      </ul>
+    </SidebarSection>
+  )
+}

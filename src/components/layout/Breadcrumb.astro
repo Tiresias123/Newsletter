@@ -1,0 +1,37 @@
+---
+// Fil d'Ariane : navigation « Accueil › Rubrique › Page », la page courante marquée aria-current.
+import type { Crumb } from '../../lib/content/breadcrumbs.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  items: Crumb[];
+}
+
+const { items } = Astro.props;
+---
+
+<nav aria-label={t('breadcrumb.label')} class="py-4 text-sm text-meta" data-pagefind-ignore>
+  <ol class="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+    {
+      items.map((item, i) => {
+        const last = i === items.length - 1;
+        return (
+          <li class:list={['inline-flex min-w-0 items-center gap-1.5', last && 'max-w-full']}>
+            {i > 0 && <Icon name="chevron-right" size={14} class="shrink-0" />}
+            {last || !item.url ? (
+              <span aria-current={last ? 'page' : undefined} class="line-clamp-1 text-secondary">
+                {frenchTypography(item.label)}
+              </span>
+            ) : (
+              <a href={item.url} class="hover:text-text hover:underline">
+                {frenchTypography(item.label)}
+              </a>
+            )}
+          </li>
+        );
+      })
+    }
+  </ol>
+</nav>

@@ -1,0 +1,52 @@
+---
+// Tête d'article (brief 7.2, étapes 2 à 10) : puces, titre, chapô, métadonnées, bloc de confiance,
+// couverture et crédit, partage, « L'essentiel » et sommaire repliable sur mobile.
+import type { ImageMetadata } from 'astro';
+import type { Entry } from '../../lib/content/graph.ts';
+import type { Editorial } from '../../lib/content/relations.ts';
+import type { ArticleView } from '../../lib/content/views.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import { url } from '../../lib/urls.ts';
+import Figure from '../editorial/Figure.astro';
+import KeyPoints from '../editorial/KeyPoints.astro';
+import ShareButtons from '../editorial/ShareButtons.astro';
+import TableOfContents from '../editorial/TableOfContents.astro';
+import TrustBlock from '../editorial/TrustBlock.astro';
+import Badge from '../ui/Badge.astro';
+import CategoryBadge from '../ui/CategoryBadge.astro';
+import JurisdictionBadge from '../ui/JurisdictionBadge.astro';
+import PreviewBadge from '../ui/PreviewBadge.astro';
+import ArticleMeta from './ArticleMeta.astro';
+
+interface Props {
+  entry: Editorial;
+  view: ArticleView;
+  headings: Array<{ depth: number; slug: string; text: string }>;
+  timezone: string;
+}
+
+const { entry, view, headings, timezone } = Astro.props;
+const d = entry.data;
+const category = view.category as Entry<'categories'> | undefined;
+const { visibility } = entry;
+---
+
+<header class="space-y-5">
+  <div class="flex flex-wrap items-center gap-1.5">
+    {category && <CategoryBadge category={{ id: category.id, label: category.data.label, style: category.data.badgeStyle, url: category.url }} link />}
+    {view.format && <Badge label={view.format.data.label} href={url.format(view.format.id)} styleClass="badge--ardoise" />}
+    {view.jurisdictions.map((j) => <JurisdictionBadge jurisdiction={j} link />)}
+    {d.breaking && <Badge label={t('cards.breaking')} styleClass="status--consultation" />}
+    {visibility.previewOnly && <PreviewBadge state={visibility.state === 'programme' ? 'programme' : 'brouillon'} />}
+  </div>
+  <h1 class="text-3xl lg:text-4xl">{frenchTypography(d.title)}</h1>
+  <p class="text-xl text-secondary lg:text-2xl">{frenchTypography(d.dek)}</p>
+  <ArticleMeta instant={visibility.instant} updatedAt={d.updatedAt} readingTime={entry.readingTime} author={view.author} timezone={timezone} />
+  {visibility.state === 'archive' && <p class="callout callout--warning text-sm font-semibold">{t('editorial.archived')}</p>}
+  {view.showTrust && <TrustBlock asOf={d.asOf} jurisdictions={view.jurisdictions} effectiveDate={view.effectiveDate} reviewedBy={d.reviewedBy} corrections={d.corrections} />}
+  {d.cover?.src && <Figure image={d.cover.src as ImageMetadata} alt={d.cover.alt} credit={d.cover.credit} creditUrl={d.cover.creditUrl} priority />}
+  <ShareButtons title={d.title} rss={category ? `${category.url}rss.xml` : '/rss.xml'} />
+  <KeyPoints points={d.tldr} />
+  <TableOfContents headings={headings} variant="inline" />
+</header>

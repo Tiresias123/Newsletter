@@ -1,0 +1,20 @@
+---
+// Avertissement tiré de config/legal.json (brief 7.2, étape 16).
+import type { Disclaimer } from '../../lib/legal.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  disclaimer: Disclaimer;
+}
+
+const { disclaimer } = Astro.props;
+---
+
+<div role="note" class="callout callout--neutral">
+  <p class="callout-title">
+    <Icon name="info" />
+    <span>{frenchTypography(disclaimer.title)}</span>
+  </p>
+  <p class="callout-body text-sm text-secondary">{frenchTypography(disclaimer.text)}</p>
+</div>

@@ -1,0 +1,35 @@
+---
+// Ligne de métadonnées d'un article (brief 7.2, étape 5) : date et heure de publication, mise à jour,
+// temps de lecture, auteur avec avatar.
+import type { Entry } from '../../lib/content/graph.ts';
+import { formatDate, formatDateTime } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import Avatar from '../ui/Avatar.astro';
+
+interface Props {
+  instant?: Date;
+  updatedAt?: string;
+  readingTime?: number;
+  author?: Entry<'auteurs'>;
+  timezone: string;
+}
+
+const { instant, updatedAt, readingTime, author, timezone } = Astro.props;
+const AuthorTag = author?.visibility.visible ? 'a' : 'span';
+---
+
+<div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-meta">
+  {instant && <time datetime={instant.toISOString()}>{formatDateTime(instant, t('editorial.meta.publishedAt'), timezone)}</time>}
+  {updatedAt && <span aria-hidden="true">·</span>}
+  {updatedAt && <time datetime={updatedAt}>{t('editorial.meta.updated', { date: formatDate(updatedAt) })}</time>}
+  {readingTime && <span aria-hidden="true">·</span>}
+  {readingTime && <span>{t('editorial.meta.readingTime', { count: readingTime })}</span>}
+  {
+    author && (
+      <AuthorTag href={AuthorTag === 'a' ? author.url : undefined} class="inline-flex items-center gap-2 font-semibold text-secondary hover:underline">
+        <Avatar name={author.data.name} src={author.data.avatar} size={32} />
+        <span>{author.data.name}</span>
+      </AuthorTag>
+    )
+  }
+</div>

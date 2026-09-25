@@ -1,0 +1,51 @@
+---
+// Fin d'article (brief 7.2, étapes 12 à 17) : « Cette réglementation », sources, contenus liés,
+// infolettre, avertissement, carte auteur et étiquettes.
+import type { Editorial } from '../../lib/content/relations.ts';
+import type { ArticleView } from '../../lib/content/views.ts';
+import { t } from '../../lib/i18n.ts';
+import { url } from '../../lib/urls.ts';
+import AuthorCard from '../editorial/AuthorCard.astro';
+import DisclaimerBox from '../editorial/DisclaimerBox.astro';
+import RegulationBox from '../editorial/RegulationBox.astro';
+import RelatedEntities from '../editorial/RelatedEntities.astro';
+import SourceList from '../editorial/SourceList.astro';
+import NewsletterBox from '../sidebar/NewsletterBox.astro';
+import Badge from '../ui/Badge.astro';
+
+interface Props {
+  entry: Editorial;
+  view: ArticleView;
+}
+
+const { entry, view } = Astro.props;
+const d = entry.data;
+---
+
+<div class="space-y-10">
+  {view.regulation && <RegulationBox regulation={view.regulation} />}
+  {
+    view.sources.length > 0 && (
+      <section aria-labelledby="sources-titre">
+        <h2 id="sources-titre" class="text-xl">
+          {t('editorial.sources.title')}
+        </h2>
+        <SourceList items={view.sources} />
+      </section>
+    )
+  }
+  <RelatedEntities groups={view.related} />
+  <NewsletterBox id="article-infolettre" variant="inline" />
+  {view.disclaimer && <DisclaimerBox disclaimer={view.disclaimer} />}
+  {view.author && <AuthorCard author={view.author} />}
+  {
+    d.tags.length > 0 && (
+      <div class="flex flex-wrap items-center gap-2 text-sm" data-pagefind-ignore>
+        <span class="text-meta">{t('editorial.tags')}</span>
+        {d.tags.map((tag) => (
+          <Badge label={tag} href={url.tag(tag)} styleClass="badge--contour" />
+        ))}
+      </div>
+    )
+  }
+</div>
