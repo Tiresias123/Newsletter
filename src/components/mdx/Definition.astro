@@ -19,14 +19,8 @@ const tipId = `definition-${count}`;
 
 {
   entry?.visibility.visible ? (
-    <span class="definition" data-definition>
-      <a href={entry.url} class="definition-term" aria-describedby={tipId}>
-        <slot />
-      </a>
-      <span role="tooltip" id={tipId} class="definition-tip">
-        <strong>{frenchTypography(entry.data.term)}</strong> {frenchTypography(entry.data.shortDefinition)}
-      </span>
-    </span>
+    // Sur une seule ligne : un blanc entre les balises s'afficherait avant la ponctuation qui suit le terme.
+    <span class="definition" data-definition><a href={entry.url} class="definition-term" aria-describedby={tipId}><slot /></a><span role="tooltip" id={tipId} class="definition-tip"><strong>{frenchTypography(entry.data.term)}</strong> {frenchTypography(entry.data.shortDefinition)}</span></span>
   ) : (
     <slot />
   )

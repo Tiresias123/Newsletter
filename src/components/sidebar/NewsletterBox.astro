@@ -8,9 +8,11 @@ import NewsletterForm from '../newsletter/NewsletterForm.astro';
 interface Props {
   id?: string;
   variant?: 'compact' | 'inline';
+  // Liste d'inscription (config/newsletter.json) ; la liste générale par défaut.
+  list?: string;
 }
 
-const { id = 'barre-infolettre', variant = 'compact' } = Astro.props;
+const { id = 'barre-infolettre', variant = 'compact', list } = Astro.props;
 const { newsletter } = getConfig();
 ---
 
@@ -21,5 +23,5 @@ const { newsletter } = getConfig();
 >
   <h2 id={`${id}-titre`} class:list={[variant === 'inline' ? 'text-xl' : 'text-lg']}>{frenchTypography(newsletter.texts.title)}</h2>
   <p class="mb-4 mt-1 text-sm text-secondary">{frenchTypography(newsletter.texts.subtitle)}</p>
-  <NewsletterForm id={id} variant={variant} />
+  <NewsletterForm id={id} variant={variant} list={list} />
 </section>

@@ -1,0 +1,22 @@
+---
+// Page de référence de tous les blocs de l'éditeur (ARCHITECTURE, section 8.2) : développement seulement,
+// pour vérifier d'un coup d'œil leur rendu, en clair comme en sombre, sur ordinateur comme sur mobile.
+import { mdxComponents } from '../components/mdx/index.ts';
+import ContentLayout from '../layouts/ContentLayout.astro';
+import { home } from '../lib/content/breadcrumbs.ts';
+import { t } from '../lib/i18n.ts';
+import Exemple, { getHeadings } from './exemple.mdx';
+import TableOfContents from '../components/editorial/TableOfContents.astro';
+
+const title = t('devExample.title');
+---
+
+<ContentLayout crumbs={[home(), { label: title }]} seo={{ title, noindex: true }}>
+  <article>
+    <h1 class="text-3xl lg:text-4xl">{title}</h1>
+    <div class="prose mt-8">
+      <Exemple components={mdxComponents} />
+    </div>
+  </article>
+  <TableOfContents slot="aside-top" headings={getHeadings()} variant="sidebar" />
+</ContentLayout>

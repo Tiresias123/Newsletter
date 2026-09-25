@@ -9,6 +9,7 @@ export function devPages(): AstroIntegration {
       'astro:config:setup': ({ command, injectRoute }) => {
         if (command !== 'dev') return;
         injectRoute({ pattern: '/a-verifier', entrypoint: './src/dev/a-verifier.astro' });
+        injectRoute({ pattern: '/exemple', entrypoint: './src/dev/exemple.astro' });
       },
     },
   };

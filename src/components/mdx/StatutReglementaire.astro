@@ -1,5 +1,6 @@
 ---
-// Statut réglementaire d'un dossier lié : puce de statut et lien vers le dossier.
+// Statut réglementaire d'un dossier lié : puce de statut et lien vers le dossier. Élément en ligne, valide
+// au milieu d'une phrase comme seul sur sa ligne.
 import { getGraph } from '../../lib/content/astro.ts';
 import type { LegalStatus } from '../../lib/content/enums.ts';
 import { frenchTypography } from '../../lib/typo.ts';
@@ -15,11 +16,11 @@ const entry = graph.get('dossiers', Astro.props.dossier);
 
 {
   entry?.visibility.visible && (
-    <p class="not-prose my-6 flex flex-wrap items-center gap-2">
+    <span class="not-prose inline-flex flex-wrap items-center gap-2 align-middle">
       <StatusBadge status={entry.data.legalStatus as LegalStatus} />
       <a href={entry.url} class="text-link font-semibold">
         {frenchTypography(entry.data.shortTitle || entry.data.title)}
       </a>
-    </p>
+    </span>
   )
 }

@@ -948,5 +948,8 @@
     "traitement": "Traitement fiscal",
     "lexique": "Lexique",
     "newsletter": "Infolettre, numéro {n}"
+  },
+  "devExample": {
+    "title": "Tous les blocs de l'éditeur"
   }
 }

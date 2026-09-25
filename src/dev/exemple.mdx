@@ -1,0 +1,93 @@
+Page de référence : chaque bloc de l'éditeur, avec chacune de ses variantes. Aucun contenu n'y est réel : tous les textes sont des exemples à ne pas reprendre.<Note>[EXEMPLE] Une note de bas de page, numérotée automatiquement et regroupée en fin de page.</Note>
+
+## Encadrés
+
+<Callout variant="important">[EXEMPLE] Variante « important ».</Callout>
+
+<Callout variant="a-retenir">[EXEMPLE] Variante « à retenir ».</Callout>
+
+<Callout variant="attention">[EXEMPLE] Variante « attention ».</Callout>
+
+<Callout variant="en-pratique">[EXEMPLE] Variante « en pratique ».</Callout>
+
+<Callout variant="exemple" title="Titre personnalisé">[EXEMPLE] Variante « exemple », avec un titre choisi par l'auteur.</Callout>
+
+<Callout variant="date-a-retenir">[EXEMPLE] Variante « date à retenir ».</Callout>
+
+<Callout variant="ce-qui-change">[EXEMPLE] Variante « ce qui change ».</Callout>
+
+<Callout variant="pour-les-particuliers">[EXEMPLE] Variante « pour les particuliers ».</Callout>
+
+<Callout variant="pour-les-entreprises">[EXEMPLE] Variante « pour les entreprises ».</Callout>
+
+<Callout variant="source-officielle">[EXEMPLE] Variante « source officielle ».</Callout>
+
+<Callout variant="mise-a-jour">[EXEMPLE] Variante « mise à jour ».</Callout>
+
+<Callout variant="pour-approfondir" href="/lexique/">[EXEMPLE] Variante « pour approfondir » : une carte de lien interne.</Callout>
+
+<Callout variant="bon-a-savoir">[EXEMPLE] Variante « bon à savoir ».</Callout>
+
+<MiseEnGarde />
+
+## Textes et citations
+
+<TexteDeLoi reference="[EXEMPLE] Loi fictive, article 1" version="[EXEMPLE] version fictive" url="https://example.org/">
+[EXEMPLE] Texte littéral d'une disposition fictive.
+</TexteDeLoi>
+
+<Citation author="[EXEMPLE] Prénom Nom" role="[EXEMPLE] Fonction" source="[EXEMPLE] Source" date="2026-09-25">
+[EXEMPLE] Propos rapporté, avec son attribution.
+</Citation>
+
+Un terme défini dans le lexique : le <Definition term="jalonnement">jalonnement</Definition>, avec son infobulle.
+
+Le statut d'un dossier lié, dans une phrase : <StatutReglementaire dossier="stablecoins-canada" />, ou seul sur sa ligne :
+
+<StatutReglementaire dossier="plateformes-negociation-cryptoactifs" />
+
+## Données
+
+<ExempleChiffre
+  title="[EXEMPLE] Calcul fictif"
+  rows={[{ label: "Montant fictif", amount: 12500 }, { label: "Déduction fictive", amount: -2500.5 }]}
+  total={{ label: "Résultat fictif", amount: 9999.5 }}
+/>
+
+<Comparatif
+  caption="[EXEMPLE] Tableau comparatif fictif"
+  columns={["Critère", "Option A", "Option B"]}
+  rows={[["Premier critère", "Oui", "Non"], ["Second critère", "Selon le cas", "Oui"]]}
+/>
+
+<Chronologie items={[{ date: "2026-01-15", title: "[EXEMPLE] Première étape", description: "[EXEMPLE] Précision." }, { date: "2026-06-30", title: "[EXEMPLE] Deuxième étape", url: "https://example.org/" }]} />
+
+## Médias
+
+<Image src="articles/exemple-entreprise-canadienne-mica/schema.webp" alt="[EXEMPLE] Schéma de démonstration" caption="[EXEMPLE] Légende" credit="[EXEMPLE] Crédit" />
+
+<Video id="M7lc1UVf-VE" title="[EXEMPLE] Vidéo de démonstration" />
+
+<BlocPartenaire id="partenaire-exemple" />
+
+## Blocs de page
+
+<Hero title="[EXEMPLE] Bandeau de page" ctaLabel="Découvrir les dossiers" ctaUrl="/dossiers/">
+[EXEMPLE] Texte d'accroche du bandeau.
+</Hero>
+
+<ListeArticles layout="grid" count="3" />
+
+<CarteAuteur id="auteur-demo" />
+
+<Newsletter />
+
+<ListeSources />
+
+<FAQ items={[{ question: "[EXEMPLE] Une question fréquente?", answer: "[EXEMPLE] Sa réponse." }, { question: "[EXEMPLE] Une deuxième question?", answer: "[EXEMPLE] Une réponse en deux paragraphes.\n\n[EXEMPLE] Le second." }]} />
+
+<Tableau
+  caption="[EXEMPLE] Tableau de page"
+  columns={["Colonne 1", "Colonne 2"]}
+  rows={[["Valeur", "Valeur"], ["Valeur", "Valeur"]]}
+/>
