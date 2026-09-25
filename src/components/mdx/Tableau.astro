@@ -1,0 +1,16 @@
+---
+// Bloc de page Tableau : tableau simple, sans en-têtes de ligne.
+import { blockSchemas, parseBlock } from '../../lib/content/block-props.ts';
+import DataTable from '../editorial/DataTable.astro';
+
+interface Props {
+  caption: string;
+  columns: unknown;
+  rows: unknown;
+}
+
+const { caption, columns, rows } = Astro.props;
+const data = parseBlock('Tableau', blockSchemas.table, { columns, rows });
+---
+
+<DataTable caption={caption} columns={data.columns} rows={data.rows} />

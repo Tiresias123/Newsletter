@@ -1,0 +1,21 @@
+---
+// Appel de note : numéro posé à la compilation (src/lib/mdx/notes.ts), lien vers la note en fin de document.
+// Le texte de la note est affiché dans la liste des notes, pas ici.
+import { t } from '../../lib/i18n.ts';
+
+interface Props {
+  n?: string;
+}
+
+const { n } = Astro.props;
+---
+
+{
+  n && (
+    <sup class="note-call">
+      <a href={`#note-${n}`} id={`appel-${n}`} aria-label={t('blocks.notes.call', { n })}>
+        {n}
+      </a>
+    </sup>
+  )
+}

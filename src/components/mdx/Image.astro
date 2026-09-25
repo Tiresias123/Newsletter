@@ -1,0 +1,21 @@
+---
+// Image du corps (bloc Image) : chemin relatif à content/images/, texte alternatif et crédit obligatoires.
+import type { ImageMetadata } from 'astro';
+import Figure from '../editorial/Figure.astro';
+
+interface Props {
+  src: string;
+  alt: string;
+  caption?: string;
+  credit: string;
+  creditUrl?: string;
+}
+
+const images = import.meta.glob<{ default: ImageMetadata }>('/content/images/**/*.{jpg,jpeg,png,webp,avif,gif}');
+const { src, alt, caption, credit, creditUrl } = Astro.props;
+const load = images[`/content/images/${src}`];
+if (!load) throw new Error(`Bloc Image : fichier introuvable « content/images/${src} ».`);
+const image = (await load()).default;
+---
+
+<Figure image={image} alt={alt} caption={caption} credit={credit} creditUrl={creditUrl} class="my-8" />

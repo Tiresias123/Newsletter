@@ -1,0 +1,33 @@
+---
+// Tableau de données (blocs Comparatif et Tableau, matrice fiscale) : légende obligatoire, en-têtes de colonne,
+// première colonne en en-tête de ligne si demandé. Sur mobile, défilement horizontal dans une zone focalisable.
+import { frenchTypography } from '../../lib/typo.ts';
+
+interface Props {
+  caption: string;
+  columns: string[];
+  rows: string[][];
+  rowHeaders?: boolean;
+}
+
+const { caption, columns, rows, rowHeaders = false } = Astro.props;
+const label = frenchTypography(caption);
+---
+
+<div class="table-scroll not-prose" role="region" aria-label={label} tabindex="0">
+  <table class:list={['data-table', rowHeaders && 'data-table--row-headers']}>
+    <caption>{label}</caption>
+    <thead>
+      <tr>{columns.map((column) => <th scope="col">{frenchTypography(column)}</th>)}</tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((row) => (
+          <tr>
+            {row.map((value, i) => (i === 0 && rowHeaders ? <th scope="row">{frenchTypography(value)}</th> : <td>{frenchTypography(value)}</td>))}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>

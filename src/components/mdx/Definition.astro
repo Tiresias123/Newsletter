@@ -1,0 +1,46 @@
+---
+// Terme défini (bloc Definition) : souligné en pointillé, lien vers sa fiche du lexique, infobulle avec la
+// définition courte au survol et au focus. L'infobulle se survole, reste affichée tant que le pointeur ou le
+// focus y est, et se ferme par Échap (WCAG 1.4.13). Terme absent ou non publié : texte simple.
+import { getGraph } from '../../lib/content/astro.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+interface Props {
+  term: string;
+}
+
+const { term } = Astro.props;
+const graph = await getGraph();
+const entry = graph.get('lexique', term);
+const count = (Astro.locals.definitionCount ?? 0) + 1;
+Astro.locals.definitionCount = count;
+const tipId = `definition-${count}`;
+---
+
+{
+  entry?.visibility.visible ? (
+    <span class="definition" data-definition>
+      <a href={entry.url} class="definition-term" aria-describedby={tipId}>
+        <slot />
+      </a>
+      <span role="tooltip" id={tipId} class="definition-tip">
+        <strong>{frenchTypography(entry.data.term)}</strong> {frenchTypography(entry.data.shortDefinition)}
+      </span>
+    </span>
+  ) : (
+    <slot />
+  )
+}
+
+<script>
+  // Échap ferme l'infobulle ouverte ; elle revient au prochain survol ou au prochain focus.
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    for (const el of document.querySelectorAll<HTMLElement>('[data-definition]:hover, [data-definition]:focus-within')) el.dataset.dismissed = '';
+  });
+  for (const el of document.querySelectorAll<HTMLElement>('[data-definition]')) {
+    const reset = () => delete el.dataset.dismissed;
+    el.addEventListener('mouseleave', reset);
+    el.addEventListener('focusout', reset);
+  }
+</script>

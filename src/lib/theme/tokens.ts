@@ -42,7 +42,7 @@ function aliases(theme: Theme, mode: Mode): Record<string, string> {
       'c-border': 'var(--slate-300)', 'c-border-subtle': 'var(--slate-200)', 'c-border-control': 'var(--slate-400)',
       'c-primary': 'var(--brand-600)', 'c-primary-hover': 'var(--brand-500)', 'c-primary-pressed': 'var(--brand-700)',
       'c-on-primary': '#FFFFFF', 'c-link': 'var(--brand-600)', 'c-focus': 'var(--brand-600)', 'c-focus-inverse': '#FFFFFF',
-      'c-heading-accent': 'var(--brand-700)', 'c-secondary-bg': 'var(--brand-100)', 'c-secondary-fg': 'var(--brand-700)',
+      'c-heading-accent': 'var(--brand-700)', 'c-secondary-bg': 'var(--brand-100)', 'c-secondary-fg': 'var(--brand-700)', 'c-rule-law': 'var(--brand-900)',
       'c-success-text': 'var(--success-strong)', 'c-danger-text': 'var(--danger)', 'c-warning-text': 'var(--warning-strong)',
       'c-rise': 'var(--success-strong)', 'c-fall': 'var(--danger-strong)',
       'c-gold-bg': gold ? 'var(--gold-100)' : 'var(--brand-100)', 'c-gold-fg': gold ? 'var(--gold-700)' : 'var(--brand-800)',
@@ -58,7 +58,7 @@ function aliases(theme: Theme, mode: Mode): Record<string, string> {
     'c-border': 'var(--dark-border)', 'c-border-subtle': 'var(--dark-border)', 'c-border-control': 'var(--dark-border-strong)',
     'c-primary': 'var(--brand-400)', 'c-primary-hover': 'var(--brand-300)', 'c-primary-pressed': 'var(--brand-200)',
     'c-on-primary': 'var(--dark-bg)', 'c-link': 'var(--dark-link)', 'c-focus': 'var(--dark-link)', 'c-focus-inverse': '#FFFFFF',
-    'c-heading-accent': 'var(--brand-200)', 'c-secondary-bg': 'var(--dark-info-bg)', 'c-secondary-fg': 'var(--brand-200)',
+    'c-heading-accent': 'var(--brand-200)', 'c-secondary-bg': 'var(--dark-info-bg)', 'c-secondary-fg': 'var(--brand-200)', 'c-rule-law': 'var(--brand-300)',
     'c-success-text': 'var(--dark-success)', 'c-danger-text': 'var(--dark-danger)', 'c-warning-text': 'var(--dark-warning)',
     'c-rise': 'var(--dark-success)', 'c-fall': 'var(--dark-danger)',
     'c-gold-bg': gold ? 'var(--dark-warning-bg)' : 'var(--dark-info-bg)', 'c-gold-fg': gold ? 'var(--gold-dark)' : 'var(--brand-200)',
@@ -82,6 +82,31 @@ function styleVariables(theme: Theme, mode: Mode): string[] {
   }
   for (const [name, style] of Object.entries(theme.statusStyles)) emit(`status-${name}`, style[mode]);
   return lines;
+}
+
+// Encadrés (Callout et blocs apparentés) : cinq familles de couleur tirées de la palette (DA, section 9).
+export const CALLOUT_FAMILIES = {
+  strong: { light: { bg: 'brand.100', rule: 'brand.800', title: 'brand.800' }, dark: { bg: 'dark.infoBg', rule: 'brand.300', title: 'brand.200' } },
+  info: { light: { bg: 'brand.50', rule: 'brand.500', title: 'brand.700' }, dark: { bg: 'dark.infoBg', rule: 'brand.400', title: 'dark.link' } },
+  warning: {
+    light: { bg: 'semantic.warning50', rule: 'semantic.warning', title: 'semantic.warningStrong' },
+    dark: { bg: 'dark.warningBg', rule: 'dark.warning', title: 'dark.warning' },
+  },
+  success: {
+    light: { bg: 'semantic.success50', rule: 'semantic.success', title: 'semantic.successStrong' },
+    dark: { bg: 'dark.successBg', rule: 'dark.success', title: 'dark.success' },
+  },
+  neutral: {
+    light: { bg: 'neutral.slate100', rule: 'neutral.slate500', title: 'neutral.slate700' },
+    dark: { bg: 'dark.surface2', rule: 'dark.textSecondary', title: 'dark.text' },
+  },
+} as const;
+export type CalloutFamily = keyof typeof CALLOUT_FAMILIES;
+
+function calloutVariables(theme: Theme, mode: Mode): string[] {
+  return Object.entries(CALLOUT_FAMILIES).flatMap(([family, modes]) =>
+    Object.entries(modes[mode]).map(([part, ref]) => `--callout-${family}-${part}: ${resolveColor(theme, ref)};`),
+  );
 }
 
 const FONT_VARIABLES: Record<Theme['fonts']['heading'], string> = {
@@ -116,6 +141,7 @@ const block = (selector: string, lines: string[]) => `${selector} {\n  ${lines.j
 const aliasLines = (theme: Theme, mode: Mode) => [
   ...Object.entries(aliases(theme, mode)).map(([k, v]) => `--${k}: ${v};`),
   ...styleVariables(theme, mode),
+  ...calloutVariables(theme, mode),
   `color-scheme: ${mode};`,
 ];
 
@@ -128,6 +154,9 @@ function styleClasses(theme: Theme): string[] {
       rule('badge', name, `${style.light.dot ? ` --b-dot: var(--badge-${name}-dot);` : ''}${style.rule ? ` --b-rule: var(--rule-${name});` : ''}`),
     ),
     ...Object.keys(theme.statusStyles).map((name) => rule('status', name)),
+    ...Object.keys(CALLOUT_FAMILIES).map(
+      (family) => `.callout--${family} { --co-bg: var(--callout-${family}-bg); --co-rule: var(--callout-${family}-rule); --co-title: var(--callout-${family}-title); }`,
+    ),
   ];
 }
 
@@ -190,6 +219,16 @@ export function contrastChecks(theme: Theme): ContrastCheck[] {
     ...Object.entries(theme.badgeStyles).map(([n, s]) => [`Puce « ${n} »`, s] as const),
     ...Object.entries(theme.statusStyles).map(([n, s]) => [`Statut « ${n} »`, s] as const),
   ];
+  // Encadrés : titre et texte courant sur le fond de chaque famille, dans les deux modes.
+  for (const [family, modes] of Object.entries(CALLOUT_FAMILIES)) {
+    for (const mode of ['light', 'dark'] as const) {
+      const bg = c(modes[mode].bg);
+      const suffix = mode === 'light' ? 'clair' : 'sombre';
+      checks.push({ label: `Titre d'encadré « ${family} » (${suffix})`, fg: c(modes[mode].title), bg, minimum: 4.5, ratio: contrastRatio(c(modes[mode].title), bg) });
+      const text = c(mode === 'light' ? 'neutral.ink' : 'dark.text');
+      checks.push({ label: `Texte d'encadré « ${family} » (${suffix})`, fg: text, bg, minimum: 4.5, ratio: contrastRatio(text, bg) });
+    }
+  }
   for (const [label, style] of styles) {
     for (const mode of ['light', 'dark'] as const) {
       const v = style[mode];

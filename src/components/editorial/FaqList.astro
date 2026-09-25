@@ -1,0 +1,31 @@
+---
+// Questions fréquentes en accordéon natif (details), lisibles sans JavaScript. Les données structurées
+// FAQPage sont produites par la page ou par le bloc qui l'affiche.
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  items: Array<{ question: string; answer: string }>;
+}
+
+const { items } = Astro.props;
+const paragraphs = (text: string) => text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
+---
+
+<div class="not-prose divide-y divide-subtle rounded-card border border-border bg-surface">
+  {
+    items.map((item) => (
+      <details class="faq-item group">
+        <summary class="flex cursor-pointer list-none items-start justify-between gap-3 p-4 font-heading text-lg font-bold">
+          <span>{frenchTypography(item.question)}</span>
+          <Icon name="chevron-down" class="mt-1 shrink-0 text-meta transition-transform group-open:rotate-180" />
+        </summary>
+        <div class="space-y-3 px-4 pb-4 text-secondary">
+          {paragraphs(item.answer).map((p) => (
+            <p>{frenchTypography(p)}</p>
+          ))}
+        </div>
+      </details>
+    ))
+  }
+</div>

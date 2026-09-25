@@ -1,6 +1,6 @@
-// Contrat des blocs riches utilisables dans le corps MDX (brief 6.15, ARCHITECTURE 7.15) :
-// nom du composant, propriétés attendues, valeurs permises. Le script check refuse tout écart ;
-// les composants eux-mêmes (phase 2) et l'éditeur (phase 3) suivent ce même contrat.
+// Contrat des blocs utilisables dans le corps MDX (brief 6.14 et 6.15, ARCHITECTURE 7.15) : nom du composant,
+// propriétés attendues, valeurs permises. Le script check refuse tout écart ; les composants
+// (src/components/mdx/) et l'éditeur (phase 3) suivent ce même contrat.
 
 export const CALLOUT_VARIANTS = [
   'important',
@@ -25,28 +25,48 @@ export type PropSpec = {
   // Propriété passée comme expression ({[…]}) : liste ou objet.
   expression?: boolean;
   // Collection dans laquelle l'identifiant doit exister.
-  references?: 'lexique' | 'dossiers';
+  references?: 'lexique' | 'dossiers' | 'auteurs';
+  // Forme attendue d'une valeur texte (ignorée tant que la valeur porte un marqueur à remplacer).
+  pattern?: { regex: RegExp; message: string };
 };
 
 export type BlockSpec = {
   props: Record<string, PropSpec>;
   children: 'required' | 'none' | 'optional';
+  // Bloc de page (brief 6.14) : réservé aux pages statiques.
+  pageOnly?: boolean;
 };
+
+const URL_PATTERN = { regex: /^https?:\/\//, message: 'adresse complète attendue, commençant par https://' };
+const YOUTUBE_ID = { regex: /^[A-Za-z0-9_-]{11}$/, message: 'identifiant YouTube attendu : les 11 caractères après « v= » dans l\'adresse de la vidéo' };
+const table = { caption: { required: true }, columns: { required: true, expression: true }, rows: { required: true, expression: true } } satisfies Record<string, PropSpec>;
 
 export const BLOCKS: Record<string, BlockSpec> = {
   Callout: { props: { variant: { required: true, values: CALLOUT_VARIANTS }, title: {}, href: {} }, children: 'required' },
-  TexteDeLoi: { props: { reference: { required: true }, version: { required: true }, url: { required: true } }, children: 'required' },
+  TexteDeLoi: { props: { reference: { required: true }, version: { required: true }, url: { required: true, pattern: URL_PATTERN } }, children: 'required' },
   ExempleChiffre: { props: { title: {}, rows: { required: true, expression: true }, total: { required: true, expression: true } }, children: 'none' },
   Chronologie: { props: { items: { required: true, expression: true } }, children: 'none' },
-  Comparatif: { props: { caption: { required: true }, columns: { required: true, expression: true }, rows: { required: true, expression: true } }, children: 'none' },
+  Comparatif: { props: table, children: 'none' },
   Citation: { props: { author: { required: true }, role: {}, source: {}, date: {} }, children: 'required' },
-  Video: { props: { id: { required: true }, title: { required: true } }, children: 'none' },
+  Video: { props: { id: { required: true, pattern: YOUTUBE_ID }, title: { required: true } }, children: 'none' },
   Definition: { props: { term: { required: true, references: 'lexique' } }, children: 'required' },
   MiseEnGarde: { props: {}, children: 'none' },
   StatutReglementaire: { props: { dossier: { required: true, references: 'dossiers' } }, children: 'none' },
   BlocPartenaire: { props: { id: { required: true } }, children: 'none' },
   Note: { props: {}, children: 'required' },
-  Image: { props: { src: { required: true }, alt: { required: true }, caption: {}, credit: { required: true } }, children: 'none' },
+  Image: { props: { src: { required: true }, alt: { required: true }, caption: {}, credit: { required: true }, creditUrl: { pattern: URL_PATTERN } }, children: 'none' },
+  FAQ: { props: { items: { required: true, expression: true } }, children: 'none' },
+  // Blocs de page.
+  Hero: { props: { title: { required: true }, ctaLabel: {}, ctaUrl: {} }, children: 'optional', pageOnly: true },
+  ListeArticles: {
+    props: { category: {}, theme: {}, jurisdiction: {}, format: {}, tag: {}, count: {}, layout: { values: ['list', 'grid'] } },
+    children: 'none',
+    pageOnly: true,
+  },
+  CarteAuteur: { props: { id: { required: true, references: 'auteurs' } }, children: 'none', pageOnly: true },
+  Newsletter: { props: { list: {} }, children: 'none', pageOnly: true },
+  ListeSources: { props: { ids: { expression: true }, jurisdiction: {}, type: {} }, children: 'none', pageOnly: true },
+  Tableau: { props: table, children: 'none', pageOnly: true },
 };
 
 export type BlockUse = { name: string; props: Record<string, string | { expression: string }>; selfClosing: boolean; line: number };

@@ -1,0 +1,11 @@
+---
+// Notes regroupées en fin de document (ajoutées à la compilation par src/lib/mdx/notes.ts).
+import { t } from '../../lib/i18n.ts';
+---
+
+<section class="notes not-prose" aria-labelledby="notes-titre">
+  <h2 id="notes-titre" class="notes-title">{t('blocks.notes.title')}</h2>
+  <ol class="notes-list">
+    <slot />
+  </ol>
+</section>

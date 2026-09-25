@@ -1,0 +1,61 @@
+---
+// Encadré : 13 variantes réparties en cinq familles de couleur (DA, section 9). Filet de 4 px, fond teinté,
+// icône décorative et titre, puis le contenu. « pour-approfondir » devient une carte de renvoi cliquable.
+import { CALLOUT_VARIANTS } from '../../lib/content/blocks.ts';
+import type { IconName } from '../../lib/icons.ts';
+import { t } from '../../lib/i18n.ts';
+import type { CalloutFamily } from '../../lib/theme/tokens.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+
+type Variant = (typeof CALLOUT_VARIANTS)[number];
+
+const STYLES: Record<Variant, { family: CalloutFamily; icon: IconName }> = {
+  important: { family: 'strong', icon: 'badge-alert' },
+  'a-retenir': { family: 'info', icon: 'bookmark' },
+  attention: { family: 'warning', icon: 'triangle-alert' },
+  'en-pratique': { family: 'info', icon: 'list-checks' },
+  exemple: { family: 'neutral', icon: 'calculator' },
+  'date-a-retenir': { family: 'strong', icon: 'calendar-clock' },
+  'ce-qui-change': { family: 'strong', icon: 'git-compare' },
+  'pour-les-particuliers': { family: 'info', icon: 'user' },
+  'pour-les-entreprises': { family: 'info', icon: 'building-complex' },
+  'source-officielle': { family: 'strong', icon: 'landmark' },
+  'mise-a-jour': { family: 'success', icon: 'refresh-cw' },
+  'pour-approfondir': { family: 'neutral', icon: 'arrow-right' },
+  'bon-a-savoir': { family: 'info', icon: 'lightbulb' },
+};
+
+interface Props {
+  variant: Variant;
+  title?: string;
+  href?: string;
+}
+
+const { variant, title, href } = Astro.props;
+const style = STYLES[variant];
+if (!style) throw new Error(`Bloc Callout : variante « ${variant} » inconnue (valeurs possibles : ${CALLOUT_VARIANTS.join(', ')}).`);
+const heading = frenchTypography(title || t(`blocks.callout.${variant}`));
+---
+
+{
+  variant === 'pour-approfondir' && href ? (
+    <div role="note" class:list={['callout callout-link not-prose', `callout--${style.family}`]}>
+      <p class="callout-title">{heading}</p>
+      <a href={href} class="stretched-link callout-link-target">
+        <slot />
+        <Icon name="arrow-right" class="shrink-0" />
+      </a>
+    </div>
+  ) : (
+    <div role="note" class:list={['callout', `callout--${style.family}`]}>
+      <p class="callout-title not-prose">
+        <Icon name={style.icon} />
+        <span>{heading}</span>
+      </p>
+      <div class="callout-body">
+        <slot />
+      </div>
+    </div>
+  )
+}

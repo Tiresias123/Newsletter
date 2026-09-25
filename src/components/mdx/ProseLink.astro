@@ -1,0 +1,15 @@
+---
+// Lien du corps : un lien vers un autre site porte rel="noopener" et une mention pour les lecteurs d'écran.
+import { getConfig } from '../../lib/config/index.ts';
+import { t } from '../../lib/i18n.ts';
+
+interface Props {
+  href?: string;
+}
+
+const { href = '', ...rest } = Astro.props as Props & Record<string, unknown>;
+const { site } = getConfig();
+const external = /^https?:\/\//.test(href) && !href.startsWith(site.url);
+---
+
+<a href={href} rel={external ? 'noopener' : undefined} {...rest}><slot />{external && <span class="sr-only"> {t('a11y.externalLink')}</span>}</a>

@@ -26,6 +26,7 @@
     "@tailwindcss/vite": "4.3.3",
     "astro": "7.3.5",
     "js-yaml": "4.3.2",
+    "satteri": "0.10.5",
     "tailwindcss": "4.3.3"
   },
   "devDependencies": {

@@ -1,27 +1,33 @@
-// Contrôle des blocs riches d'un corps MDX contre leur contrat (content/blocks.ts) :
-// nom connu, propriétés permises et obligatoires, valeurs, références, contenu attendu.
+// Contrôle des blocs d'un corps MDX contre leur contrat (content/blocks.ts) : nom connu, propriétés permises
+// et obligatoires, valeurs et formes, références, contenu attendu, blocs de page hors des pages.
 import { BLOCKS, findBlocks } from '../content/blocks.ts';
+import { findMarkers } from './markers.ts';
+
+type Target = 'lexique' | 'dossiers' | 'auteurs';
 
 export type BlockResolvers = {
-  exists: (collection: 'lexique' | 'dossiers', id: string) => boolean;
+  // « hidden » : le contenu existe mais n'est pas publié (le lien ou l'infobulle ne s'affichera pas).
+  state: (collection: Target, id: string) => 'visible' | 'hidden' | 'missing';
   partner: (id: string) => boolean;
   // Chemin relatif à content/images/.
   image: (src: string) => boolean;
 };
 
-export type BlockProblem = { line: number; message: string };
+// « warning » : le rendu reste correct, mais le point mérite l'attention de l'auteur.
+export type BlockProblem = { line: number; message: string; warning?: boolean };
 
-const TARGETS = { lexique: 'le lexique', dossiers: 'les dossiers' } as const;
+const TARGETS: Record<Target, string> = { lexique: 'le lexique', dossiers: 'les dossiers', auteurs: 'les auteurs' };
 
-export function checkBlocks(body: string, resolve: BlockResolvers): BlockProblem[] {
+export function checkBlocks(body: string, resolve: BlockResolvers, options: { isPage?: boolean } = {}): BlockProblem[] {
   const problems: BlockProblem[] = [];
   for (const use of findBlocks(body)) {
-    const add = (message: string) => problems.push({ line: use.line, message: `bloc ${use.name} : ${message}` });
+    const add = (message: string, warning = false) => problems.push({ line: use.line, message: `bloc ${use.name} : ${message}`, warning });
     const spec = BLOCKS[use.name];
     if (!spec) {
       add(`bloc inconnu. Blocs possibles : ${Object.keys(BLOCKS).join(', ')}.`);
       continue;
     }
+    if (spec.pageOnly && !options.isPage) add('bloc de page, réservé aux pages statiques (content/pages/).');
     const allowed = Object.keys(spec.props);
     for (const [prop, value] of Object.entries(use.props)) {
       const rule = spec.props[prop];
@@ -32,7 +38,12 @@ export function checkBlocks(body: string, resolve: BlockResolvers): BlockProblem
       if (typeof value !== 'string') continue;
       if (rule.expression) add(`« ${prop} » attend une liste entre accolades, par exemple ${prop}={[…]}.`);
       else if (rule.values && !rule.values.includes(value)) add(`valeur « ${value} » non permise pour « ${prop} ». Valeurs possibles : ${rule.values.join(', ')}.`);
-      else if (rule.references && !resolve.exists(rule.references, value)) add(`« ${value} » n'existe pas dans ${TARGETS[rule.references]}.`);
+      else if (rule.pattern && findMarkers(value).length === 0 && !rule.pattern.regex.test(value)) add(`« ${prop} » : ${rule.pattern.message}.`);
+      else if (rule.references) {
+        const state = resolve.state(rule.references, value);
+        if (state === 'missing') add(`« ${value} » n'existe pas dans ${TARGETS[rule.references]}.`);
+        else if (state === 'hidden') add(`« ${value} » n'est pas publié : le bloc s'affichera sans lien tant qu'il ne l'est pas.`, true);
+      }
     }
     for (const [prop, rule] of Object.entries(spec.props)) {
       if (rule.required && !(prop in use.props)) add(`propriété obligatoire « ${prop} » manquante.`);

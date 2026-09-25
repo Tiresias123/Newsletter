@@ -1,0 +1,36 @@
+---
+// Icône d'un réseau : logo (tracés Simple Icons, CC0) quand il existe, glyphe générique pour LinkedIn,
+// icône Lucide pour le flux RSS, le courriel et le site web. Toujours décorative : le libellé est à côté.
+import type { SocialNetwork } from '../../lib/content/enums.ts';
+import type { IconName } from '../../lib/icons.ts';
+import { BRAND_PATHS, type BrandIcon } from '../../lib/social-icons.ts';
+import Icon from './Icon.astro';
+
+interface Props {
+  name: SocialNetwork | BrandIcon | 'whatsapp' | 'telegram';
+  size?: number;
+  class?: string;
+}
+
+const LUCIDE: Partial<Record<string, IconName>> = { rss: 'rss', courriel: 'mail', site: 'globe' };
+const { name, size = 20, class: className } = Astro.props;
+const lucide = LUCIDE[name];
+const path = name in BRAND_PATHS ? BRAND_PATHS[name as BrandIcon] : undefined;
+---
+
+{
+  lucide ? (
+    <Icon name={lucide} size={size} class={className} />
+  ) : (
+    <svg viewBox="0 0 24 24" width={size} height={size} class={className} aria-hidden="true" focusable="false">
+      {path ? (
+        <path fill="currentColor" d={path} />
+      ) : (
+        <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="3" />
+          <path d="M8 11v6M8 7.5v.01M12 17v-6M12 13.5a2.5 2.5 0 0 1 5 0V17" />
+        </g>
+      )}
+    </svg>
+  )
+}

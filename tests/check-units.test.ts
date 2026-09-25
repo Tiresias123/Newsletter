@@ -29,7 +29,8 @@ describe('marqueurs', () => {
 
 describe('blocs riches', () => {
   const resolvers = {
-    exists: (collection: 'lexique' | 'dossiers', id: string) => collection === 'lexique' && id === 'staking',
+    state: (collection: 'lexique' | 'dossiers' | 'auteurs', id: string) =>
+      collection === 'lexique' && id === 'staking' ? ('visible' as const) : id === 'brouillon' ? ('hidden' as const) : ('missing' as const),
     partner: (id: string) => id === 'partenaire',
     image: (src: string) => src === 'ok.webp',
   };
@@ -56,7 +57,18 @@ describe('blocs riches', () => {
       '1 bloc Callout : propriété « titre » inconnue. Propriétés possibles : variant, title, href.',
     ]);
     expect(problems('<Callout variant="rouge">t</Callout>')[0]).toContain('valeur « rouge » non permise');
-    expect(problems('\n\n<Video id="abc" />')).toEqual(['3 bloc Video : propriété obligatoire « title » manquante.']);
+    expect(problems('\n\n<Video id="abcdefghijk" />')).toEqual(['3 bloc Video : propriété obligatoire « title » manquante.']);
+  });
+
+  it('contrôle les formes attendues et les blocs de page', () => {
+    expect(problems('<Video id="abc" title="t" />')[0]).toContain('identifiant YouTube attendu');
+    expect(problems('<Video id="[À COMPLÉTER PAR L’AUTEUR]" title="t" />')).toEqual([]);
+    expect(problems('<TexteDeLoi reference="r" version="v" url="www.x.ca">t</TexteDeLoi>')[0]).toContain('adresse complète attendue');
+    expect(problems('<Hero title="t">x</Hero>')[0]).toContain('bloc de page, réservé aux pages statiques');
+    expect(checkBlocks('<Hero title="t">x</Hero>', resolvers, { isPage: true })).toEqual([]);
+    expect(checkBlocks('<Definition term="brouillon">x</Definition>', resolvers)).toEqual([
+      { line: 1, message: 'bloc Definition : « brouillon » n\'est pas publié : le bloc s\'affichera sans lien tant qu\'il ne l\'est pas.', warning: true },
+    ]);
   });
 
   it('vérifie les références, le contenu attendu et les règles propres à un bloc', () => {

@@ -1,0 +1,18 @@
+---
+// Une note de fin de document, avec son lien de retour vers l'appel.
+import { t } from '../../lib/i18n.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  n: string;
+}
+
+const { n } = Astro.props;
+---
+
+<li id={`note-${n}`}>
+  <slot />
+  <a href={`#appel-${n}`} class="note-back" aria-label={t('blocks.notes.back', { n })}>
+    <Icon name="arrow-up" size={14} />
+  </a>
+</li>

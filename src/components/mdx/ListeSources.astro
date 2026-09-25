@@ -1,0 +1,19 @@
+---
+// Bloc de page ListeSources : les sources réutilisables, toutes ou filtrées (identifiants, juridiction, type).
+import { blockSchemas, parseBlock } from '../../lib/content/block-props.ts';
+import { getGraph } from '../../lib/content/astro.ts';
+import { reusableSources } from '../../lib/content/sources.ts';
+import SourceList from '../editorial/SourceList.astro';
+
+interface Props {
+  ids?: unknown;
+  jurisdiction?: string;
+  type?: string;
+}
+
+const { ids, jurisdiction, type } = Astro.props;
+const graph = await getGraph();
+const items = reusableSources(graph, { ids: ids === undefined ? undefined : parseBlock('ListeSources', blockSchemas.ids, ids), jurisdiction, type });
+---
+
+<div class="my-8"><SourceList items={items} /></div>

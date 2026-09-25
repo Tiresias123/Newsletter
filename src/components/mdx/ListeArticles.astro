@@ -1,0 +1,47 @@
+---
+// Bloc de page ListeArticles : articles et guides filtrés par l'auteur (catégorie, thème, juridiction,
+// format, étiquette), en liste ou en grille. Le filtrage interactif passe par la recherche.
+import { getGraph } from '../../lib/content/astro.ts';
+import { articleCard } from '../../lib/content/cards.ts';
+import { editorial } from '../../lib/content/relations.ts';
+import { t } from '../../lib/i18n.ts';
+import ArticleCard from '../cards/ArticleCard.astro';
+
+interface Props {
+  category?: string;
+  theme?: string;
+  jurisdiction?: string;
+  format?: string;
+  tag?: string;
+  count?: string | number;
+  layout?: 'list' | 'grid';
+}
+
+const { category, theme, jurisdiction, format, tag, count = 6, layout = 'list' } = Astro.props;
+const graph = await getGraph();
+const cards = editorial(graph)
+  .filter(({ data }) => (!category || data.category === category) && (!theme || data.themes.includes(theme)))
+  .filter(({ data }) => (!jurisdiction || data.jurisdictions.includes(jurisdiction)) && (!format || data.format === format) && (!tag || data.tags.includes(tag)))
+  .slice(0, Number(count))
+  .map((entry) => articleCard(graph, entry));
+---
+
+<div class="not-prose my-8">
+  {
+    cards.length === 0 ? (
+      <p class="text-meta">{t('blocks.articles.empty')}</p>
+    ) : layout === 'grid' ? (
+      <ul class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        {cards.map((card) => (
+          <li><ArticleCard card={card} variant="medium" level={3} /></li>
+        ))}
+      </ul>
+    ) : (
+      <ul class="divide-y divide-subtle">
+        {cards.map((card) => (
+          <li class="py-4"><ArticleCard card={card} variant="horizontal" level={3} surface="plain" /></li>
+        ))}
+      </ul>
+    )
+  }
+</div>

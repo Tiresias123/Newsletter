@@ -1,0 +1,15 @@
+---
+// Bloc de page CarteAuteur : la carte d'un auteur de la collection « auteurs ».
+import { getGraph } from '../../lib/content/astro.ts';
+import AuthorCard from '../editorial/AuthorCard.astro';
+
+interface Props {
+  id: string;
+}
+
+const graph = await getGraph();
+const author = graph.get('auteurs', Astro.props.id);
+if (!author) throw new Error(`Bloc CarteAuteur : auteur « ${Astro.props.id} » introuvable.`);
+---
+
+<div class="my-8"><AuthorCard author={author} heading="h3" /></div>

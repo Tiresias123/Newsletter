@@ -1,0 +1,14 @@
+---
+// Bloc Chronologie : frise verticale des étapes saisies dans le corps.
+import { blockSchemas, parseBlock } from '../../lib/content/block-props.ts';
+import { t } from '../../lib/i18n.ts';
+import Timeline from '../editorial/Timeline.astro';
+
+interface Props {
+  items: unknown;
+}
+
+const items = parseBlock('Chronologie', blockSchemas.chronologie, Astro.props.items);
+---
+
+<Timeline items={items} label={t('blocks.chronologie.title')} />

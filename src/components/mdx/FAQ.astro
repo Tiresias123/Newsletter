@@ -1,0 +1,15 @@
+---
+// Bloc FAQ : questions en accordéon, et données structurées FAQPage pour les moteurs de recherche.
+import { blockSchemas, parseBlock } from '../../lib/content/block-props.ts';
+import { faqJsonLd, serializeJsonLd } from '../../lib/seo/json-ld.ts';
+import FaqList from '../editorial/FaqList.astro';
+
+interface Props {
+  items: unknown;
+}
+
+const items = parseBlock('FAQ', blockSchemas.faq, Astro.props.items);
+---
+
+<div class="my-8"><FaqList items={items} /></div>
+<script type="application/ld+json" set:html={serializeJsonLd(faqJsonLd(items))} />

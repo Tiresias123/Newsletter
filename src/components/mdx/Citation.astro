@@ -1,0 +1,28 @@
+---
+// Citation avec attribution (personne, fonction, source, date). Le texte cité n'est jamais retouché.
+import { isCalendarDate } from '../../lib/dates.ts';
+import { formatDate } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+interface Props {
+  author: string;
+  role?: string;
+  source?: string;
+  date?: string;
+}
+
+const { author, role, source, date } = Astro.props;
+const parts = [frenchTypography(author), role && frenchTypography(role)].filter(Boolean).join(', ');
+---
+
+<figure class="quote not-prose">
+  <blockquote class="quote-text">
+    <slot />
+  </blockquote>
+  <figcaption class="quote-caption">
+    <span class="font-semibold text-text">{parts}</span>
+    {source && <span>{t('blocks.citation.source', { source })}</span>}
+    {date && (isCalendarDate(date) ? <time datetime={date}>{formatDate(date)}</time> : <span>{date}</span>)}
+  </figcaption>
+</figure>

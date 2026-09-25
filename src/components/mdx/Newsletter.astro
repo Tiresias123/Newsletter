@@ -1,0 +1,12 @@
+---
+// Bloc de page Newsletter : le formulaire d'inscription, textes lus dans config/newsletter.json.
+import NewsletterForm from '../newsletter/NewsletterForm.astro';
+
+interface Props {
+  list?: string;
+}
+---
+
+<div class="not-prose my-8 rounded-card border border-border bg-surface p-6">
+  <NewsletterForm id="bloc-infolettre" variant="inline" list={Astro.props.list} />
+</div>

@@ -1,0 +1,46 @@
+---
+// Exemple chiffré : lignes libellé et montant en dollars canadiens, total sur fond or (brand si l'or est
+// désactivé), mention d'avertissement tirée de config/legal.json (variante « exemple-chiffre »).
+import { parseBlock, blockSchemas } from '../../lib/content/block-props.ts';
+import { formatMoney } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import { disclaimer } from '../../lib/legal.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+interface Props {
+  title?: string;
+  rows: unknown;
+  total: unknown;
+}
+
+const { title, rows, total } = Astro.props;
+const data = parseBlock('ExempleChiffre', blockSchemas.exempleChiffre, { rows, total });
+const notice = disclaimer('exemple-chiffre');
+const caption = frenchTypography(title || t('blocks.exempleChiffre.title'));
+---
+
+<figure class="figure-example not-prose">
+  <table class="example-table">
+    <caption>{caption}</caption>
+    <thead class="sr-only">
+      <tr><th scope="col">{t('blocks.exempleChiffre.label')}</th><th scope="col">{t('blocks.exempleChiffre.amount')}</th></tr>
+    </thead>
+    <tbody>
+      {
+        data.rows.map((row) => (
+          <tr>
+            <th scope="row">{frenchTypography(row.label)}</th>
+            <td class="tabular">{formatMoney(row.amount)}</td>
+          </tr>
+        ))
+      }
+    </tbody>
+    <tfoot>
+      <tr>
+        <th scope="row">{frenchTypography(data.total.label)}</th>
+        <td class="tabular">{formatMoney(data.total.amount)}</td>
+      </tr>
+    </tfoot>
+  </table>
+  {notice && <figcaption class="example-notice">{frenchTypography(notice.text)}</figcaption>}
+</figure>

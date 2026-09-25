@@ -1,0 +1,25 @@
+---
+// Bloc partenaire : affiché seulement s'il est activé dans config/ads.json pour cet emplacement,
+// toujours signalé « Publicité », sur fond neutre et jamais aux couleurs de la marque (DA, section 8.2).
+import { t } from '../../lib/i18n.ts';
+import { activePartner, type Placement } from '../../lib/partners.ts';
+
+interface Props {
+  partnerId: string;
+  placement: Placement;
+}
+
+const { partnerId, placement } = Astro.props;
+const partner = activePartner(partnerId, placement);
+---
+
+{
+  partner && (
+    <aside class="not-prose my-8 rounded-card border border-border bg-muted p-6" aria-label={t('partner.disclosure')}>
+      <p class="text-xs font-semibold uppercase tracking-wide text-meta">{partner.disclosure || t('partner.disclosure')}</p>
+      <a href={partner.url} rel="sponsored noopener" class="mt-2 inline-block text-lg font-semibold underline underline-offset-4">
+        {partner.campaign || partner.name}
+      </a>
+    </aside>
+  )
+}

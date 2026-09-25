@@ -1,0 +1,42 @@
+---
+// Figure : image optimisée (WebP, plusieurs largeurs), légende et crédit (DA, section 8.1).
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+interface Props {
+  image: ImageMetadata;
+  alt: string;
+  caption?: string;
+  credit?: string;
+  creditUrl?: string;
+  sizes?: string;
+  priority?: boolean;
+  class?: string;
+}
+
+const { image, alt, caption, credit, creditUrl, sizes = '(min-width: 1024px) 720px, 100vw', priority = false, class: className } = Astro.props;
+const widths = [...[480, 720, 960, 1440].filter((w) => w < image.width), image.width];
+const creditText = credit ? t('editorial.cover.credit', { credit }) : undefined;
+---
+
+<figure class:list={['not-prose', className]}>
+  <Image
+    src={image}
+    alt={alt}
+    widths={widths}
+    sizes={sizes}
+    loading={priority ? 'eager' : 'lazy'}
+    fetchpriority={priority ? 'high' : undefined}
+    class="w-full rounded-image"
+  />
+  {
+    (caption || creditText) && (
+      <figcaption class="mt-2 flex flex-wrap gap-x-2 text-sm text-meta">
+        {caption && <span class="text-secondary">{frenchTypography(caption)}</span>}
+        {creditText && (creditUrl ? <a href={creditUrl} class="text-link" rel="noopener">{creditText}</a> : <span>{creditText}</span>)}
+      </figcaption>
+    )
+  }
+</figure>

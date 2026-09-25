@@ -1,0 +1,39 @@
+---
+// Frise verticale (chronologie d'un dossier, bloc Chronologie, veille) : liste ordonnée, dates en <time>.
+// Variante compacte pour les barres latérales.
+import { formatDate } from '../../lib/format.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+export type TimelineItem = { date: string; title: string; description?: string; url?: string; meta?: string };
+
+interface Props {
+  items: TimelineItem[];
+  compact?: boolean;
+  label?: string;
+}
+
+const { items, compact = false, label } = Astro.props;
+---
+
+<ol class:list={['timeline not-prose', compact && 'timeline--compact']} aria-label={label}>
+  {
+    items.map((item) => (
+      <li class="timeline-item">
+        <time datetime={item.date} class="timeline-date">
+          {formatDate(item.date.slice(0, 10))}
+        </time>
+        <p class="timeline-title">
+          {item.url ? (
+            <a href={item.url} class="text-link">
+              {frenchTypography(item.title)}
+            </a>
+          ) : (
+            frenchTypography(item.title)
+          )}
+        </p>
+        {item.meta && <p class="text-sm text-meta">{item.meta}</p>}
+        {item.description && !compact && <p class="timeline-description">{frenchTypography(item.description)}</p>}
+      </li>
+    ))
+  }
+</ol>

@@ -1,0 +1,30 @@
+---
+// Citation littérale d'une disposition (DA, section 9) : référence, version citée, lien vers le texte officiel.
+// Serif légale (ou italique si elle est désactivée), filet brand-900 ; le texte cité n'est jamais retouché.
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  reference: string;
+  version: string;
+  url: string;
+}
+
+const { reference, version, url } = Astro.props;
+---
+
+<figure class="law-quote not-prose">
+  <figcaption class="law-quote-reference">{frenchTypography(reference)}</figcaption>
+  <blockquote cite={url} class="law-quote-text">
+    <slot />
+  </blockquote>
+  <p class="law-quote-meta">
+    <span>{t('blocks.texteDeLoi.version', { version })}</span>
+    <a href={url} class="text-link inline-flex items-center gap-1" rel="noopener">
+      {t('blocks.texteDeLoi.official')}
+      <Icon name="arrow-up-right" size={16} />
+      <span class="sr-only">{t('a11y.externalLink')}</span>
+    </a>
+  </p>
+</figure>

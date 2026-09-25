@@ -1,0 +1,51 @@
+---
+// Vidéo YouTube en façade : aucun appel à YouTube avant le clic (DA, section 9). Le clic remplace la façade
+// par le lecteur youtube-nocookie.com ; sans JavaScript, un lien mène à la vidéo.
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  id: string;
+  title: string;
+}
+
+const { id, title } = Astro.props;
+const valid = /^[A-Za-z0-9_-]{11}$/.test(id);
+const label = frenchTypography(title);
+---
+
+<figure class="video not-prose" data-video={valid ? id : undefined} data-title={label}>
+  <div class="video-frame generated-cover">
+    {
+      valid && (
+        <button type="button" class="video-play" data-video-play>
+          <Icon name="play" size={28} />
+          <span class="sr-only">{t('blocks.video.play', { title: label })}</span>
+        </button>
+      )
+    }
+    <span class="video-title" aria-hidden="true">{label}</span>
+  </div>
+  <figcaption class="mt-2 text-sm text-meta">
+    {t('blocks.video.notice')}
+    {valid && <a href={`https://www.youtube.com/watch?v=${id}`} class="text-link" rel="noopener">{t('blocks.video.watch')}</a>}
+  </figcaption>
+</figure>
+
+<script>
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-video-play]')) {
+    button.addEventListener('click', () => {
+      const figure = button.closest<HTMLElement>('[data-video]');
+      if (!figure?.dataset.video) return;
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.youtube-nocookie.com/embed/${figure.dataset.video}?autoplay=1`;
+      iframe.title = figure.dataset.title ?? '';
+      iframe.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen';
+      iframe.allowFullscreen = true;
+      iframe.className = 'video-iframe';
+      button.parentElement?.replaceChildren(iframe);
+      iframe.focus();
+    });
+  }
+</script>

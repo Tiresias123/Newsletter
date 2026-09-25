@@ -1,0 +1,50 @@
+---
+// Carte auteur (fin d'article, page auteur, bloc CarteAuteur) : photo, rôle, mention professionnelle,
+// biographie, nombre d'articles et réseaux (DA, section 8.2).
+import { getGraph } from '../../lib/content/astro.ts';
+import type { Entry } from '../../lib/content/graph.ts';
+import { editorialByAuthor } from '../../lib/content/relations.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Avatar from '../ui/Avatar.astro';
+import SocialIcon from '../ui/SocialIcon.astro';
+
+interface Props {
+  author: Entry<'auteurs'>;
+  heading?: 'h2' | 'h3';
+  linkToProfile?: boolean;
+}
+
+const { author, heading = 'h2', linkToProfile = true } = Astro.props;
+const graph = await getGraph();
+const count = editorialByAuthor(graph, author.id).length;
+const d = author.data;
+const Heading = heading;
+---
+
+<div class="not-prose flex flex-col gap-4 rounded-card border border-border bg-surface p-5 sm:flex-row">
+  <Avatar name={d.name} src={d.avatar} size={64} />
+  <div class="min-w-0 space-y-1.5">
+    <Heading class="text-xl">
+      {linkToProfile && author.url ? <a href={author.url} class="hover:underline">{frenchTypography(d.name)}</a> : frenchTypography(d.name)}
+    </Heading>
+    {d.role && <p class="font-semibold text-secondary">{frenchTypography(d.role)}</p>}
+    {d.mentionProfessionnelle && <p class="text-sm text-meta">{frenchTypography(d.mentionProfessionnelle)}</p>}
+    {d.bio && <p class="pt-1 text-secondary">{frenchTypography(d.bio)}</p>}
+    <p class="text-sm text-meta">{t('editorial.author.articles', { count })}</p>
+    {
+      d.socials.length > 0 && (
+        <ul class="flex flex-wrap gap-2 pt-1">
+          {d.socials.map((s) => (
+            <li>
+              <a href={s.url} class="btn btn-ghost min-h-9 px-3" rel="me noopener">
+                <SocialIcon name={s.network} size={16} />
+                <span>{t(`social.${s.network}`)}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</div>

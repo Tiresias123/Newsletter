@@ -1,0 +1,48 @@
+---
+// Liste de sources (DA, section 8.2) : officielles d'abord, avec une icône distinctive ; type, émetteur,
+// date du document, lien vers la source et vers sa copie archivée.
+import { formatDate } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import type { SourceItem } from '../../lib/content/sources.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  items: SourceItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<ul class="not-prose divide-y divide-subtle">
+  {
+    items.map((item) => (
+      <li class="flex gap-3 py-3">
+        <Icon name={item.official ? 'landmark' : 'file-text'} class:list={['mt-0.5 shrink-0', item.official ? 'text-primary' : 'text-meta']} />
+        <div class="min-w-0 space-y-1">
+          <p>
+            <a href={item.url} class="text-link break-words font-semibold" rel="noopener">
+              {frenchTypography(item.title)}
+              <span class="sr-only"> {t('a11y.externalLink')}</span>
+            </a>
+          </p>
+          <p class="flex flex-wrap gap-x-2 text-sm text-meta">
+            {item.official && <span class="font-semibold text-primary">{t('editorial.sources.official')}</span>}
+            <span>{item.typeLabel}</span>
+            {item.issuer && (item.issuer.url ? <a href={item.issuer.url} class="text-link">{item.issuer.label}</a> : <span>{item.issuer.label}</span>)}
+            {item.date && <time datetime={item.date}>{formatDate(item.date)}</time>}
+            {item.citation && <span>{frenchTypography(item.citation)}</span>}
+          </p>
+          {item.archivedUrl && (
+            <p class="text-sm">
+              <a href={item.archivedUrl} class="text-link inline-flex items-center gap-1" rel="noopener">
+                <Icon name="archive" size={16} />
+                {t('editorial.sources.archived')}
+              </a>
+            </p>
+          )}
+        </div>
+      </li>
+    ))
+  }
+</ul>

@@ -1,0 +1,22 @@
+---
+// Mise en garde sur les risques, texte fixe tiré de config/legal.json (variante « mise-en-garde »).
+import { disclaimer } from '../../lib/legal.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+
+const notice = disclaimer('mise-en-garde');
+---
+
+{
+  notice && (
+    <div role="note" class="callout callout--warning">
+      <p class="callout-title not-prose">
+        <Icon name="triangle-alert" />
+        <span>{frenchTypography(notice.title)}</span>
+      </p>
+      <div class="callout-body">
+        <p>{frenchTypography(notice.text)}</p>
+      </div>
+    </div>
+  )
+}

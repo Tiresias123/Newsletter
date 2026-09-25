@@ -59,7 +59,7 @@ const cta = (value: { label: string; url: string }) => (value.label && value.url
       case 'newsletter-cta':
         return <NewsletterCta {...common} list={section.list} />;
       case 'partner-block':
-        return <PartnerBlock id={id} partnerId={section.partnerId} placement="home" />;
+        return <PartnerBlock id={id} partnerId={section.partnerId} />;
       case 'custom-html':
         return <CustomText {...common} content={section.content} />;
       default:

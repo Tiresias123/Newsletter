@@ -1,0 +1,19 @@
+---
+// Bloc de page Hero : titre, texte et bouton facultatif, sur fond de marque.
+import { frenchTypography } from '../../lib/typo.ts';
+import Button from '../ui/Button.astro';
+
+interface Props {
+  title: string;
+  ctaLabel?: string;
+  ctaUrl?: string;
+}
+
+const { title, ctaLabel, ctaUrl } = Astro.props;
+---
+
+<section class="not-prose on-brand my-8 rounded-card bg-brand-section p-6 text-white sm:p-10">
+  <h2 class="text-3xl">{frenchTypography(title)}</h2>
+  <div class="mt-3 max-w-reading space-y-3 text-lg text-meta-inverse"><slot /></div>
+  {ctaLabel && ctaUrl && <Button href={ctaUrl} variant="inverse" class="mt-6">{frenchTypography(ctaLabel)}</Button>}
+</section>

@@ -1,0 +1,16 @@
+---
+// Bloc Comparatif : tableau dont la première colonne sert d'en-tête de ligne (figée sur mobile).
+import { blockSchemas, parseBlock } from '../../lib/content/block-props.ts';
+import DataTable from '../editorial/DataTable.astro';
+
+interface Props {
+  caption: string;
+  columns: unknown;
+  rows: unknown;
+}
+
+const { caption, columns, rows } = Astro.props;
+const data = parseBlock('Comparatif', blockSchemas.table, { columns, rows });
+---
+
+<DataTable caption={caption} columns={data.columns} rows={data.rows} rowHeaders />

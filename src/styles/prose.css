@@ -1,0 +1,478 @@
+/* Corps de texte (articles, fiches, pages) et blocs riches (DA, sections 5 et 9).
+   Toutes les couleurs viennent des variables générées depuis config/theme.json. */
+
+@layer components {
+  /* Texte courant : 17 px sur mobile, 18 px sur ordinateur, 720 px de large au plus. */
+  .prose {
+    max-width: var(--reading-w);
+    font-size: var(--fs-article-mobile);
+    line-height: var(--lh-body);
+  }
+
+  @media (min-width: 64rem) {
+    .prose {
+      font-size: var(--fs-lg);
+    }
+  }
+
+  /* Rythme vertical, dans le corps et dans les blocs qui contiennent du texte. */
+  :where(.prose, .callout-body, .quote-text, .law-quote-text) > * + * {
+    margin-top: 1em;
+  }
+
+  .prose > :where(h2) {
+    margin-top: 2.2em;
+    font-size: var(--fs-2xl);
+  }
+
+  .prose > :where(h3) {
+    margin-top: 1.8em;
+    font-size: var(--fs-xl);
+  }
+
+  .prose > :where(h4) {
+    margin-top: 1.5em;
+    font-size: var(--fs-lg);
+  }
+
+  .prose > :where(h2, h3, h4) + * {
+    margin-top: 0.6em;
+  }
+
+  :where(.prose, .callout-body, .notes-list) :where(ul, ol):not(:where(.not-prose, .not-prose *)) {
+    padding-inline-start: 1.4em;
+  }
+
+  :where(.prose, .callout-body, .notes-list) :where(ul):not(:where(.not-prose, .not-prose *)) {
+    list-style: disc;
+  }
+
+  :where(.prose, .callout-body) :where(ol):not(:where(.not-prose, .not-prose *)) {
+    list-style: decimal;
+  }
+
+  :where(.prose, .callout-body) :where(li):not(:where(.not-prose, .not-prose *)) + li {
+    margin-top: 0.4em;
+  }
+
+  :where(.prose, .callout-body) :where(li)::marker {
+    color: var(--c-primary);
+  }
+
+  /* Liens du texte : soulignés, épaissis au survol, jamais la couleur seule. */
+  :where(.prose, .callout-body, .quote-text, .notes-list, .definition-tip) :where(a:not([class])) {
+    color: var(--c-link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  :where(.prose, .callout-body, .quote-text, .notes-list) :where(a:not([class])):hover {
+    text-decoration-thickness: 2px;
+  }
+
+  .prose :where(strong):not(:where(.not-prose, .not-prose *)) {
+    font-weight: 700;
+  }
+
+  .prose :where(code):not(:where(.not-prose, .not-prose *, pre *)) {
+    padding: 0.1em 0.35em;
+    border-radius: var(--r-badge);
+    background: var(--c-section-muted);
+    font-size: 0.9em;
+  }
+
+  .prose > :where(pre) {
+    overflow-x: auto;
+    padding: 1rem;
+    border-radius: var(--r-card);
+    background: var(--c-section-muted);
+    font-size: var(--fs-sm);
+  }
+
+  .prose > :where(blockquote) {
+    padding-inline-start: 1rem;
+    border-inline-start: 4px solid var(--c-border);
+    color: var(--c-text-secondary);
+  }
+
+  .prose > :where(hr) {
+    margin-block: 2.5em;
+    border-color: var(--c-border);
+  }
+
+  /* Encadrés (Callout, MiseEnGarde) : filet de 4 px, fond teinté, titre et icône de la famille. */
+  .callout {
+    margin-block: 1.75rem;
+    padding: 1rem 1.25rem;
+    border-inline-start: 4px solid var(--co-rule);
+    border-radius: 0 var(--r-card) var(--r-card) 0;
+    background: var(--co-bg);
+    font-size: var(--fs-base);
+  }
+
+  .callout-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--co-title);
+    font-family: var(--ff-heading);
+    font-weight: 700;
+    line-height: var(--lh-label);
+  }
+
+  .callout-link {
+    position: relative;
+    transition: box-shadow 150ms;
+  }
+
+  .callout-link:hover {
+    box-shadow: var(--c-shadow-hover);
+  }
+
+  .callout-link-target {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    color: var(--c-link);
+    font-weight: 600;
+  }
+
+  /* Citation d'un texte de loi : serif légale (ou italique), filet foncé, version citée. */
+  .law-quote {
+    margin-block: 2rem;
+    padding: 1rem 1.25rem;
+    border-inline-start: 4px solid var(--c-rule-law);
+    background: var(--c-surface);
+  }
+
+  .law-quote-reference {
+    font-family: var(--ff-heading);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--c-heading-accent);
+  }
+
+  .law-quote-text {
+    margin-block: 0.75rem;
+    font-family: var(--ff-legal);
+    font-style: var(--legal-style);
+    font-size: 1.0625em;
+  }
+
+  .law-quote-meta,
+  .quote-caption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+    font-size: var(--fs-sm);
+    color: var(--c-text-meta);
+  }
+
+  /* Citation avec attribution. */
+  .quote {
+    margin-block: 2rem;
+    padding-inline-start: 1.25rem;
+    border-inline-start: 4px solid var(--c-border-control);
+  }
+
+  .quote-text {
+    font-family: var(--ff-legal);
+    font-style: var(--legal-style);
+    font-size: 1.125em;
+  }
+
+  .quote-caption {
+    margin-top: 0.75rem;
+  }
+
+  /* Exemple chiffré : montants alignés à droite, total sur fond or (brand si l'or est désactivé). */
+  .figure-example {
+    margin-block: 2rem;
+  }
+
+  .example-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-base);
+  }
+
+  .example-table caption {
+    padding-bottom: 0.5rem;
+    text-align: start;
+    font-family: var(--ff-heading);
+    font-weight: 700;
+  }
+
+  .example-table :where(th, td) {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--c-border-subtle);
+    text-align: start;
+    font-weight: 400;
+  }
+
+  .example-table td {
+    text-align: end;
+    white-space: nowrap;
+  }
+
+  .example-table tfoot :where(th, td) {
+    border-bottom: 0;
+    background: var(--c-gold-bg);
+    font-weight: 700;
+  }
+
+  .example-notice {
+    margin-top: 0.5rem;
+    font-size: var(--fs-sm);
+    color: var(--c-text-meta);
+  }
+
+  /* Frise verticale : filet et pastille par étape. */
+  .timeline {
+    margin-block: 1.5rem;
+  }
+
+  .timeline-item {
+    position: relative;
+    padding: 0 0 1.25rem 1.5rem;
+    border-inline-start: 2px solid var(--c-border);
+  }
+
+  .timeline-item:last-child {
+    padding-bottom: 0;
+    border-color: transparent;
+  }
+
+  .timeline-item::before {
+    content: "";
+    position: absolute;
+    top: 0.3rem;
+    left: -6px;
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--c-primary);
+  }
+
+  .timeline-date {
+    display: block;
+    font-family: var(--ff-heading);
+    font-size: var(--fs-sm);
+    font-weight: 700;
+    color: var(--c-heading-accent);
+  }
+
+  .timeline-title {
+    font-weight: 600;
+  }
+
+  .timeline-description {
+    margin-top: 0.25rem;
+    color: var(--c-text-secondary);
+  }
+
+  .timeline--compact .timeline-item {
+    padding-bottom: 0.875rem;
+    font-size: var(--fs-sm);
+  }
+
+  /* Tableaux : zone de défilement focalisable, première colonne figée pour les comparatifs. */
+  .table-scroll {
+    margin-block: 1.75rem;
+    overflow-x: auto;
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-card);
+    background: var(--c-surface);
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--fs-sm);
+  }
+
+  .data-table caption {
+    padding: 0.75rem 1rem;
+    text-align: start;
+    font-family: var(--ff-heading);
+    font-weight: 700;
+  }
+
+  .data-table :where(th, td) {
+    padding: 0.625rem 1rem;
+    border-top: 1px solid var(--c-border-subtle);
+    text-align: start;
+    vertical-align: top;
+  }
+
+  .data-table thead th {
+    background: var(--c-section-muted);
+    font-weight: 700;
+  }
+
+  .data-table--row-headers tbody th {
+    position: sticky;
+    left: 0;
+    background: var(--c-surface);
+    font-weight: 600;
+  }
+
+  /* Vidéo en façade : aucun appel à YouTube avant le clic. */
+  .video {
+    margin-block: 2rem;
+  }
+
+  .video-frame {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: var(--r-image);
+    color: var(--c-text-inverse);
+  }
+
+  .video-play {
+    display: grid;
+    place-items: center;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 999px;
+    background: var(--c-text-inverse);
+    color: var(--brand-900);
+    z-index: 1;
+  }
+
+  .video-play::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+  }
+
+  .video-title {
+    position: absolute;
+    inset-inline: 1rem;
+    bottom: 0.75rem;
+    font-family: var(--ff-heading);
+    font-weight: 700;
+  }
+
+  .video-iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  /* Terme du lexique : souligné en pointillé, infobulle survolable (WCAG 1.4.13). */
+  .definition {
+    position: relative;
+  }
+
+  .definition-term {
+    text-decoration: underline dotted;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    cursor: help;
+  }
+
+  .definition-tip {
+    position: absolute;
+    bottom: calc(100% + 0.5rem);
+    left: 0;
+    z-index: 30;
+    display: none;
+    width: max-content;
+    max-width: min(20rem, calc(100vw - 2rem));
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-button);
+    background: var(--c-surface-raised);
+    box-shadow: var(--c-shadow-menu);
+    color: var(--c-text);
+    font-size: var(--fs-sm);
+    font-style: normal;
+    line-height: 1.5;
+  }
+
+  /* Pont invisible entre le terme et l'infobulle : le pointeur peut passer de l'un à l'autre. */
+  .definition-tip::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 100%;
+    height: 0.5rem;
+  }
+
+  .definition:hover .definition-tip,
+  .definition:focus-within .definition-tip {
+    display: block;
+  }
+
+  .definition[data-dismissed] .definition-tip {
+    display: none;
+  }
+
+  /* Notes : appels en exposant, liste en fin de document. */
+  .note-call a {
+    padding-inline: 0.1em;
+    color: var(--c-link);
+    font-weight: 600;
+  }
+
+  .notes {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--c-border);
+  }
+
+  .notes-title {
+    font-size: var(--fs-xl);
+  }
+
+  .notes-list {
+    margin-top: 0.75rem;
+    padding-inline-start: 1.4em;
+    list-style: decimal;
+    font-size: var(--fs-sm);
+    color: var(--c-text-secondary);
+  }
+
+  .notes-list li + li {
+    margin-top: 0.5rem;
+  }
+
+  .note-back {
+    display: inline-flex;
+    margin-inline-start: 0.25rem;
+    vertical-align: middle;
+    color: var(--c-link);
+  }
+
+  /* Sommaire : lien courant marqué d'un filet et en gras. */
+  .toc-link {
+    display: block;
+    margin-inline-start: -1px;
+    padding: 0.25rem 0 0.25rem 0.75rem;
+    border-inline-start: 2px solid transparent;
+    color: var(--c-text-secondary);
+  }
+
+  .toc-link:hover {
+    color: var(--c-text);
+  }
+
+  .toc-link[aria-current] {
+    border-color: var(--c-primary);
+    color: var(--c-link);
+    font-weight: 600;
+  }
+
+  .toc summary::-webkit-details-marker {
+    display: none;
+  }
+}

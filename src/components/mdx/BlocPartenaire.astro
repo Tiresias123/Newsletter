@@ -1,0 +1,10 @@
+---
+// Bloc partenaire dans un article : seulement si le partenaire vise l'emplacement « article ».
+import PartnerBlock from '../editorial/PartnerBlock.astro';
+
+interface Props {
+  id: string;
+}
+---
+
+<PartnerBlock partnerId={Astro.props.id} placement="article" />

@@ -27,7 +27,10 @@ export function checkBodiesAndLinks({ graph, config, entries, shown, add, root }
   const imagesDir = join(root, 'content', 'images');
   const external = new Map<string, Place[]>();
   const resolvers = {
-    exists: (collection: 'lexique' | 'dossiers', id: string) => graph.get(collection, id) !== undefined,
+    state: (collection: 'lexique' | 'dossiers' | 'auteurs', id: string) => {
+      const entry = graph.get(collection, id);
+      return !entry ? 'missing' : entry.visibility.visible ? 'visible' : 'hidden';
+    },
     partner: (id: string) => config.ads.partners.some((p) => p.id === id),
     image: (src: string) => {
       const file = resolve(imagesDir, src);
@@ -55,7 +58,11 @@ export function checkBodiesAndLinks({ graph, config, entries, shown, add, root }
     const isShown = shown.has(entry);
     const blocking: Severity = isShown ? 'bloquant' : 'avertissement';
     const line = (n: number) => `ligne ${(bodyStart.get(entry.file) ?? 1) + n - 1}`;
-    for (const p of checkBlocks(entry.body, resolvers)) add(entry.file, line(p.line), p.message, 'bloc', blocking);
+    // Un lien vers un contenu non publié n'est signalé que si le contenu qui l'emploie est affiché.
+    for (const p of checkBlocks(entry.body, resolvers, { isPage: entry.collection === 'pages' })) {
+      if (!p.warning) add(entry.file, line(p.line), p.message, 'bloc', blocking);
+      else if (isShown) add(entry.file, line(p.line), p.message, 'bloc', 'avertissement');
+    }
     for (const link of fieldLinks(entry.data)) checkLink(entry.file, describePath(link.path ?? []), link.href, isShown);
     const { links, images } = bodyLinks(entry.body);
     for (const link of links) checkLink(entry.file, line(link.line ?? 1), link.href, isShown);
