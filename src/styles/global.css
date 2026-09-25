@@ -1,0 +1,471 @@
+/* Feuille globale : Tailwind branché sur les jetons de config/theme.json (via virtual:theme.css).
+   Aucune couleur ni taille en dur ici : tout passe par les variables générées. */
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --leading-*: initial;
+  --radius-*: initial;
+  --breakpoint-*: initial;
+  --shadow-*: initial;
+
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+}
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-raised: var(--c-surface-raised);
+  --color-muted: var(--c-section-muted);
+  --color-card-muted: var(--c-card-in-muted);
+  --color-brand-section: var(--c-section-brand);
+  --color-text: var(--c-text);
+  --color-secondary: var(--c-text-secondary);
+  --color-meta: var(--c-text-meta);
+  --color-inverse: var(--c-text-inverse);
+  --color-meta-inverse: var(--c-text-meta-inverse);
+  --color-border: var(--c-border);
+  --color-subtle: var(--c-border-subtle);
+  --color-control: var(--c-border-control);
+  --color-primary: var(--c-primary);
+  --color-primary-hover: var(--c-primary-hover);
+  --color-primary-pressed: var(--c-primary-pressed);
+  --color-on-primary: var(--c-on-primary);
+  --color-link: var(--c-link);
+  --color-focus: var(--c-focus);
+  --color-focus-inverse: var(--c-focus-inverse);
+  --color-accent: var(--c-heading-accent);
+  --color-secondary-bg: var(--c-secondary-bg);
+  --color-secondary-fg: var(--c-secondary-fg);
+  --color-success: var(--c-success-text);
+  --color-danger: var(--c-danger-text);
+  --color-warning: var(--c-warning-text);
+  --color-rise: var(--c-rise);
+  --color-fall: var(--c-fall);
+  --color-gold-bg: var(--c-gold-bg);
+  --color-gold-fg: var(--c-gold-fg);
+  --color-gold-border: var(--c-gold-border);
+  --color-gold-dot: var(--c-gold-dot);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-white: #fff;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --font-heading: var(--ff-heading);
+  --font-body: var(--ff-body);
+  --font-legal: var(--ff-legal);
+
+  --text-xs: var(--fs-xs);
+  --text-sm: var(--fs-sm);
+  --text-base: var(--fs-base);
+  --text-lg: var(--fs-lg);
+  --text-xl: var(--fs-xl);
+  --text-2xl: var(--fs-2xl);
+  --text-3xl: var(--fs-3xl);
+  --text-4xl: var(--fs-4xl);
+  --text-5xl: var(--fs-5xl);
+
+  --leading-heading: var(--lh-heading);
+  --leading-body: var(--lh-body);
+  --leading-label: var(--lh-label);
+
+  --radius-card: var(--r-card);
+  --radius-button: var(--r-button);
+  --radius-badge: var(--r-badge);
+  --radius-image: var(--r-image);
+  --radius-pill: 999px;
+
+  --shadow-hover: var(--c-shadow-hover);
+  --shadow-menu: var(--c-shadow-menu);
+
+  --container-page: var(--container-w);
+  --container-reading: var(--reading-w);
+}
+
+@layer base {
+  html {
+    background: var(--c-bg);
+    color: var(--c-text);
+    font-family: var(--ff-body);
+    line-height: var(--lh-body);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    scroll-padding-top: calc(var(--header-h) + 1rem);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--ff-heading);
+    line-height: var(--lh-heading);
+    text-wrap: balance;
+  }
+
+  h1 {
+    font-weight: 800;
+  }
+
+  h2,
+  h3,
+  h4 {
+    font-weight: 700;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--c-focus);
+    outline-offset: 2px;
+  }
+
+  /* Sur les fonds bleu foncé (pied de page, bandeaux), l'anneau passe en blanc (DA, section 10). */
+  .on-brand :focus-visible {
+    outline-color: var(--c-focus-inverse);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Chiffres alignés dans les dates, montants et tableaux. */
+  time,
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Lien de texte : souligné, épaissi au survol (jamais la couleur seule). */
+  .text-link {
+    color: var(--c-link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    transition: text-decoration-thickness 150ms;
+  }
+
+  .text-link:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  /* Conteneur de page : 1240 px au plus, marges de 16, 24 et 32 px. */
+  .page-container {
+    width: 100%;
+    max-width: var(--container-w);
+    margin-inline: auto;
+    padding-inline: 1rem;
+  }
+
+  @media (min-width: 48rem) {
+    .page-container {
+      padding-inline: 1.5rem;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .page-container {
+      padding-inline: 2rem;
+    }
+  }
+
+}
+
+@layer components {
+  /* Puce : catégorie, juridiction, statut. Couleurs fournies par les classes badge--… et status--… */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    max-width: 100%;
+    padding: 0.1875rem 0.5rem;
+    border: 1px solid var(--b-border, var(--c-border));
+    border-radius: var(--r-badge);
+    background: var(--b-bg, transparent);
+    color: var(--b-fg, var(--c-text-secondary));
+    font-size: var(--fs-xs);
+    font-weight: 600;
+    line-height: var(--lh-label);
+    white-space: nowrap;
+  }
+
+  .badge-dot::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--b-dot, currentColor);
+    flex: none;
+  }
+
+  a.badge:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  /* Filet de catégorie de 4 px à gauche d'un titre (DA, section 1). */
+  .rule-left {
+    border-inline-start: 4px solid var(--b-rule, var(--c-primary));
+    padding-inline-start: 0.625rem;
+  }
+
+  /* Boutons : primaire, secondaire, fantôme, pastille de lien. */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid transparent;
+    border-radius: var(--r-button);
+    font-size: var(--fs-sm);
+    font-weight: 600;
+    line-height: var(--lh-label);
+    transition: background-color 150ms, color 150ms, border-color 150ms;
+  }
+
+  .btn-primary {
+    background: var(--c-primary);
+    color: var(--c-on-primary);
+  }
+
+  .btn-primary:hover {
+    background: var(--c-primary-hover);
+  }
+
+  .btn-primary:active {
+    background: var(--c-primary-pressed);
+  }
+
+  .btn-secondary {
+    background: var(--c-secondary-bg);
+    color: var(--c-secondary-fg);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--c-text);
+    border-color: var(--c-border);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--c-border-control);
+  }
+
+  .btn-pill {
+    min-height: 2rem;
+    padding: 0.25rem 0.875rem;
+    border-radius: 999px;
+    border-color: var(--c-border);
+    color: var(--c-link);
+    font-size: var(--fs-sm);
+  }
+
+  .btn-pill:hover {
+    border-color: var(--c-link);
+  }
+
+  .on-brand .btn-pill {
+    color: var(--c-text-inverse);
+    border-color: var(--c-text-meta-inverse);
+  }
+
+  .btn-inverse {
+    background: #fff;
+    color: var(--brand-900);
+  }
+
+  /* Carte : bordure au repos, ombre et translation de 2 px au survol. */
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-card);
+    background: var(--c-surface);
+    transition: box-shadow 150ms, transform 150ms;
+  }
+
+  .card:hover {
+    box-shadow: var(--c-shadow-hover);
+    transform: translateY(-2px);
+  }
+
+  .bg-muted .card {
+    background: var(--c-card-in-muted);
+  }
+
+  /* Une carte posée sur un fond de marque garde ses couleurs et son anneau de focus normaux. */
+  .card {
+    color: var(--c-text);
+  }
+
+  .on-brand .card :focus-visible {
+    outline-color: var(--c-focus);
+  }
+
+  /* Lien étendu : tout le bloc est cliquable, sans lien imbriqué. */
+  .stretched-link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  /* Couverture générée : dégradé bleu roi et grille fine (DA, section 7). */
+  .generated-cover {
+    background-color: var(--brand-800);
+    background-image:
+      linear-gradient(to right, color-mix(in srgb, var(--brand-600) 40%, transparent) 1px, transparent 1px),
+      linear-gradient(to bottom, color-mix(in srgb, var(--brand-600) 40%, transparent) 1px, transparent 1px),
+      linear-gradient(135deg, var(--brand-700), var(--brand-900));
+    background-size: 24px 24px, 24px 24px, 100% 100%;
+  }
+}
+
+@layer components {
+  /* Icône de la bascule et logo : suivent le thème effectif, sans attendre le JavaScript. */
+  .theme-icon-sun,
+  .logo-for-dark {
+    display: none;
+  }
+
+  :root[data-theme="dark"] .theme-icon-sun,
+  :root[data-theme="dark"] .logo-for-dark {
+    display: inline-block;
+  }
+
+  :root[data-theme="dark"] .theme-icon-moon,
+  :root[data-theme="dark"] .logo-for-light {
+    display: none;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .theme-icon-sun,
+    :root:not([data-theme="light"]) .logo-for-dark {
+      display: inline-block;
+    }
+
+    :root:not([data-theme="light"]) .theme-icon-moon,
+    :root:not([data-theme="light"]) .logo-for-light {
+      display: none;
+    }
+  }
+
+  /* Page figée quand le tiroir mobile est ouvert. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  /* Menus déroulants de l'en-tête : au survol, et au clavier par le bouton (aria-expanded). */
+  .nav-submenu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 50;
+    display: none;
+    min-width: 14rem;
+    padding: 0.5rem;
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-card);
+    background: var(--c-surface-raised);
+    box-shadow: var(--c-shadow-menu);
+  }
+
+  .nav-item:hover > .nav-submenu,
+  .nav-item[data-open] > .nav-submenu,
+  .site-nav:not([data-js]) .nav-item:focus-within > .nav-submenu {
+    display: block;
+  }
+
+  .nav-link[aria-current="page"],
+  .nav-link[data-active] {
+    color: var(--c-link);
+    box-shadow: inset 0 -2px 0 var(--c-link);
+  }
+
+  /* Tiroir mobile plein écran depuis la droite (élément dialog natif : focus retenu, Échap). */
+  .drawer {
+    margin: 0 0 0 auto;
+    width: min(100vw, 26rem);
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 0;
+    border: 0;
+    background: var(--c-surface);
+    color: var(--c-text);
+  }
+
+  .drawer::backdrop {
+    background: rgb(10 14 39 / 0.55);
+  }
+
+  .drawer summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .drawer details[open] .drawer-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* Champs de formulaire : bordure de contrôle à 3:1 au moins (DA, section 4). */
+  .input {
+    min-height: 2.75rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--c-border-control);
+    border-radius: var(--r-button);
+    background: var(--c-surface);
+    color: var(--c-text);
+    font-size: var(--fs-base);
+  }
+
+  .input::placeholder {
+    color: var(--c-text-meta);
+  }
+
+  input[type="checkbox"] {
+    accent-color: var(--c-primary);
+  }
+
+  .site-header[data-scrolled] {
+    box-shadow: var(--c-shadow-hover);
+  }
+}
