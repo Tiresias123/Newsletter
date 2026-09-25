@@ -87,6 +87,11 @@ export function addMonths(date: CalendarDate, months: number): CalendarDate {
   return target.toISOString().slice(0, 10);
 }
 
+export function addDays(date: CalendarDate, days: number): CalendarDate {
+  const { year, month, day } = splitCalendarDate(date);
+  return new Date(Date.UTC(year, month - 1, day + days)).toISOString().slice(0, 10);
+}
+
 // Nombre de jours entre deux dates calendaires (b − a).
 export function daysBetween(a: CalendarDate, b: CalendarDate): number {
   const pa = splitCalendarDate(a);

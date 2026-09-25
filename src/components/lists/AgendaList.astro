@@ -1,0 +1,84 @@
+---
+// Échéances regroupées par mois (page Agenda) : date, type, juridiction, heure ou période, description,
+// source officielle, dossier lié et fichier .ics de l'échéance.
+import { agendaByMonth, icsPath } from '../../lib/content/agenda.ts';
+import { getGraph } from '../../lib/content/astro.ts';
+import { jurisdictionBadges } from '../../lib/content/cards.ts';
+import type { Entry } from '../../lib/content/graph.ts';
+import { formatDate, formatMonth, formatTime } from '../../lib/format.ts';
+import { enumLabel, t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Badge from '../ui/Badge.astro';
+import Icon from '../ui/Icon.astro';
+import JurisdictionBadge from '../ui/JurisdictionBadge.astro';
+import PreviewBadge from '../ui/PreviewBadge.astro';
+
+interface Props {
+  entries: Entry<'agenda'>[];
+}
+
+const graph = await getGraph();
+const groups = agendaByMonth(Astro.props.entries);
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+---
+
+<div class="space-y-12">
+  {
+    groups.map((group) => (
+      <section id={`mois-${group.month}`} aria-labelledby={`mois-${group.month}-titre`}>
+        <h2 id={`mois-${group.month}-titre`} class="mb-4 border-b border-border pb-2 text-2xl">
+          {capitalize(formatMonth(group.month))}
+        </h2>
+        <ol class="space-y-4">
+          {group.entries.map((e) => {
+            const d = e.data;
+            const dossier = graph.get('dossiers', d.relatedDossier);
+            return (
+              <li class="card flex flex-col gap-3 p-4 sm:flex-row sm:gap-5">
+                <time datetime={d.date} class="shrink-0 font-heading font-bold text-accent sm:w-40">
+                  {formatDate(d.date)}
+                </time>
+                <div class="min-w-0 flex-1 space-y-2">
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    <Badge label={enumLabel('agendaType', d.type)} styleClass="badge--ardoise" />
+                    {jurisdictionBadges(graph, [d.jurisdiction]).map((j) => <JurisdictionBadge jurisdiction={j} link />)}
+                    {e.visibility.previewOnly && <PreviewBadge state={e.visibility.state === 'programme' ? 'programme' : 'brouillon'} />}
+                  </div>
+                  <h3 class="text-lg">{frenchTypography(d.title)}</h3>
+                  {(d.time || d.endDate) && (
+                    <p class="text-sm text-meta">
+                      {d.endDate ? t('agenda.until', { date: formatDate(d.endDate) }) : t('agenda.at', { time: formatTime(d.time ?? '') })}
+                    </p>
+                  )}
+                  {d.description && <p class="text-secondary">{frenchTypography(d.description)}</p>}
+                  <ul class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                    {d.url && (
+                      <li>
+                        <a href={d.url} class="text-link inline-flex items-center gap-1" rel="noopener">
+                          <Icon name="landmark" size={16} />
+                          {t('agenda.officialSource')}
+                          <span class="sr-only">{t('a11y.externalLink')}</span>
+                        </a>
+                      </li>
+                    )}
+                    {dossier?.visibility.visible && (
+                      <li>
+                        <a href={dossier.url} class="text-link">{t('agenda.dossier', { title: dossier.data.shortTitle || dossier.data.title })}</a>
+                      </li>
+                    )}
+                    <li>
+                      <a href={icsPath(e)} class="text-link inline-flex items-center gap-1" download>
+                        <Icon name="calendar-plus" size={16} />
+                        {t('agenda.addToCalendar')}
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+    ))
+  }
+</div>

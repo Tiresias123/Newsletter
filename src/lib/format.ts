@@ -65,6 +65,12 @@ export function formatPercent(value: number, options: { decimals?: number; signe
   return `${sign}${body}${NBSP}%`;
 }
 
+// Mois et année d'une date ou d'un mois calendaire (« 2026-10 » → « octobre 2026 »).
+export function formatMonth(month: string, locale = DEFAULT_LOCALE): string {
+  const [year, m] = month.split('-').map(Number) as [number, number];
+  return new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(Date.UTC(year, m - 1, 15)));
+}
+
 // Nom d'un pays ou d'une région à partir de son code ISO (« CA » → « Canada », « EU » → « Union européenne »).
 export function formatRegion(code: string, locale = DEFAULT_LOCALE): string {
   try {

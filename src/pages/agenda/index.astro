@@ -1,0 +1,33 @@
+---
+// Agenda (brief 6.10) : échéances à venir, par mois ; export de tout l'agenda et de chaque échéance en .ics.
+import EmptyState from '../../components/editorial/EmptyState.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import AgendaList from '../../components/lists/AgendaList.astro';
+import FeaturedDossiers from '../../components/sidebar/FeaturedDossiers.astro';
+import NewsletterBox from '../../components/sidebar/NewsletterBox.astro';
+import Button from '../../components/ui/Button.astro';
+import ListLayout from '../../layouts/ListLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph } from '../../lib/content/astro.ts';
+import { forHub, hubUrl } from '../../lib/content/breadcrumbs.ts';
+import { upcomingAgenda } from '../../lib/content/relations.ts';
+import { t } from '../../lib/i18n.ts';
+import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
+
+const graph = await getGraph();
+const { site } = getConfig();
+const entries = upcomingAgenda(graph);
+const title = t('hubs.agenda.title');
+const description = t('hubs.agenda.description');
+---
+
+<ListLayout crumbs={forHub('agenda')} seo={{ title, description, jsonLd: [webPageJsonLd(site.url, { type: 'CollectionPage', path: hubUrl('agenda'), name: title, description })] }}>
+  <PageHeader slot="header" title={title} description={description}>
+    <Button href="/agenda.ics" variant="secondary" icon="download">{t('agenda.download')}</Button>
+  </PageHeader>
+  {entries.length > 0 ? <AgendaList entries={entries} /> : <EmptyState message={t('agenda.empty')} />}
+  <Fragment slot="aside">
+    <FeaturedDossiers />
+    <NewsletterBox />
+  </Fragment>
+</ListLayout>

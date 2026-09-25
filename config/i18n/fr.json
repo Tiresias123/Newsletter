@@ -870,5 +870,16 @@
       "taxType": "Type d'impôt",
       "verifiedOn": "Vérifié le"
     }
+  },
+  "agenda": {
+    "calendarName": "{site} : agenda",
+    "download": "Télécharger l'agenda (.ics)",
+    "addToCalendar": "Ajouter à mon agenda",
+    "officialSource": "Source officielle",
+    "dossier": "Dossier : {title}",
+    "until": "Jusqu'au {date}",
+    "at": "à {time}",
+    "empty": "Aucune échéance à venir pour le moment.",
+    "month": "Échéances de {month}"
   }
 }
