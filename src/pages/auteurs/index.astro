@@ -1,0 +1,35 @@
+---
+// Auteurs du site (actifs d'abord), avec leur carte : rôle, mention professionnelle, biographie, réseaux.
+import AuthorCard from '../../components/editorial/AuthorCard.astro';
+import EmptyState from '../../components/editorial/EmptyState.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import ListLayout from '../../layouts/ListLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph } from '../../lib/content/astro.ts';
+import { forHub, hubUrl } from '../../lib/content/breadcrumbs.ts';
+import { t } from '../../lib/i18n.ts';
+import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
+
+const graph = await getGraph();
+const { site } = getConfig();
+const authors = graph.all('auteurs').sort((a, b) => Number(b.data.active) - Number(a.data.active) || a.data.name.localeCompare(b.data.name, 'fr-CA'));
+const title = t('hubs.auteurs.title');
+const description = t('hubs.auteurs.description');
+---
+
+<ListLayout crumbs={forHub('auteurs')} seo={{ title, description, jsonLd: [webPageJsonLd(site.url, { type: 'CollectionPage', path: hubUrl('auteurs'), name: title, description })] }}>
+  <PageHeader slot="header" title={title} description={description} />
+  {
+    authors.length > 0 ? (
+      <ul class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {authors.map((author) => (
+          <li>
+            <AuthorCard author={author} />
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <EmptyState />
+    )
+  }
+</ListLayout>

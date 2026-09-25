@@ -899,5 +899,15 @@
     "at": "à {time}",
     "empty": "Aucune échéance à venir pour le moment.",
     "month": "Échéances de {month}"
+  },
+  "newsletterPage": {
+    "subscribe": "S'abonner",
+    "archive": "Numéros précédents",
+    "issue": "N° {n} : {subject}",
+    "issueBadge": "Numéro {n}",
+    "sentOn": "Envoyé le {date}",
+    "articles": "Au sommaire",
+    "empty": "Les numéros envoyés seront archivés ici.",
+    "allIssues": "Tous les numéros"
   }
 }

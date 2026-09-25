@@ -1,0 +1,39 @@
+---
+// Page d'un auteur (brief 6.11) : présentation (photo, rôle, mention professionnelle, biographie, réseaux),
+// puis ses articles et guides, paginés.
+import AuthorCard from '../../../components/editorial/AuthorCard.astro';
+import CardListPage from '../../../components/lists/CardListPage.astro';
+import { getConfig } from '../../../lib/config/index.ts';
+import { getGraph } from '../../../lib/content/astro.ts';
+import { breadcrumbs } from '../../../lib/content/breadcrumbs.ts';
+import { articleCard } from '../../../lib/content/cards.ts';
+import { editorialByAuthor } from '../../../lib/content/relations.ts';
+import { pagedPaths } from '../../../lib/lists.ts';
+import { personJsonLd, webPageJsonLd } from '../../../lib/seo/json-ld.ts';
+
+export async function getStaticPaths() {
+  const graph = await getGraph();
+  return graph.all('auteurs').flatMap((author) => pagedPaths({ slug: author.id }, editorialByAuthor(graph, author.id).length));
+}
+
+const graph = await getGraph();
+const { site } = getConfig();
+const { current } = Astro.props as { current: number };
+const author = graph.get('auteurs', Astro.params.slug);
+if (!author) throw new Error(`Auteur introuvable : ${Astro.params.slug}.`);
+const d = author.data;
+const path = author.url ?? '/';
+const sameAs = d.socials.map((s) => s.url).filter((u) => /^https?:\/\//.test(u));
+const person = personJsonLd(site.url, { name: d.name, path, role: d.role, description: d.bio, sameAs });
+---
+
+<CardListPage
+  title={d.name}
+  crumbs={breadcrumbs.auteur(author)}
+  base={path}
+  current={current}
+  cards={editorialByAuthor(graph, author.id).map((e) => articleCard(graph, e))}
+  seo={{ type: 'profile', description: d.bio || d.role || undefined, jsonLd: [{ ...webPageJsonLd(site.url, { type: 'ProfilePage', path, name: d.name }), mainEntity: person }] }}
+>
+  <AuthorCard slot="intro" author={author} linkToProfile={false} showName={false} />
+</CardListPage>

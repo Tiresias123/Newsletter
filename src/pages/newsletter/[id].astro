@@ -1,0 +1,81 @@
+---
+// Numéro archivé de l'infolettre : sujet, date d'envoi, mot d'introduction (corps), articles du numéro et,
+// s'il y en a un, le partenaire signalé « Publicité ».
+import CardGrid from '../../components/cards/CardGrid.astro';
+import PartnerBlock from '../../components/editorial/PartnerBlock.astro';
+import PageSection from '../../components/editorial/PageSection.astro';
+import { mdxComponents } from '../../components/mdx/index.ts';
+import NewsletterBox from '../../components/sidebar/NewsletterBox.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import PreviewBadge from '../../components/ui/PreviewBadge.astro';
+import ContentLayout from '../../layouts/ContentLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph, renderEntry } from '../../lib/content/astro.ts';
+import { breadcrumbs, hubUrl } from '../../lib/content/breadcrumbs.ts';
+import { articleCard } from '../../lib/content/cards.ts';
+import { formatDate } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import { absolute, articleJsonLd } from '../../lib/seo/json-ld.ts';
+import { ogImagePath } from '../../lib/seo/meta.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+export async function getStaticPaths() {
+  const graph = await getGraph();
+  return graph
+    .all('newsletters')
+    .filter((e) => e.visibility.visible)
+    .map((e) => ({ params: { id: e.id } }));
+}
+
+const graph = await getGraph();
+const entry = graph.get('newsletters', Astro.params.id);
+if (!entry) throw new Error(`Numéro introuvable : ${Astro.params.id}.`);
+const { site } = getConfig();
+const d = entry.data;
+const { Content } = await renderEntry('newsletters', entry.id);
+const path = entry.url ?? '/';
+const cards = d.articles.flatMap((id) => {
+  const article = graph.get('articles', id);
+  return article?.visibility.visible ? [articleCard(graph, article)] : [];
+});
+const published = entry.visibility.instant?.toISOString();
+const seo = {
+  title: d.subject,
+  description: d.preheader || t('hubs.newsletter.description'),
+  type: 'article' as const,
+  image: ogImagePath(path),
+  imageAlt: d.subject,
+  article: { publishedTime: published, section: t('hubs.newsletter.title') },
+  jsonLd: [articleJsonLd(site.url, { type: 'Article', path, headline: d.subject, description: d.preheader || d.subject, image: absolute(site.url, ogImagePath(path)), datePublished: published, section: t('hubs.newsletter.title') })],
+};
+---
+
+<ContentLayout crumbs={breadcrumbs.newsletter(entry)} seo={seo}>
+  <article data-pagefind-body data-pagefind-filter={`type:${t('hubs.newsletter.title')}`} class="space-y-8">
+    <header class="space-y-4">
+      <div class="flex flex-wrap items-center gap-1.5">
+        <Badge label={t('newsletterPage.issueBadge', { n: d.issueNumber })} styleClass="badge--ardoise" />
+        {entry.visibility.previewOnly && <PreviewBadge state="brouillon" />}
+      </div>
+      <h1 class="text-3xl lg:text-4xl">{frenchTypography(d.subject)}</h1>
+      {d.preheader && <p class="text-xl text-secondary">{frenchTypography(d.preheader)}</p>}
+      {d.sentAt && <p class="text-sm text-meta"><time datetime={d.sentAt}>{t('newsletterPage.sentOn', { date: formatDate(d.sentAt) })}</time></p>}
+    </header>
+    <div class="prose">
+      <Content components={mdxComponents} />
+    </div>
+    {d.sponsor && <PartnerBlock partnerId={d.sponsor} placement="newsletter" />}
+    {
+      cards.length > 0 && (
+        <PageSection id="sommaire" title={t('newsletterPage.articles')}>
+          <CardGrid cards={cards} variant="horizontal" />
+        </PageSection>
+      )
+    }
+  </article>
+  <div slot="end" class="space-y-8">
+    <NewsletterBox id="numero-infolettre" variant="inline" />
+    <Button href={`${hubUrl('newsletter')}#archive`} variant="pill" icon="arrow-left">{t('newsletterPage.allIssues')}</Button>
+  </div>
+</ContentLayout>

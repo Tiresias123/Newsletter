@@ -1,0 +1,41 @@
+---
+// Infolettre (brief 8.5) : promesse et formulaire d'inscription (textes de config/newsletter.json), puis
+// l'archive des numéros envoyés.
+import EmptyState from '../../components/editorial/EmptyState.astro';
+import LinkList from '../../components/editorial/LinkList.astro';
+import PageSection from '../../components/editorial/PageSection.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import NewsletterForm from '../../components/newsletter/NewsletterForm.astro';
+import ListLayout from '../../layouts/ListLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph } from '../../lib/content/astro.ts';
+import { forHub, hubUrl } from '../../lib/content/breadcrumbs.ts';
+import { formatDate } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+const graph = await getGraph();
+const { site, newsletter } = getConfig();
+const issues = graph
+  .listed('newsletters')
+  .sort((a, b) => b.data.issueNumber - a.data.issueNumber)
+  .map((e) => ({ label: t('newsletterPage.issue', { n: e.data.issueNumber, subject: e.data.subject }), url: e.url, meta: e.data.sentAt && formatDate(e.data.sentAt), datetime: e.data.sentAt }));
+const title = t('hubs.newsletter.title');
+const description = t('hubs.newsletter.description');
+---
+
+<ListLayout crumbs={forHub('newsletter')} seo={{ title, description, jsonLd: [webPageJsonLd(site.url, { path: hubUrl('newsletter'), name: title, description })] }}>
+  <PageHeader slot="header" title={title} description={description} />
+  <div class="space-y-12">
+    <section class="max-w-reading rounded-card border border-border bg-surface p-6" aria-labelledby="inscription-titre">
+      <h2 id="inscription-titre" class="text-2xl">{frenchTypography(newsletter.texts.title)}</h2>
+      <p class="mb-5 mt-2 text-secondary">{frenchTypography(newsletter.texts.subtitle)}</p>
+      <p class="mb-5 text-sm text-meta">{frenchTypography(newsletter.texts.frequency)}</p>
+      <NewsletterForm id="page-infolettre" variant="page" />
+    </section>
+    <PageSection id="archive" title={t('newsletterPage.archive')}>
+      {issues.length > 0 ? <LinkList items={issues} /> : <EmptyState message={t('newsletterPage.empty')} />}
+    </PageSection>
+  </div>
+</ListLayout>

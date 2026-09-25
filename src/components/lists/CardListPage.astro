@@ -1,7 +1,7 @@
 ---
-// Page de liste de cartes (hub de catégorie, tous les articles, thème, étiquette, format ; DA, maquettes 12.5
-// et 12.6) : en-tête et pastilles, « à la une » en première page, filtres menant à la recherche, grille de
-// douze cartes, pagination ; veille, échéances et infolettre en barre latérale.
+// Page de liste de cartes (hub de catégorie, tous les articles, thème, étiquette, format, auteur ; DA, maquettes
+// 12.5 et 12.6) : en-tête et pastilles, présentation facultative (emplacement « intro »), « à la une » en première
+// page, filtres menant à la recherche, grille de douze cartes, pagination ; veille, échéances et infolettre.
 import { getGraph } from '../../lib/content/astro.ts';
 import type { CardModel } from '../../lib/content/cards.ts';
 import type { Crumb } from '../../lib/content/breadcrumbs.ts';
@@ -48,7 +48,10 @@ const trail = current > 1 ? [...crumbs.slice(0, -1), { label: title, url: base }
 ---
 
 <ListLayout crumbs={trail} seo={{ title: fullTitle, description, ...seo }}>
-  <PageHeader slot="header" title={fullTitle} description={current === 1 ? description : undefined} links={links} />
+  <Fragment slot="header">
+    <PageHeader title={fullTitle} description={current === 1 ? description : undefined} links={links} />
+    {current === 1 && Astro.slots.has('intro') && <div class="mb-10"><slot name="intro" /></div>}
+  </Fragment>
   <Fragment slot="top">
     {
       showFeatured && (
