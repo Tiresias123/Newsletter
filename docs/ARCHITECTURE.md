@@ -244,11 +244,13 @@ Versions relevées le 25 septembre 2026 sur le registre npm (étiquette `latest`
 | **Pagefind** | 1.5.2 | 12 avril 2026 | recherche statique | projet devenu indépendant de CloudCannon; recherche insensible aux accents depuis 1.5; racinisation française |
 | satori | 0.33.5 | 22 sept. 2026 | images Open Graph (SVG) | moteur de texte changé le 20 août 2026 : version exacte, contrôle visuel |
 | sharp | 0.35.4 | 26 août 2026 | images, et PNG des images Open Graph | déjà requis par Astro; **remplace @resvg/resvg-js** (aucune version stable depuis mars 2024) |
-| @fontsource-variable/inter, @fontsource-variable/manrope | 5.3.0 | 19 juill. 2026 | polices web (woff2 variables, sous-ensemble latin) | servies par l'**API Fonts d'Astro** (stable depuis 6.0), sans appel réseau au build |
-| @fontsource-variable/source-serif-4 | [À VÉRIFIER en phase 1] | | citations juridiques | seulement si la serif est retenue (question A4) |
+| @fontsource-variable/inter, @fontsource-variable/manrope | 5.3.0 | 19 juill. 2026 | polices web (woff2 variables, sous-ensemble latin) | servies par l'**API Fonts d'Astro** (stable depuis 6.0) avec le fournisseur **local**, qui lit les fichiers woff2 dans `node_modules` : le fournisseur npm les télécharge depuis un CDN (constaté en phase 1), ce qui ferait dépendre le build du réseau |
+| @fontsource-variable/source-serif-4 | 5.3.0 | | citations juridiques | serif retenue (question A4); 50,8 Ko en romain et 51,5 Ko en italique, jamais préchargée |
 | @fontsource/manrope | 5.3.0 | 19 juill. 2026 | police .woff statique pour les images Open Graph | satori ne lit ni le WOFF2 ni, de façon fiable, les polices variables; les images Open Graph utilisent toujours Manrope |
 | @lucide/astro | 1.48.0 | 24 sept. 2026 | icônes (SVG au build) | Lucide 1.0 a retiré les logos de marque : les icônes sociales viennent de Simple Icons (licence CC0), copiées en SVG |
-| Vitest | 5.0.1 | 15 sept. 2026 | tests unitaires | réservé aux fonctions pures (formatage, schémas, graphe de contenu) |
+| Vitest | 5.0.2 | | tests unitaires | fonctions pures (formatage, schémas, graphe de contenu) et script `check` sur des jeux d'essai |
+| @astrojs/markdown-satteri | 0.4.2 | | réglage du processeur Markdown | seul moyen de désactiver la ponctuation « intelligente » de Sätteri |
+| js-yaml | 4.3.2 | | lecture des entêtes par le script `check` | même version que celle qu'emploie Astro, pour lire les fichiers à l'identique |
 | @playwright/test | 1.63.0 | 4 sept. 2026 | tests de fumée | avec @axe-core/playwright 4.13.0 pour l'accessibilité |
 | wrangler | 4.139.0 | 24 sept. 2026 | outil Cloudflare (développement local du Worker, secrets) | |
 | @astrojs/cloudflare | 14.3.3 | 22 sept. 2026 | **seulement si le mode GitHub de Keystatic est activé** | ne vise plus que Workers (Cloudflare Pages n'est plus pris en charge depuis la v13); à régler alors : `imageService: 'compile'`, `session: false`, `prerenderEnvironment: 'node'` |
@@ -311,13 +313,14 @@ L'arborescence du point 4.2 du brief est conservée, avec des ajustements signal
 │   ├── components/            composants .astro (aucune chaîne en dur, aucun contenu)
 │   ├── layouts/
 │   ├── pages/                 routes dynamiques
-│   ├── lib/                   formatage, graphe de contenu, fournisseurs (newsletter, analytique, recherche)
+│   ├── lib/                   formatage, graphe de contenu, script check (lib/check/), fournisseurs (newsletter, analytique, recherche)
+│   ├── dev/                   ★ pages du mode développement seulement (/a-verifier/)
 │   ├── styles/                jetons → variables CSS, Tailwind
 │   └── content.config.ts      schémas Zod des collections (source de vérité)
 ├── worker/                    ★ le Worker : formulaires et tâche planifiée (section 15.1)
 ├── scripts/                   new-article, check, newsletter-draft, veille-fetch, og-generate, social-export, redirects
 ├── tests/                     ★ tests unitaires et de fumée
-├── docs/                      ARCHITECTURE, DA, QUESTIONS, GUIDE-AUTEUR, A-VERIFIER, CHANGELOG
+├── docs/                      ARCHITECTURE, DA, QUESTIONS, GUIDE-AUTEUR, CHANGELOG; A-VERIFIER est produit par check et non versionné
 ├── .github/workflows/         veille, rapport hebdomadaire, vérifications
 ├── keystatic.config.ts
 ├── astro.config.mjs
@@ -328,7 +331,7 @@ L'arborescence du point 4.2 du brief est conservée, avec des ajustements signal
 
 Justification des ajustements :
 
-- **`content/images/` au lieu de `public/images/`.** `astro:assets` n'optimise pas les images de `public/`, alors que le brief exige des couvertures WebP en plusieurs tailles (point 3.4). D'après le code source d'Astro, le helper `image()` des schémas résout les chemins relativement au fichier de contenu : un dossier `content/images/` hors de `src/` devrait donc fonctionner. Ce n'est pas documenté explicitement, et ce sera le premier test de la phase 1. En cas d'échec, les images iront dans `src/assets/images/` (recette officielle de Keystatic), seule exception documentée à la règle « zéro contenu dans `src/` ».
+- **`content/images/` au lieu de `public/images/`.** `astro:assets` n'optimise pas les images de `public/`, alors que le brief exige des couvertures WebP en plusieurs tailles (point 3.4). D'après le code source d'Astro, le helper `image()` des schémas résout les chemins relativement au fichier de contenu : un dossier `content/images/` hors de `src/` devrait donc fonctionner. Ce n'est pas documenté explicitement : **vérifié en phase 1**, les couvertures de `content/images/` sont bien optimisées en WebP. Le repli prévu (`src/assets/images/`, recette officielle de Keystatic) est donc inutile.
 - **`data/`** sépare ce que produisent les scripts (cache de veille) de ce qu'écrit l'auteur.
 - **Taxonomies en sous-dossiers, un fichier par entrée** : c'est ce qu'exigent les relations Keystatic (une liste déroulante alimentée par une collection).
 - **`worker/` et `wrangler.jsonc`** : le petit programme serveur et sa configuration (section 15.1).
@@ -342,14 +345,14 @@ Justification des ajustements :
 ### 7.0 Principes
 
 1. **Identifiant = slug** : ASCII minuscule, tirets, sans date, 80 caractères au maximum, unique par collection. C'est aussi le nom du fichier.
-2. **Une relation est stockée d'un seul côté.** L'autre côté est calculé au build par un « graphe de contenu » (`src/lib/graph.ts`). Exemple : l'organisme porte sa juridiction, et la fiche juridiction calcule la liste de ses organismes. Pas de double saisie, donc pas d'incohérence. Les champs `key…` du brief (dossiers clés, traitements clés d'une juridiction) restent stockés, parce qu'ils expriment une **sélection éditoriale** et non la relation elle-même.
+2. **Une relation est stockée d'un seul côté.** L'autre côté est calculé au build par un « graphe de contenu » (`src/lib/content/graph.ts`). Exemple : l'organisme porte sa juridiction, et la fiche juridiction calcule la liste de ses organismes. Pas de double saisie, donc pas d'incohérence. Les champs `key…` du brief (dossiers clés, traitements clés d'une juridiction) restent stockés, parce qu'ils expriment une **sélection éditoriale** et non la relation elle-même.
 3. **Classements modifiables par l'auteur = contenu.** Catégories, thèmes et formats sont des fichiers de taxonomie (point 6.13 du brief). Il est proposé d'y ajouter les activités fiscales et les types de contribuables de la matrice fiscale, qu'un fiscaliste voudra enrichir.
 4. **Énumérations qui pilotent l'affichage = code**, avec leurs libellés dans `config/i18n/fr.json` : statut de publication, statut réglementaire, type de texte, type d'organisme, niveau de guide, type d'échéance. Leurs valeurs changent rarement et déclenchent un rendu particulier (puce, icône, type schema.org).
-5. **Statut de publication commun à toutes les collections** : `brouillon`, `programme`, `publie`, `archive`.
+5. **Statut de publication commun aux collections éditoriales** : `brouillon`, `programme`, `publie`, `archive`. Les infolettres ont `brouillon` et `envoye` (publiée à sa date d'envoi). Les sources, les auteurs et les taxonomies n'ont pas de statut : une source ou un auteur est affiché dès qu'un contenu visible le cite.
    - Visible en production si `publie`, ou `programme` avec une date passée.
    - `archive` : page conservée et indexable, bandeau « Contenu archivé, susceptible d'être dépassé », retirée des listes, des flux et de la newsletter.
    - Dépublier = repasser en `brouillon`. L'URL renvoie alors une page 404; la dépublication est listée dans le rapport `check` (section 8.3).
-6. **Marqueurs de gabarit bloquants.** Un contenu publié qui contient encore `[À COMPLÉTER`, `[À VÉRIFIER`, `[À VALIDER` ou `[EXEMPLE]` fait échouer le build de production. Les fiches d'amorçage et les articles de démonstration restent en `brouillon`. Ainsi, aucun squelette n'est mis en ligne ni référencé par les moteurs.
+6. **Marqueurs de gabarit bloquants.** Un contenu publié qui contient encore `[À COMPLÉTER`, `[À VÉRIFIER`, `[À VALIDER`, `[EXEMPLE]` ou `[NOM-DU-SITE]` fait échouer le build de production. Dans `config/`, les marqueurs deviennent bloquants à la mise en ligne, c'est-à-dire dès que `site.url` n'est plus l'adresse d'exemple (section 25.3). Les fiches d'amorçage et les articles de démonstration restent en `brouillon`. Ainsi, aucun squelette n'est mis en ligne ni référencé par les moteurs.
 7. **Groupes de champs** dans l'éditeur, dans l'ordre : Contenu, Classement, Publication, Révision, Réglementation, Fiscalité, Sources, Relations, Newsletter, Référencement. Les libellés sont ceux qu'un juriste emploie : « Date d'entrée en vigueur », « Source officielle », « Organisme émetteur ».
 8. **Messages d'erreur en français.** Chaque champ Zod porte son message (« Le chapô doit compter de 160 à 300 caractères (il en compte 142). »). Avant le build, une étape reformule les erreurs avec le chemin du fichier et le libellé du champ.
 
@@ -474,7 +477,7 @@ Champs : `title`, `slug`, `jurisdiction`, `taxpayerType` et `activity` (★ rel
 
 ### 7.13 Taxonomies (`content/taxonomies/`)
 
-- **Catégories** : `label`, `slug`, `description`, ★ `badgeStyle` (style de puce choisi dans une liste fermée définie dans `theme.json`, dont chaque entrée porte ses paires de couleurs claire et sombre déjà vérifiées; DA, section 3.7), `icon`, `order`, `seo`. Le script `check` refuse un style inconnu. L'auteur peut donc créer une catégorie sans risquer un contraste insuffisant (le brief prévoyait une « couleur parmi les jetons »).
+- **Catégories** : `label`, `description`, ★ `badgeStyle` (style de puce choisi dans une liste fermée définie dans `theme.json`, dont chaque entrée porte ses paires de couleurs claire et sombre déjà vérifiées; DA, section 3.7), `icon`, `order`, ★ `requireVerification` (réglementation, fiscalité : « Vérifié le », « L'essentiel », juridictions et source officielle exigés à la publication), ★ `defaultDisclaimer` (avertissement par défaut, parmi ceux de `config/legal.json`). Le slug est le nom du fichier; la description sert au référencement du hub. Le script `check` refuse un style inconnu. L'auteur peut donc créer une catégorie sans risquer un contraste insuffisant (le brief prévoyait une « couleur parmi les jetons »).
 - **Thèmes** : `label`, `slug`, `description`, ★ `group` (reglementation, fiscalite, general), `order`.
 - **Formats** : `label`, `slug`, `description`, ★ `schemaType` (NewsArticle, AnalysisNewsArticle, OpinionNewsArticle, BackgroundNewsArticle, Article). Le format pilote ainsi le type schema.org sans code.
 - ★ **Activités fiscales et types de contribuables** : `label`, `slug`, `description`, `order`.
@@ -1336,6 +1339,32 @@ Non comptés : la rédaction des contenus réels et des textes juridiques, la c
 - **Typographie** : espaces insécables insérées au build; polices servies par l'API Fonts d'Astro; Lucide rendu au build.
 - **Sécurité** : CSP par en-têtes plutôt que par la fonction intégrée d'Astro.
 - **Outillage** : TypeScript 6 (section 5); pas d'outil de mise en forme ni de crochet Git; tests visuels faits à l'œil sur `/exemple/`.
+
+### 25.3 Décisions de la phase 1
+
+Prises en appliquant les recommandations par défaut de `QUESTIONS.md`, retenues par l'auteur le 25 septembre 2026.
+
+- **Polices** : fournisseur local de l'API Fonts (section 5). Manrope (24,8 Ko) et Inter (48,3 Ko) sont préchargées; Source Serif 4 ne l'est jamais.
+- **Catégories** : deux champs ajoutés, `requireVerification` et `defaultDisclaimer` (section 7.13). Les exigences de vérification suivent la catégorie au lieu d'être écrites dans le code pour « réglementation » et « fiscalité ».
+- **Sources officielles** : les types réputés officiels sont listés dans `config/legal.json` (`officialSourceTypes`). Le drapeau `officialSourceTypesValidated` reste à `false` tant que l'auteur n'a pas validé la liste, et le rapport le rappelle.
+- **Mise en ligne** : tant que `site.url` vaut `https://example.com`, les marqueurs de `config/` sont signalés sans bloquer, puisque le nom du site n'est pas encore choisi. Ils bloquent dès que l'adresse réelle est saisie.
+- **Script `check`** (`scripts/check.ts`, logique dans `src/lib/check/`) :
+  - mêmes schémas, même graphe et mêmes règles que le build; fichiers lus avec `js-yaml`, comme Astro;
+  - trois niveaux : bloquant, à vérifier, pour information. Si des fichiers sont illisibles, il s'arrête là, comme un compilateur;
+  - liens internes résolus d'après la table des routes (section 8.2), que la page soit déjà construite ou prévue pour une phase ultérieure. Un lien cassé, ou vers un contenu non publié, est « à vérifier » et non bloquant;
+  - un bloc mal formé, ou une image sans texte alternatif, bloque un contenu affiché. Dans un brouillon, le même défaut est « à vérifier », pour ne pas empêcher la publication des autres contenus;
+  - images de plus de 500 Ko « à vérifier »; images inutilisées signalées pour information;
+  - brouillon « ancien » : inchangé depuis 90 jours d'après git;
+  - liens externes : option `--liens-externes`, destinée au rapport hebdomadaire;
+  - dépublications et URL disparues : reportées à la phase 5 (comparaison avec le plan du site en ligne, section 8.3).
+- **`docs/A-VERIFIER.md`** n'est pas versionné : il est recréé à chaque exécution, et le rapport hebdomadaire sera publié dans un ticket GitHub (section 15.4). La page `/a-verifier/` n'est injectée que par `astro dev` (intégration `src/lib/dev-pages.ts`).
+- **Mode aperçu** : variable `SITE_MODE=preview`, lue par Astro et par `check`, y compris depuis un fichier `.env`.
+- **Infolettre** : l'archive d'un numéro est à `/newsletter/{identifiant}/` (ex. `/newsletter/2026-001/`).
+- **Accueil** : section « Les essentiels » activée par défaut. Favicon généré depuis la couleur `brand.600` du thème.
+- **Organismes** : le contenu d'amorçage en compte 13, dont le Parlement du Canada et l'Assemblée nationale du Québec, qui émettent les projets de loi (`authorityType` : `assemblee-legislative`).
+- **Menus** : `openInNewTab`, `highlight` et `badge` sont pris en charge sur ordinateur et dans le tiroir mobile; l'ouverture dans un nouvel onglet est annoncée aux lecteurs d'écran.
+- **Icône** : Lucide a renommé `building-2` en `building-complex` (DA mise à jour).
+- **Images des brouillons** : Astro copie dans `dist/` toutes les images citées par un champ `image()`, brouillons compris, sous un nom haché. Aucune page publique n'y renvoie, mais elles comptent dans le plafond de fichiers (section 19.1).
 
 ---
 

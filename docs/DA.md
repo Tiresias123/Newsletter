@@ -322,7 +322,7 @@ Tout le reste du brief passe tel quel. L'ajustement de slate-500 est le seul cha
 - **Geist** : très réussie, mais connotée « outil de développeur » (Vercel), moins institutionnelle.
 - **Serif pour tous les titres** : trop « presse magazine » pour un média de conformité, et moins lisible en petite taille dans les cartes.
 
-La serif est **facultative** : `theme.json` contient `fonts.legalSerif: true|false`. Si elle est désactivée, `TexteDeLoi` et `Citation` passent en Inter italique. Coût : une graisse et son italique en woff2, sous-ensemble latin, chargées seulement sur les pages qui les utilisent (poids à mesurer en phase 1).
+La serif est **facultative** : `theme.json` contient `fonts.legalSerif: true|false`. Si elle est désactivée, `TexteDeLoi` et `Citation` passent en Inter italique. Coût : une graisse et son italique en woff2, sous-ensemble latin, chargées seulement sur les pages qui les utilisent (mesuré en phase 1 : 50,8 Ko en romain et 51,5 Ko en italique; pour comparaison, Manrope pèse 24,8 Ko et Inter 48,3 Ko, toutes deux préchargées sur chaque page).
 
 **Chargement** :
 - polices auto-hébergées, servies par l'API Fonts d'Astro à partir des paquets `@fontsource-variable` (ARCHITECTURE, section 5);
@@ -506,7 +506,7 @@ Le filet porte la couleur de la famille; le titre et l'icône, sa variante forte
 | `date-a-retenir` | info forte | `calendar-clock` | Date à retenir |
 | `ce-qui-change` | info forte | `git-compare` | Ce qui change |
 | `pour-les-particuliers` | info | `user` | Pour les particuliers |
-| `pour-les-entreprises` | info | `building-2` | Pour les entreprises |
+| `pour-les-entreprises` | info | `building-complex` | Pour les entreprises |
 | `source-officielle` | info forte | `landmark` | Source officielle |
 | `mise-a-jour` | succès | `refresh-cw` | Mise à jour |
 | `pour-approfondir` | neutre, lien interne en carte | `arrow-right` | Pour approfondir |
