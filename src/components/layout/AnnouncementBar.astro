@@ -10,7 +10,7 @@ const { announcement } = getConfig().site;
 
 {
   announcement.enabled && (
-    <aside aria-label={t('announcement.label')} class="on-brand bg-brand-800 text-white">
+    <aside aria-label={t('announcement.label')} class="on-brand bg-brand-800 text-white print:hidden">
       <div class="page-container flex min-h-10 flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 text-center text-sm">
         <p>{frenchTypography(announcement.message)}</p>
         {announcement.linkUrl && announcement.linkLabel && (

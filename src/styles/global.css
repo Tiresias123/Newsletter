@@ -2,6 +2,7 @@
    Aucune couleur ni taille en dur ici : tout passe par les variables générées. */
 @import "tailwindcss";
 @import "./prose.css";
+@import "./print.css";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 

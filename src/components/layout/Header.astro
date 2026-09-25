@@ -13,7 +13,7 @@ const { site, navigation } = getConfig();
 const subscribe = navigation.subscribeButton;
 ---
 
-<header class="site-header sticky top-0 z-40 border-b border-subtle bg-surface transition-shadow" data-header>
+<header class="site-header sticky top-0 z-40 border-b border-subtle bg-surface transition-shadow print:hidden" data-header>
   <div class="page-container flex h-[var(--header-h-mobile)] items-center gap-4 lg:h-[var(--header-h)]">
     <a href="/" class="shrink-0" aria-label={t('site.logoHome', { site: site.name })}><Logo /></a>
     <DesktopNav />

@@ -15,7 +15,7 @@ const { title, cards, id = 'articles-lies' } = Astro.props;
 
 {
   cards.length > 0 && (
-    <section aria-labelledby={id} class="mt-16 border-t border-border pt-10" data-pagefind-ignore>
+    <section aria-labelledby={id} class="mt-16 border-t border-border pt-10 print:hidden" data-pagefind-ignore>
       <h2 id={id} class="text-2xl">
         {title}
       </h2>

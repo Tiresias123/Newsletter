@@ -19,7 +19,7 @@ const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
 {
   items.length > 1 &&
     (variant === 'sidebar' ? (
-      <nav aria-label={title} class="toc sticky top-[calc(var(--header-h)+1.5rem)] text-sm" data-toc data-pagefind-ignore>
+      <nav aria-label={title} class="toc sticky top-[calc(var(--header-h)+1.5rem)] text-sm print:hidden" data-toc data-pagefind-ignore>
         <p class="mb-2 font-heading font-bold">{title}</p>
         <ol class="space-y-1 border-s border-border">
           {items.map((h) => (
@@ -32,7 +32,7 @@ const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
         </ol>
       </nav>
     ) : variant === 'anchors' ? (
-      <nav aria-label={title} class="text-sm lg:hidden" data-pagefind-ignore>
+      <nav aria-label={title} class="text-sm lg:hidden print:hidden" data-pagefind-ignore>
         <p class="mb-2 font-heading font-bold">{title}</p>
         <ul class="flex flex-wrap gap-2">
           {items.filter((h) => h.depth === 2).map((h) => (
@@ -45,7 +45,7 @@ const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
         </ul>
       </nav>
     ) : (
-      <details class="toc my-6 rounded-card border border-border bg-surface lg:hidden" data-pagefind-ignore>
+      <details class="toc my-6 rounded-card border border-border bg-surface lg:hidden print:hidden" data-pagefind-ignore>
         <summary class="flex cursor-pointer items-center justify-between p-4 font-heading font-bold">{title}</summary>
         <nav aria-label={title} class="px-4 pb-4 text-sm">
           <ol class="space-y-2">

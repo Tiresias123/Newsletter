@@ -55,6 +55,22 @@ const bodyFont = FONT_VARIABLES[fonts.body] ?? '--font-inter';
     </main>
     <Footer />
     <script>
+      // Impression : thème clair et blocs repliables ouverts (FAQ, fiche d'identité), rétablis ensuite.
+      let restore: Array<() => void> = [];
+      addEventListener('beforeprint', () => {
+        const root = document.documentElement;
+        const theme = root.dataset.theme;
+        const closed = [...document.querySelectorAll('details:not([open])')] as HTMLDetailsElement[];
+        root.dataset.theme = 'light';
+        for (const d of closed) d.open = true;
+        restore = [() => (theme ? (root.dataset.theme = theme) : delete root.dataset.theme), () => closed.forEach((d) => (d.open = false))];
+      });
+      addEventListener('afterprint', () => {
+        for (const undo of restore) undo();
+        restore = [];
+      });
+    </script>
+    <script>
       // Dates relatives (« Il y a 3 heures ») calculées dans le navigateur : une page statique ne vieillit pas.
       import { formatRelative, type RelativeMessages } from '../lib/format.ts';
 

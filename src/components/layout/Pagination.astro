@@ -14,7 +14,7 @@ const numbers = Array.from({ length: page.total }, (_, i) => i + 1).filter((n) =
 
 {
   page.total > 1 && (
-    <nav aria-label={t('pagination.label')} class="mt-10 flex flex-wrap items-center justify-between gap-4 text-sm" data-pagefind-ignore>
+    <nav aria-label={t('pagination.label')} class="mt-10 flex flex-wrap items-center justify-between gap-4 text-sm print:hidden" data-pagefind-ignore>
       {page.urls.previous ? (
         <a href={page.urls.previous} class="btn btn-ghost" rel="prev"><Icon name="chevron-left" size={16} />{t('pagination.previous')}</a>
       ) : <span />}

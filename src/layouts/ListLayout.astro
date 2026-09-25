@@ -28,7 +28,7 @@ const hasAside = Astro.slots.has('aside');
       </div>
       {
         hasAside && (
-          <aside aria-label={t('sidebar.label')} class="space-y-8">
+          <aside aria-label={t('sidebar.label')} class="space-y-8 print:hidden">
             <slot name="aside" />
           </aside>
         )

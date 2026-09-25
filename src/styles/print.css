@@ -1,0 +1,72 @@
+/* Impression (dossiers, fiches, matrice fiscale, articles) : une seule colonne, sans navigation ni barre
+   latérale (classes print:hidden des composants), adresses des liens externes du corps affichées, blocs non
+   coupés entre deux pages. Le thème clair et les blocs repliables ouverts sont imposés par un script de
+   BaseLayout au moment de l'impression. */
+@media print {
+  @page {
+    margin: 16mm 14mm;
+  }
+
+  body {
+    background: none;
+  }
+
+  .page-container {
+    max-width: none;
+    padding-inline: 0;
+  }
+
+  .layout-grid {
+    display: block;
+  }
+
+  .layout-grid > * + * {
+    margin-top: 2rem;
+  }
+
+  .prose {
+    max-width: none;
+    font-size: 11pt;
+  }
+
+  /* Adresse des liens externes du corps, pour le lecteur du papier. */
+  .prose a:not([class])[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.85em;
+    word-break: break-all;
+  }
+
+  .callout,
+  figure,
+  blockquote,
+  .card,
+  .timeline-item,
+  .law-quote,
+  tr {
+    break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+
+  .table-scroll {
+    overflow: visible;
+  }
+
+  /* Les puces de la frise débordent à gauche : marge pour qu'elles restent dans la page. */
+  .timeline {
+    margin-inline-start: 0.5rem;
+  }
+
+  .data-table--row-headers tbody th {
+    position: static;
+  }
+
+  .toc,
+  .stretched-link::after {
+    display: none;
+  }
+}
