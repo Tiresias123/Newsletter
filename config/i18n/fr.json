@@ -460,5 +460,260 @@
   "forms": {
     "honeypot": "Laissez ce champ vide",
     "required": "obligatoire"
+  },
+  "breadcrumb": {
+    "label": "Fil d'Ariane",
+    "home": "Accueil"
+  },
+  "hubs": {
+    "articles": {
+      "title": "Tous les articles",
+      "description": "Tous les articles, du plus récent au plus ancien."
+    },
+    "dossiers": {
+      "title": "Dossiers",
+      "description": "Les grands chantiers réglementaires, suivis et datés : statut, autorités, échéances et sources officielles."
+    },
+    "guides": {
+      "title": "Guides",
+      "description": "Comprendre et appliquer les règles, pas à pas."
+    },
+    "juridictions": {
+      "title": "Juridictions",
+      "description": "Le cadre applicable aux cryptoactifs, juridiction par juridiction."
+    },
+    "organismes": {
+      "title": "Organismes",
+      "description": "Les autorités, leur rôle et leurs décisions."
+    },
+    "textes": {
+      "title": "Textes officiels",
+      "description": "Lois, règlements, avis et décisions qui encadrent les cryptoactifs."
+    },
+    "traitements": {
+      "title": "Traitements fiscaux",
+      "description": "La fiscalité des cryptoactifs, par juridiction, type de contribuable et activité."
+    },
+    "lexique": {
+      "title": "Lexique",
+      "description": "Les termes de la réglementation et de la fiscalité des cryptoactifs, définis simplement."
+    },
+    "agenda": {
+      "title": "Agenda",
+      "description": "Échéances fiscales, consultations, entrées en vigueur et audiences à venir."
+    },
+    "veille": {
+      "title": "Veille officielle",
+      "description": "Les dernières publications des autorités, avec un lien vers la source officielle."
+    },
+    "auteurs": {
+      "title": "Auteurs",
+      "description": "Les personnes qui écrivent sur le site."
+    },
+    "newsletter": {
+      "title": "Infolettre",
+      "description": "L'essentiel de la réglementation et de la fiscalité des cryptoactifs, dans votre boîte de courriel."
+    },
+    "recherche": {
+      "title": "Recherche",
+      "description": "Rechercher un article, un dossier, un guide, un organisme ou un terme."
+    },
+    "theme": {
+      "title": "Thème : {label}",
+      "description": "Les contenus sur le thème « {label} »."
+    },
+    "tag": {
+      "title": "Étiquette : {label}",
+      "description": "Les contenus portant l'étiquette « {label} »."
+    },
+    "format": {
+      "title": "Format : {label}",
+      "description": "Les contenus au format « {label} »."
+    },
+    "page": "Page {n}"
+  },
+  "blocks": {
+    "callout": {
+      "important": "Important",
+      "a-retenir": "À retenir",
+      "attention": "Attention",
+      "en-pratique": "En pratique",
+      "exemple": "Exemple",
+      "date-a-retenir": "Date à retenir",
+      "ce-qui-change": "Ce qui change",
+      "pour-les-particuliers": "Pour les particuliers",
+      "pour-les-entreprises": "Pour les entreprises",
+      "source-officielle": "Source officielle",
+      "mise-a-jour": "Mise à jour",
+      "pour-approfondir": "Pour approfondir",
+      "bon-a-savoir": "Bon à savoir"
+    },
+    "texteDeLoi": {
+      "version": "Version citée : {version}",
+      "official": "Texte officiel"
+    },
+    "exempleChiffre": {
+      "title": "Exemple chiffré",
+      "label": "Élément",
+      "amount": "Montant"
+    },
+    "chronologie": {
+      "title": "Chronologie"
+    },
+    "citation": {
+      "source": "Source : {source}"
+    },
+    "video": {
+      "play": "Lire la vidéo « {title} »",
+      "notice": "La lecture charge le lecteur de YouTube, en mode sans témoins (youtube-nocookie.com).",
+      "watch": "Voir la vidéo sur YouTube"
+    },
+    "definition": {
+      "more": "Voir la définition complète"
+    },
+    "notes": {
+      "title": "Notes",
+      "call": "Note {n}",
+      "back": "Retour au texte (note {n})"
+    },
+    "image": {
+      "credit": "Crédit : {credit}"
+    },
+    "faq": {
+      "title": "Questions fréquentes"
+    },
+    "sources": {
+      "title": "Sources"
+    },
+    "articles": {
+      "empty": "Aucun article pour le moment."
+    }
+  },
+  "editorial": {
+    "cover": {
+      "credit": "Crédit : {credit}"
+    },
+    "sources": {
+      "title": "Sources",
+      "official": "Source officielle",
+      "archived": "Copie archivée"
+    },
+    "author": {
+      "articles": {
+        "one": "{count} article publié",
+        "other": "{count} articles publiés"
+      }
+    },
+    "meta": {
+      "published": "Publié le {date}",
+      "publishedAt": "{date} à {time}",
+      "updated": "Mis à jour le {date}",
+      "readingTime": {
+        "one": "{count} minute de lecture",
+        "other": "{count} minutes de lecture"
+      },
+      "by": "Par {author}"
+    },
+    "trust": {
+      "label": "Fiabilité de l'information",
+      "verifiedOn": "Vérifié le {date}",
+      "concerns": "Cette information concerne :",
+      "effectiveDate": "Entrée en vigueur : {date}",
+      "reviewedBy": "Révisé par : {name}",
+      "correction": "Correction du {date} :",
+      "notVerified": "Date de vérification non indiquée"
+    },
+    "keyPoints": "L'essentiel",
+    "toc": {
+      "title": "Sommaire",
+      "toggle": "Afficher le sommaire"
+    },
+    "share": {
+      "label": "Partager cette page",
+      "x": "Partager sur X",
+      "linkedin": "Partager sur LinkedIn",
+      "facebook": "Partager sur Facebook",
+      "whatsapp": "Partager sur WhatsApp",
+      "telegram": "Partager sur Telegram",
+      "email": "Envoyer par courriel",
+      "copy": "Copier le lien",
+      "copied": "Lien copié",
+      "rss": "S'abonner au flux RSS",
+      "print": "Imprimer",
+      "reportError": "Signaler une erreur",
+      "suggest": "Suggérer un sujet",
+      "reportSubject": "Erreur signalée : {title}",
+      "reportBody": "Page concernée : {url}\n\nL'erreur relevée :\n",
+      "suggestSubject": "Suggestion de sujet",
+      "suggestBody": "Après la lecture de : {url}\n\nMa suggestion :\n"
+    },
+    "regulation": {
+      "title": "Cette réglementation",
+      "status": "Statut",
+      "authorities": "Autorités",
+      "jurisdictions": "Juridictions",
+      "dates": "Dates clés",
+      "officialSources": "Sources officielles",
+      "seeDossier": "Voir le dossier complet"
+    },
+    "dossierDates": {
+      "proposalDate": "Proposition",
+      "publicationDate": "Publication",
+      "adoptedDate": "Adoption",
+      "effectiveDate": "Entrée en vigueur",
+      "implementationDate": "Mise en œuvre",
+      "repealDate": "Abrogation"
+    },
+    "related": {
+      "title": "Textes, organismes et traitements liés",
+      "dossiers": "Dossiers",
+      "textes": "Textes officiels",
+      "organismes": "Organismes",
+      "traitements": "Traitements fiscaux"
+    },
+    "relatedArticles": "Articles liés",
+    "tags": "Étiquettes",
+    "archived": "Contenu archivé, susceptible d'être dépassé : il n'est plus mis à jour.",
+    "guide": {
+      "level": "Niveau",
+      "duration": "Durée",
+      "audience": "Pour qui",
+      "prerequisites": "Avant de commencer",
+      "steps": "Les étapes",
+      "step": "Étape {n} :"
+    }
+  },
+  "sidebar": {
+    "label": "Pour aller plus loin",
+    "about": "À propos du site",
+    "aboutLink": "Notre méthodologie",
+    "editorsPick": "Sélection de la rédaction",
+    "featuredDossiers": "Dossiers en vedette",
+    "veille": "Veille officielle",
+    "veilleEmpty": "Les publications officielles apparaîtront ici.",
+    "watchlist": "À surveiller",
+    "newsletter": "Infolettre"
+  },
+  "seo": {
+    "writtenBy": "Écrit par",
+    "readingTime": "Durée de lecture estimée",
+    "readingTimeValue": {
+      "one": "{count} minute",
+      "other": "{count} minutes"
+    }
+  },
+  "search": {
+    "types": {
+      "articles": "Articles",
+      "guides": "Guides",
+      "dossiers": "Dossiers",
+      "organismes": "Organismes",
+      "textes": "Textes officiels",
+      "juridictions": "Juridictions",
+      "lexique": "Lexique",
+      "auteurs": "Auteurs",
+      "traitements": "Traitements fiscaux",
+      "pages": "Pages"
+    }
   }
 }

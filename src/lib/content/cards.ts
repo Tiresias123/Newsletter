@@ -27,10 +27,11 @@ export type CardModel = {
   preview?: 'brouillon' | 'programme';
 };
 
-function jurisdictionBadges(graph: Graph, ids: readonly string[]): BadgeModel[] {
+// Puces de juridiction ; une juridiction non publiée garde sa puce, sans lien.
+export function jurisdictionBadges(graph: Graph, ids: readonly string[]): BadgeModel[] {
   return ids.flatMap((id) => {
     const j = graph.get('juridictions', id);
-    return j ? [{ id, label: j.data.name, style: j.data.badgeStyle, url: j.url }] : [];
+    return j ? [{ id, label: j.data.name, style: j.data.badgeStyle, url: j.visibility.visible ? j.url : undefined }] : [];
   });
 }
 

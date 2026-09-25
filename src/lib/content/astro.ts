@@ -1,9 +1,9 @@
 // Côté Astro : charge les collections et construit le graphe (une fois par build, à chaque requête en développement).
-import { getCollection } from 'astro:content';
+import { getCollection, getEntry, render } from 'astro:content';
 import { getConfig } from '../config/index.ts';
 import { ContentValidationError } from '../errors.ts';
 import type { VisibilityContext } from '../visibility.ts';
-import { COLLECTION_NAMES } from './collections.ts';
+import { COLLECTION_NAMES, type CollectionName } from './collections.ts';
 import { buildGraph, type Graph, type RawCollections } from './graph.ts';
 
 // Aperçu (développement ou build de branche avec SITE_MODE=preview) : brouillons visibles, pages en noindex.
@@ -34,4 +34,11 @@ export function getGraph(): Promise<Graph> {
   if (import.meta.env.DEV) return load();
   cached ??= load();
   return cached;
+}
+
+// Corps MDX d'une entrée, prêt à afficher, avec ses titres (sommaire) ; les blocs sont ceux de src/components/mdx.
+export async function renderEntry(collection: CollectionName, id: string) {
+  const entry = await getEntry(collection, id);
+  if (!entry) throw new Error(`Contenu introuvable : ${collection}/${id}.`);
+  return render(entry);
 }

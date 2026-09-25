@@ -1,7 +1,7 @@
 // Choix des contenus de chaque section de l'accueil (config/homepage.json). Fonctions pures, testables.
 import type { HomepageSection } from '../config/schemas.ts';
 import { calendarDateInZone, daysBetween, type CalendarDate } from '../dates.ts';
-import { articleCard, dossierCard, type BadgeModel, type CardModel } from './cards.ts';
+import { articleCard, dossierCard, jurisdictionBadges, type BadgeModel, type CardModel } from './cards.ts';
 import type { Entry, Graph } from './graph.ts';
 import { veilleItems, type VeilleItem } from './veille.ts';
 
@@ -80,7 +80,6 @@ export function watchlistItems(
     .sort((a, b) => a.data.date.localeCompare(b.data.date))
     .slice(0, section.count)
     .map((e): AgendaItem => {
-      const j = graph.get('juridictions', e.data.jurisdiction);
       const dossier = graph.get('dossiers', e.data.relatedDossier);
       return {
         id: e.id,
@@ -90,7 +89,7 @@ export function watchlistItems(
         time: e.data.time,
         type: e.data.type,
         url: dossier?.visibility.listed ? dossier.url : e.data.url,
-        jurisdiction: j ? { id: j.id, label: j.data.name, style: j.data.badgeStyle, url: j.url } : undefined,
+        jurisdiction: jurisdictionBadges(graph, [e.data.jurisdiction])[0],
       };
     });
   const consultations = graph
