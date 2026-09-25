@@ -1,0 +1,9 @@
+{
+  "label": "Fiscalité",
+  "description": "Impôt sur le revenu, gain en capital ou revenu d'entreprise, TPS et TVQ, déclarations et formulaires, positions de l'ARC et de Revenu Québec, jurisprudence.",
+  "badgeStyle": "doux-900",
+  "icon": "receipt",
+  "order": 3,
+  "requireVerification": true,
+  "defaultDisclaimer": "fiscal"
+}

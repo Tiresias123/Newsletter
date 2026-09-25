@@ -1,0 +1,9 @@
+{
+  "label": "Réglementation",
+  "description": "Valeurs mobilières, lutte contre le blanchiment, stablecoins et paiements, institutions financières, protection du consommateur, décisions et sanctions au Canada et au Québec.",
+  "badgeStyle": "plein-700",
+  "icon": "scale",
+  "order": 2,
+  "requireVerification": true,
+  "defaultDisclaimer": "reglementaire"
+}

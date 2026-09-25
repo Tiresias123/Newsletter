@@ -1,0 +1,9 @@
+{
+  "label": "Analyses",
+  "description": "Mises en perspective et décryptages approfondis des textes, des décisions et des tendances.",
+  "badgeStyle": "clair-300",
+  "icon": "lightbulb",
+  "order": 4,
+  "requireVerification": false,
+  "defaultDisclaimer": "general"
+}

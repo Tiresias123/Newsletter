@@ -1,0 +1,9 @@
+{
+  "label": "Actualités",
+  "description": "L'actualité des cryptoactifs traitée sous l'angle canadien et québécois : marchés, entreprises, projets, et décisions étrangères qui ont un effet au Canada.",
+  "badgeStyle": "plein-500",
+  "icon": "newspaper",
+  "order": 1,
+  "requireVerification": false,
+  "defaultDisclaimer": "general"
+}

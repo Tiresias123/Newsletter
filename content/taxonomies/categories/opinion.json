@@ -1,0 +1,9 @@
+{
+  "label": "Opinion",
+  "description": "Textes d'opinion signés, distincts des contenus d'information.",
+  "badgeStyle": "ardoise",
+  "icon": "messages-square",
+  "order": 5,
+  "requireVerification": false,
+  "defaultDisclaimer": "opinion"
+}
