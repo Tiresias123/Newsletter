@@ -33,7 +33,7 @@ const { visibility } = entry;
 ---
 
 <header class="space-y-5">
-  <div class="flex flex-wrap items-center gap-1.5">
+  <div class="flex flex-wrap items-center gap-1.5" data-pagefind-ignore>
     {category && <CategoryBadge category={{ id: category.id, label: category.data.label, style: category.data.badgeStyle, url: category.url }} link />}
     {view.format && <Badge label={view.format.data.label} href={url.format(view.format.id)} styleClass="badge--ardoise" />}
     {view.jurisdictions.map((j) => <JurisdictionBadge jurisdiction={j} link />)}

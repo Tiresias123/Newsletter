@@ -737,8 +737,39 @@
       "lexique": "Lexique",
       "auteurs": "Auteurs",
       "traitements": "Traitements fiscaux",
-      "pages": "Pages"
-    }
+      "pages": "Pages",
+      "newsletters": "Infolettre"
+    },
+    "title": "Rechercher sur le site",
+    "label": "Termes recherchés",
+    "placeholder": "Un article, un dossier, un organisme, un terme…",
+    "submit": "Rechercher",
+    "close": "Fermer la recherche",
+    "filters": "Affiner",
+    "filter": {
+      "type": "Type",
+      "categorie": "Catégorie",
+      "theme": "Thème",
+      "format": "Format",
+      "juridiction": "Juridiction",
+      "annee": "Année"
+    },
+    "all": "Tous",
+    "allFeminine": "Toutes",
+    "loading": "Recherche en cours…",
+    "results": {
+      "one": "{count} résultat",
+      "other": "{count} résultats"
+    },
+    "none": "Aucun résultat. Essayez d'autres mots ou retirez un filtre.",
+    "prompt": "Saisissez un ou plusieurs mots, ou choisissez un filtre.",
+    "unavailable": "La recherche n'est pas encore disponible : l'index est créé à la construction du site (npm run build).",
+    "error": "La recherche a échoué. Réessayez dans un instant.",
+    "seeMore": "Voir plus de résultats",
+    "showMore": "Afficher plus",
+    "group": "{type} ({count})",
+    "shortcut": "Raccourci : Ctrl K ou ⌘ K",
+    "noscript": "La recherche demande JavaScript. Les rubriques du menu restent accessibles sans lui."
   },
   "pagination": {
     "label": "Pagination",

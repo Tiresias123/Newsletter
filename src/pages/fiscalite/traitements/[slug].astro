@@ -23,6 +23,7 @@ import { traitementView } from '../../../lib/content/fiches.ts';
 import { enumLabel, t } from '../../../lib/i18n.ts';
 import { webPageJsonLd } from '../../../lib/seo/json-ld.ts';
 import { ogImagePath } from '../../../lib/seo/meta.ts';
+import { searchDataOf } from '../../../lib/search/index-data.ts';
 import { pageToc } from '../../../lib/toc.ts';
 import { frenchTypography, paragraphs } from '../../../lib/typo.ts';
 
@@ -67,7 +68,7 @@ const seo = {
 };
 ---
 
-<FicheLayout crumbs={breadcrumbs.traitement(graph, entry)} seo={seo} identity={view.identity} toc={toc} searchType={t('search.types.traitements')}>
+<FicheLayout crumbs={breadcrumbs.traitement(graph, entry)} seo={seo} identity={view.identity} toc={toc} search={searchDataOf(graph, entry)}>
   <div slot="header" class="space-y-5">
     <FicheHeader title={d.title}>
       <Fragment slot="badges">

@@ -2,6 +2,7 @@
    Aucune couleur ni taille en dur ici : tout passe par les variables générées. */
 @import "tailwindcss";
 @import "./prose.css";
+@import "./search.css";
 @import "./print.css";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
@@ -436,7 +437,7 @@
   }
 
   .drawer::backdrop {
-    background: rgb(10 14 39 / 0.55);
+    background: color-mix(in srgb, var(--dark-bg) 55%, transparent);
   }
 
   .drawer summary::-webkit-details-marker {

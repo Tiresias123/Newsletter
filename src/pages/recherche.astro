@@ -1,0 +1,28 @@
+---
+// Recherche en pleine page (ARCHITECTURE, section 10) : même panneau que la fenêtre, avec tous les filtres.
+// Reçoit les critères par l'adresse (/recherche/?q=…&categorie=…), depuis les hubs ou « Voir plus ».
+// Hors des moteurs : les résultats n'ont pas vocation à être indexés.
+import PageHeader from '../components/layout/PageHeader.astro';
+import SearchPanel from '../components/search/SearchPanel.astro';
+import ListLayout from '../layouts/ListLayout.astro';
+import { forHub } from '../lib/content/breadcrumbs.ts';
+import { t } from '../lib/i18n.ts';
+
+const title = t('hubs.recherche.title');
+---
+
+<ListLayout crumbs={forHub('recherche')} seo={{ title, description: t('hubs.recherche.description'), noindex: true }}>
+  <PageHeader slot="header" title={title} description={t('hubs.recherche.description')} />
+  <div class="max-w-reading">
+    <SearchPanel id="page-recherche" mode="page" />
+    <noscript><p class="callout callout--info mt-6">{t('search.noscript')}</p></noscript>
+  </div>
+</ListLayout>
+
+<script>
+  import { mountSearch } from '../lib/search/controller.ts';
+  import { pagefindProvider } from '../lib/search/pagefind-provider.ts';
+
+  const panel = document.querySelector<HTMLElement>('[data-search][data-mode="page"]');
+  if (panel) mountSearch(panel, pagefindProvider());
+</script>

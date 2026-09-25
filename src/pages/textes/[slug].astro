@@ -25,6 +25,7 @@ import { texteView } from '../../lib/content/fiches.ts';
 import { enumLabel, t } from '../../lib/i18n.ts';
 import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
 import { ogImagePath } from '../../lib/seo/meta.ts';
+import { searchDataOf } from '../../lib/search/index-data.ts';
 import { pageToc } from '../../lib/toc.ts';
 
 export async function getStaticPaths() {
@@ -77,7 +78,7 @@ const seo = {
 };
 ---
 
-<FicheLayout crumbs={breadcrumbs.texte(entry)} seo={seo} identity={view.identity} toc={toc} searchType={t('search.types.textes')}>
+<FicheLayout crumbs={breadcrumbs.texte(entry)} seo={seo} identity={view.identity} toc={toc} search={searchDataOf(graph, entry)}>
   <div slot="header" class="space-y-5">
     <FicheHeader title={d.title} lead={d.summary}>
       <Fragment slot="badges">

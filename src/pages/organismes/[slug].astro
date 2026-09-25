@@ -23,6 +23,7 @@ import { organismeView } from '../../lib/content/fiches.ts';
 import { enumLabel, t } from '../../lib/i18n.ts';
 import { organismeJsonLd } from '../../lib/seo/json-ld.ts';
 import { ogImagePath } from '../../lib/seo/meta.ts';
+import { searchDataOf } from '../../lib/search/index-data.ts';
 import { pageToc } from '../../lib/toc.ts';
 
 export async function getStaticPaths() {
@@ -78,7 +79,7 @@ const seo = {
 };
 ---
 
-<FicheLayout crumbs={breadcrumbs.organisme(entry)} seo={seo} identity={view.identity} toc={toc} searchType={t('search.types.organismes')}>
+<FicheLayout crumbs={breadcrumbs.organisme(entry)} seo={seo} identity={view.identity} toc={toc} search={searchDataOf(graph, entry)}>
   <FicheHeader slot="header" title={title} lead={d.role} mark={mark}>
     <Fragment slot="badges">
       {view.jurisdictions.map((j) => <JurisdictionBadge jurisdiction={j} link />)}

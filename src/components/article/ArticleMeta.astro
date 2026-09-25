@@ -18,7 +18,7 @@ const { instant, updatedAt, readingTime, author, timezone } = Astro.props;
 const AuthorTag = author?.visibility.visible ? 'a' : 'span';
 ---
 
-<div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-meta">
+<div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-meta" data-pagefind-ignore>
   {instant && <time datetime={instant.toISOString()}>{formatDateTime(instant, t('editorial.meta.publishedAt'), timezone)}</time>}
   {updatedAt && instant && <span aria-hidden="true">·</span>}
   {updatedAt && <time datetime={updatedAt}>{t('editorial.meta.updated', { date: formatDate(updatedAt) })}</time>}

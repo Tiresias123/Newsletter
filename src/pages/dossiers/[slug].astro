@@ -31,6 +31,7 @@ import type { LegalStatus } from '../../lib/content/enums.ts';
 import { t } from '../../lib/i18n.ts';
 import { absolute, articleJsonLd, faqJsonLd } from '../../lib/seo/json-ld.ts';
 import { ogImagePath } from '../../lib/seo/meta.ts';
+import { searchDataOf } from '../../lib/search/index-data.ts';
 import { pageToc } from '../../lib/toc.ts';
 import { frenchTypography, paragraphs } from '../../lib/typo.ts';
 
@@ -92,7 +93,7 @@ const seo = {
 };
 ---
 
-<FicheLayout crumbs={breadcrumbs.dossier(entry)} seo={seo} identity={view.identity} identityTitle={t('dossier.sheet')} toc={toc} searchType={t('search.types.dossiers')}>
+<FicheLayout crumbs={breadcrumbs.dossier(entry)} seo={seo} identity={view.identity} identityTitle={t('dossier.sheet')} toc={toc} search={searchDataOf(graph, entry)}>
   <div slot="header" class="space-y-5">
     <FicheHeader title={d.title} lead={d.summary}>
       <Fragment slot="badges">

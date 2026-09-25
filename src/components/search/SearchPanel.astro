@@ -1,0 +1,67 @@
+---
+// Panneau de recherche, commun à la fenêtre (Ctrl K) et à la page /recherche/ : champ, filtres, état annoncé
+// aux lecteurs d'écran et résultats groupés par type. La logique vit dans src/lib/search/controller.ts.
+import { getGraph } from '../../lib/content/astro.ts';
+import { pluralForms, t } from '../../lib/i18n.ts';
+import { filterLabels } from '../../lib/search/index-data.ts';
+import type { FilterKey } from '../../lib/search/types.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  id: string;
+  mode: 'modal' | 'page';
+}
+
+const { id, mode } = Astro.props;
+const graph = await getGraph();
+const labels = filterLabels(graph);
+const keys: FilterKey[] = mode === 'page' ? ['type', 'categorie', 'theme', 'format', 'juridiction', 'annee'] : ['type', 'juridiction', 'annee'];
+const feminine = new Set<FilterKey>(['categorie', 'juridiction', 'annee']);
+const filters = keys.filter((key) => Object.keys(labels[key]).length > 0);
+// La fenêtre n'emporte que les libellés dont elle a besoin (types et filtres affichés).
+const config = {
+  labels: Object.fromEntries((mode === 'page' ? Object.keys(labels) : ['type', ...filters]).map((key) => [key, labels[key as FilterKey]])),
+  messages: {
+    results: pluralForms('search.results'),
+    none: t('search.none'),
+    prompt: t('search.prompt'),
+    loading: t('search.loading'),
+    unavailable: t('search.unavailable'),
+    error: t('search.error'),
+    seeMore: t('search.seeMore'),
+    showMore: t('search.showMore'),
+    group: t('search.group'),
+  },
+};
+---
+
+<div class="search-panel space-y-4" data-search data-mode={mode}>
+  <form action="/recherche/" method="get" role="search" class="space-y-3" data-search-form>
+    <label for={`${id}-q`} class="sr-only">{t('search.label')}</label>
+    <div class="relative">
+      <Icon name="search" size={18} class="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-meta" />
+      <input id={`${id}-q`} name="q" type="search" class="input ps-10" placeholder={t('search.placeholder')} autocomplete="off" enterkeyhint="search" />
+    </div>
+    <fieldset class:list={['grid gap-3', mode === 'page' ? 'sm:grid-cols-2 lg:grid-cols-3' : 'grid-cols-3']}>
+      <legend class="sr-only">{t('search.filters')}</legend>
+      {
+        filters.map((key) => (
+          <div class="space-y-1">
+            <label for={`${id}-${key}`} class="text-xs font-semibold text-secondary">
+              {t(`search.filter.${key}`)}
+            </label>
+            <select id={`${id}-${key}`} name={key} class="input min-h-10 py-1.5 text-sm" data-filter>
+              <option value="">{feminine.has(key) ? t('search.allFeminine') : t('search.all')}</option>
+              {Object.entries(labels[key]).map(([value, label]) => (
+                <option value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+        ))
+      }
+    </fieldset>
+  </form>
+  <p class="text-sm text-meta" aria-live="polite" data-search-status></p>
+  <div class="search-results space-y-8" data-search-results></div>
+  <script type="application/json" data-search-config set:html={JSON.stringify(config).replace(/</g, '\\u003c')} />
+</div>

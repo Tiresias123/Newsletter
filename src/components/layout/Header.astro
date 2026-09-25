@@ -18,11 +18,11 @@ const subscribe = navigation.subscribeButton;
     <a href="/" class="shrink-0" aria-label={t('site.logoHome', { site: site.name })}><Logo /></a>
     <DesktopNav />
     <div class="ml-auto flex items-center gap-1">
-      <a href="/recherche/" class="hidden min-h-10 items-center gap-2 rounded-pill border border-control px-3 text-sm text-meta hover:border-primary xl:inline-flex">
+      <a href="/recherche/" class="hidden min-h-10 items-center gap-2 rounded-pill border border-control px-3 text-sm text-meta hover:border-primary xl:inline-flex" data-search-open aria-keyshortcuts="Control+K Meta+K">
         <Icon name="search" size={16} />
         <span>{t('header.searchPlaceholder')}</span>
       </a>
-      <a href="/recherche/" class="inline-flex size-10 items-center justify-center rounded-button text-secondary hover:text-text xl:hidden">
+      <a href="/recherche/" class="inline-flex size-10 items-center justify-center rounded-button text-secondary hover:text-text xl:hidden" data-search-open>
         <Icon name="search" />
         <span class="sr-only">{t('header.search')}</span>
       </a>

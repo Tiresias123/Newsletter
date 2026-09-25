@@ -6,6 +6,7 @@ import PageSection from '../../components/editorial/PageSection.astro';
 import ShareButtons from '../../components/editorial/ShareButtons.astro';
 import SourceList from '../../components/editorial/SourceList.astro';
 import { mdxComponents } from '../../components/mdx/index.ts';
+import SearchData from '../../components/search/SearchData.astro';
 import NewsletterBox from '../../components/sidebar/NewsletterBox.astro';
 import Button from '../../components/ui/Button.astro';
 import PreviewBadge from '../../components/ui/PreviewBadge.astro';
@@ -57,7 +58,8 @@ const seo = {
 ---
 
 <ContentLayout crumbs={breadcrumbs.lexique(entry)} seo={seo}>
-  <article data-pagefind-body data-pagefind-filter={`type:${t('search.types.lexique')}`} class="space-y-8">
+  <article data-pagefind-body class="space-y-8">
+    <SearchData data={{ type: 'lexique', filters: {} }} />
     <header class="space-y-4">
       {entry.visibility.previewOnly && <PreviewBadge state={entry.visibility.state === 'programme' ? 'programme' : 'brouillon'} />}
       <h1 class="text-3xl lg:text-4xl">{frenchTypography(d.term)}</h1>

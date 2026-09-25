@@ -1,0 +1,56 @@
+---
+// Fenêtre de recherche (DA, section 8.3) : élément dialog natif, ouverte par les liens de recherche de l'en-tête
+// ou par Ctrl K (⌘ K sur Mac), jamais par une touche seule (WCAG 2.1.4). L'index n'est chargé qu'à l'ouverture.
+import { t } from '../../lib/i18n.ts';
+import Icon from '../ui/Icon.astro';
+import SearchPanel from './SearchPanel.astro';
+---
+
+<dialog id="recherche" class="search-dialog" aria-labelledby="recherche-titre" data-pagefind-ignore>
+  <div class="flex items-center justify-between gap-4 border-b border-border px-5 py-3">
+    <h2 id="recherche-titre" class="text-lg">{t('search.title')}</h2>
+    <form method="dialog">
+      <button class="inline-flex size-10 items-center justify-center rounded-button text-secondary hover:text-text" aria-label={t('search.close')}>
+        <Icon name="x" />
+      </button>
+    </form>
+  </div>
+  <div class="max-h-[calc(100dvh-10rem)] overflow-y-auto px-5 py-4">
+    <SearchPanel id="fenetre-recherche" mode="modal" />
+    <p class="mt-6 hidden text-xs text-meta sm:block">{t('search.shortcut')}</p>
+  </div>
+</dialog>
+
+<script>
+  import { mountSearch } from '../../lib/search/controller.ts';
+  import { pagefindProvider } from '../../lib/search/pagefind-provider.ts';
+
+  const dialog = document.querySelector<HTMLDialogElement>('dialog#recherche');
+  const panel = dialog?.querySelector<HTMLElement>('[data-search]');
+  if (dialog && panel) {
+    const provider = pagefindProvider();
+    mountSearch(panel, provider);
+    const open = () => {
+      if (dialog.open) return;
+      dialog.showModal();
+      panel.querySelector<HTMLInputElement>('input[name="q"]')?.focus();
+      provider.preload('');
+    };
+    for (const link of document.querySelectorAll<HTMLElement>('[data-search-open]')) {
+      link.addEventListener('click', (event) => {
+        event.preventDefault();
+        open();
+      });
+    }
+    addEventListener('keydown', (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        open();
+      }
+    });
+    // Un clic sur le fond (hors du contenu) ferme la fenêtre.
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  }
+</script>

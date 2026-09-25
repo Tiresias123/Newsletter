@@ -10,6 +10,7 @@ import { veilleItems } from '../../lib/content/veille.ts';
 import { t } from '../../lib/i18n.ts';
 import { pagedTitle } from '../../lib/lists.ts';
 import { paginate } from '../../lib/pagination.ts';
+import type { SearchData as SearchDataModel } from '../../lib/search/index-data.ts';
 import type { SeoProps } from '../../lib/seo/meta.ts';
 import ListLayout from '../../layouts/ListLayout.astro';
 import ArticleCard from '../cards/ArticleCard.astro';
@@ -20,6 +21,7 @@ import Pagination from '../layout/Pagination.astro';
 import NewsletterBox from '../sidebar/NewsletterBox.astro';
 import UpcomingList from '../sidebar/UpcomingList.astro';
 import VeilleFeed from '../sidebar/VeilleFeed.astro';
+import SearchData from '../search/SearchData.astro';
 import FilterForm from './FilterForm.astro';
 
 interface Props {
@@ -35,9 +37,11 @@ interface Props {
   featured?: number;
   filters?: Record<string, string> | false;
   seo?: SeoProps;
+  // Page indexée par la recherche (auteur) : seule la présentation l'est, jamais les cartes.
+  search?: SearchDataModel;
 }
 
-const { title, description, crumbs, base, current, cards, links = [], featured = 0, filters = false, seo = {} } = Astro.props;
+const { title, description, crumbs, base, current, cards, links = [], featured = 0, filters = false, seo = {}, search } = Astro.props;
 const graph = await getGraph();
 const [lead, ...side] = cards.slice(0, featured);
 const page = paginate(cards.slice(featured), base, current);
@@ -48,10 +52,11 @@ const trail = current > 1 ? [...crumbs.slice(0, -1), { label: title, url: base }
 ---
 
 <ListLayout crumbs={trail} seo={{ title: fullTitle, description, ...seo }}>
-  <Fragment slot="header">
+  <div slot="header" data-pagefind-body={search && current === 1 ? '' : undefined}>
+    {search && current === 1 && <SearchData data={search} />}
     <PageHeader title={fullTitle} description={current === 1 ? description : undefined} links={links} />
     {current === 1 && Astro.slots.has('intro') && <div class="mb-10"><slot name="intro" /></div>}
-  </Fragment>
+  </div>
   <Fragment slot="top">
     {
       showFeatured && (

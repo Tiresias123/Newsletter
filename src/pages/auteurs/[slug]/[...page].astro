@@ -33,6 +33,7 @@ const person = personJsonLd(site.url, { name: d.name, path, role: d.role, descri
   base={path}
   current={current}
   cards={editorialByAuthor(graph, author.id).map((e) => articleCard(graph, e))}
+  search={{ type: 'auteurs', filters: {} }}
   seo={{ type: 'profile', description: d.bio || d.role || undefined, jsonLd: [{ ...webPageJsonLd(site.url, { type: 'ProfilePage', path, name: d.name }), mainEntity: person }] }}
 >
   <AuthorCard slot="intro" author={author} linkToProfile={false} showName={false} />

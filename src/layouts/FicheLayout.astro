@@ -5,8 +5,10 @@
 // ligne d'ancres, sous l'en-tête.
 import FicheIdentity from '../components/fiche/IdentityCard.astro';
 import TableOfContents from '../components/editorial/TableOfContents.astro';
+import SearchData from '../components/search/SearchData.astro';
 import type { Crumb } from '../lib/content/breadcrumbs.ts';
 import type { IdentityItem } from '../lib/content/views.ts';
+import type { SearchData as SearchDataModel } from '../lib/search/index-data.ts';
 import { t } from '../lib/i18n.ts';
 import type { SeoProps } from '../lib/seo/meta.ts';
 import type { Heading } from '../lib/toc.ts';
@@ -18,16 +20,17 @@ interface Props {
   identity: IdentityItem[];
   identityTitle?: string;
   toc: Heading[];
-  // Type de contenu pour les filtres de la recherche (Dossiers, Organismes…).
-  searchType: string;
+  // Données d'indexation de la recherche (type, filtres, date).
+  search?: SearchDataModel;
 }
 
-const { crumbs, seo, identity, identityTitle, toc, searchType } = Astro.props;
+const { crumbs, seo, identity, identityTitle, toc, search } = Astro.props;
 const onThisPage = t('fiche.onThisPage');
 ---
 
 <ContentLayout crumbs={crumbs} seo={seo}>
-  <article data-pagefind-body data-pagefind-filter={`type:${searchType}`}>
+  <article data-pagefind-body>
+    {search && <SearchData data={search} />}
     <slot name="header" />
     <div class="mt-8 space-y-6 lg:hidden">
       <FicheIdentity items={identity} title={identityTitle} collapsible />

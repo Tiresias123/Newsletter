@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "npm run check && astro build",
+    "build": "npm run check && astro build && pagefind && node scripts/postbuild.ts",
     "preview": "astro preview",
     "check": "node --env-file-if-exists=.env scripts/check.ts",
     "typecheck": "astro check",
@@ -33,6 +33,7 @@
     "@astrojs/check": "0.9.10",
     "@types/js-yaml": "4.0.9",
     "@types/node": "24.13.6",
+    "pagefind": "1.5.2",
     "typescript": "6.0.3",
     "vitest": "5.0.2"
   }

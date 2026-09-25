@@ -1,0 +1,23 @@
+---
+// Données d'indexation Pagefind d'une page : type, filtres, date de tri et métadonnées des résultats. Posées
+// dans un bloc masqué et ignoré à l'indexation du texte : Pagefind en lit tout de même les attributs.
+import type { SearchData } from '../../lib/search/index-data.ts';
+import { typeLabel } from '../../lib/search/index-data.ts';
+
+interface Props {
+  data: SearchData;
+}
+
+const { data } = Astro.props;
+const filters = Object.entries(data.filters).flatMap(([key, values]) => (values ?? []).map((value) => [key, value] as const));
+---
+
+<div hidden data-pagefind-ignore>
+  <span data-pagefind-filter="type">{data.type}</span>
+  {filters.map(([key, value]) => <span data-pagefind-filter={key}>{value}</span>)}
+  {data.date && <span data-pagefind-filter="annee">{data.date.slice(0, 4)}</span>}
+  <span data-pagefind-sort="date">{data.date ?? '0000-00-00'}</span>
+  <span data-pagefind-meta="type">{typeLabel(data.type)}</span>
+  {data.date && <span data-pagefind-meta="date">{data.date}</span>}
+  {data.category && <span data-pagefind-meta="categorie">{data.category}</span>}
+</div>

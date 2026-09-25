@@ -1,0 +1,67 @@
+/* Recherche : fenêtre (dialog natif) et résultats groupés par type (DA, section 8.3).
+   Couleurs tirées des jetons de config/theme.json, en clair comme en sombre. */
+@layer components {
+  .search-dialog {
+    margin: 5vh auto auto;
+    width: min(46rem, calc(100vw - 2rem));
+    max-height: calc(100dvh - 10vh);
+    padding: 0;
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-card);
+    background: var(--c-surface);
+    color: var(--c-text);
+    box-shadow: var(--c-shadow-hover);
+  }
+
+  .search-dialog::backdrop {
+    background: color-mix(in srgb, var(--dark-bg) 55%, transparent);
+  }
+
+  .search-group-title {
+    margin-bottom: 0.5rem;
+    font-size: var(--fs-lg);
+  }
+
+  .search-hits > * + * {
+    border-top: 1px solid var(--c-border-subtle);
+  }
+
+  .search-hit {
+    padding-block: 0.75rem;
+  }
+
+  .search-hit-link {
+    font-family: var(--ff-heading);
+    font-weight: 700;
+    color: var(--c-link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  .search-hit-link:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  .search-hit-meta {
+    margin-top: 0.125rem;
+    font-size: var(--fs-sm);
+    color: var(--c-text-meta);
+  }
+
+  .search-hit-excerpt {
+    margin-top: 0.25rem;
+    font-size: var(--fs-sm);
+    color: var(--c-text-secondary);
+  }
+
+  .search-hit-excerpt mark {
+    background: var(--c-gold-bg);
+    color: var(--c-gold-fg);
+    border-radius: 2px;
+  }
+
+  .search-group > .btn {
+    margin-top: 0.5rem;
+  }
+}

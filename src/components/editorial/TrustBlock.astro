@@ -19,7 +19,7 @@ interface Props {
 const { asOf, jurisdictions = [], effectiveDate, reviewedBy, corrections = [] } = Astro.props;
 ---
 
-<div class="space-y-2 rounded-card border border-border bg-surface p-4 text-sm" role="group" aria-label={t('editorial.trust.label')}>
+<div class="space-y-2 rounded-card border border-border bg-surface p-4 text-sm" role="group" aria-label={t('editorial.trust.label')} data-pagefind-ignore>
   {
     asOf && (
       <p class="flex items-center gap-2 font-semibold text-success">
