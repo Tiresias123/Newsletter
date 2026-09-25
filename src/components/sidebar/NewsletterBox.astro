@@ -14,14 +14,17 @@ interface Props {
 
 const { id = 'barre-infolettre', variant = 'compact', list } = Astro.props;
 const { newsletter } = getConfig();
+// En ligne (fin d'article, bloc de page), une région nommée ; en barre latérale, déjà dans le repère « aside »,
+// un simple bloc : deux régions portant le même titre seraient indistinctes pour un lecteur d'écran.
+const Container = variant === 'inline' ? 'section' : 'div';
 ---
 
-<section
+<Container
   class:list={['rounded-card border border-border p-5 print:hidden', variant === 'inline' ? 'bg-muted sm:p-6' : 'bg-surface']}
-  aria-labelledby={`${id}-titre`}
+  aria-labelledby={variant === 'inline' ? `${id}-titre` : undefined}
   data-pagefind-ignore
 >
   <h2 id={`${id}-titre`} class:list={[variant === 'inline' ? 'text-xl' : 'text-lg']}>{frenchTypography(newsletter.texts.title)}</h2>
   <p class="mb-4 mt-1 text-sm text-secondary">{frenchTypography(newsletter.texts.subtitle)}</p>
   <NewsletterForm id={id} variant={variant} list={list} />
-</section>
+</Container>
