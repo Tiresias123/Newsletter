@@ -1,0 +1,1399 @@
+# Architecture
+
+> Phase 0, livrable 1 sur 3. Rédigé le 25 septembre 2026. Aucune ligne de code n'a été écrite.
+> Statut : proposition argumentée, en attente de validation de l'auteur (voir `docs/QUESTIONS.md`).
+> Référence : brief v2. Quand ce document s'en écarte, l'écart est signalé et justifié (section 25).
+> Convention : les faits tirés d'extraits de moteur de recherche, non recoupés sur une source primaire, sont marqués « (s) ». Les sites de la plupart des fournisseurs étaient inaccessibles depuis l'environnement de travail (section 26).
+
+---
+
+## Sommaire
+
+0. Lexique technique
+1. Résumé
+2. Hypothèses de travail
+3. Famille A contre famille B
+4. Interface d'édition dans la famille A
+5. Pile retenue et versions vérifiées
+6. Arborescence
+7. Modèle de contenu
+8. Architecture des URL
+9. Rendu, composition et fraîcheur
+10. Recherche
+11. Newsletter
+12. Formulaires, anti-pourriel, analytique, données de marché
+13. Référencement
+14. Veille officielle
+15. Déploiement et publication programmée
+16. Sécurité, sauvegarde, comptes et secrets
+17. Données personnelles et conformité : mécanismes
+18. Coûts mensuels estimés
+19. Risques et parades
+20. Décisions irréversibles
+21. Ce qui doit être prévu dès la v1
+22. Feuille de route v1, v2, v3
+23. Chemin de migration de A vers B
+24. Estimation d'effort par phase
+25. Écarts avec le brief et décisions prises par défaut
+26. Journal des vérifications
+
+---
+
+## 0. Lexique technique
+
+| Terme | Sens dans ce document |
+|---|---|
+| **Build** (construction du site) | Étape automatique qui transforme les fichiers de contenu en pages web. Si une règle n'est pas respectée, le build échoue et rien n'est mis en ligne : la version précédente reste en place. |
+| **Déploiement** | Mise en ligne du résultat d'un build. |
+| **Commit** | Enregistrement horodaté et attribué d'une modification dans l'historique Git. |
+| **Branche**, **fusion** | Version de travail parallèle; intégration de cette version dans `main`, la branche publiée. |
+| **Demande de fusion** (PR) | Proposition de fusion soumise à relecture sur GitHub. |
+| **Aperçu de branche** | Copie du site construite à partir d'une branche, à une adresse non référencée par les moteurs. |
+| **Slug** | Dernière partie de l'adresse d'une page (`/articles/mon-slug/`), qui sert aussi d'identifiant du contenu. |
+| **Schéma** (Zod) | Liste des champs attendus d'un contenu et de leurs règles. Un contenu non conforme fait échouer le build avec un message en français. |
+| **Worker** | Petit programme exécuté par Cloudflare à la demande (formulaires) ou à heure fixe (tâche planifiée). |
+| **Tâche planifiée** (cron) | Action lancée automatiquement à intervalle régulier. |
+| **Deploy Hook** | Adresse secrète qui, appelée, déclenche un nouveau build. |
+| **Redirection 301** | Renvoi permanent d'une ancienne adresse vers la nouvelle, reconnu par les moteurs. |
+| **`noindex`**, **canonique** | Consigne demandant aux moteurs de ne pas référencer une page; adresse officielle d'une page quand plusieurs y mènent. |
+| **Îlot** | Petite portion de page qui exécute du JavaScript (menu, recherche) dans une page par ailleurs statique. |
+| **Double opt-in** | Inscription confirmée par un clic dans un courriel de vérification. |
+| **CSP** | Politique de sécurité du contenu : liste des sources de scripts et d'images que le navigateur accepte. |
+| **SDK** | Trousse de développement fournie par un service pour appeler son API. |
+| **UTC** | Temps universel coordonné, heure de référence des serveurs (Montréal : UTC−5 l'hiver, UTC−4 l'été). |
+
+---
+
+## 1. Résumé
+
+**Recommandation : famille A** (site statique, contenu dans Git), dans une version volontairement dépouillée :
+
+- **Astro 7** génère un site **entièrement statique**, sans adaptateur serveur au lancement.
+- **Un seul petit Worker Cloudflare** (un fichier d'une centaine de lignes) porte ce qui ne peut pas être statique : l'inscription à la newsletter, le formulaire de contact et la tâche planifiée de publication.
+- **Le contenu** vit dans le dépôt, en MDX et JSON, sous `content/` et `config/`. Des schémas Zod le valident au build, avec des messages d'erreur en français.
+- **Keystatic** sert de formulaire d'édition, en mode local (sur l'ordinateur de l'auteur) au lancement. Le mode en ligne sur `/keystatic` prévu par le brief est documenté et prêt à activer (question A2). C'est un outil remplaçable : il écrit les mêmes fichiers que ceux qu'on éditerait à la main.
+- **L'hébergement** se fait sur Cloudflare Workers, forfait gratuit : fichiers statiques gratuits et illimités, aperçus par branche, tâches planifiées.
+- **La publication programmée** est déclenchée par Cloudflare toutes les 15 minutes quand une échéance est atteinte. La latence visée est d'une dizaine de minutes en moyenne et d'une vingtaine au pire, sans garantie écrite de Cloudflare; elle sera mesurée en phase 4. **La veille officielle** et le rapport hebdomadaire passent par GitHub Actions, dont les retards sont ici sans conséquence.
+- **La recherche** repose sur Pagefind, un index statique sans serveur.
+- **La newsletter** passe par un fournisseur derrière une interface unique, avec double opt-in natif et preuve de consentement enregistrée chez le fournisseur.
+
+**Pourquoi A.**
+- **C'est la condition posée par le brief.** L'auteur est seul et publie quelques fois par semaine : c'est exactement le cas où le point 5.3 retient la famille A.
+- **Presque rien à exploiter.** Le coût est proche de zéro, il n'y a ni base de données ni serveur, la sauvegarde se résume à un `git clone`, et le contenu reste lisible sans aucun outil.
+- **Des faiblesses connues, non bloquantes pour un auteur seul.** Pas de rôles, une publication programmée émulée, un aperçu par déploiement et non instantané (section 3).
+- **Le choix n'enferme pas.** Le passage à B reste possible par script (section 23).
+
+**Ce que l'auteur doit trancher d'abord** : les questions 2 (contributeurs et relecture, décisive pour A ou B), 6 (URL), 1 (nom et domaine), 3 (hébergeur) et 4 (newsletter). Voir `docs/QUESTIONS.md`.
+
+---
+
+## 2. Hypothèses de travail
+
+| Hypothèse | Conséquence si elle est fausse |
+|---|---|
+| Un seul auteur pendant 12 mois, quelques publications par semaine | Plusieurs contributeurs avec relecture obligatoire : B devient raisonnable (question 2) |
+| La publication programmée tolère une vingtaine de minutes de décalage | Publication à la minute près exigée : famille B (section 15.3) |
+| Volume à trois ans : moins de 3 000 contenus et moins de 2 000 images | Au-delà : builds incrémentaux, images hors dépôt (section 19) |
+| Trafic de 0 à 10 000 visiteurs par jour | Au-delà, le statique tient sans effort; seules les fonctions sont à surveiller |
+| Budget d'exploitation proche de zéro, aucun service payant sans accord | Chaque service payant est signalé avec son palier gratuit |
+| L'auteur est à l'aise avec Git et Claude Code, mais pas développeur | La maintenance du code passe par Claude Code guidé par `CLAUDE.md` |
+| Dépôt GitHub privé (il l'est) | S'il devenait public : l'historique complet, brouillons compris, le serait pour toujours (section 20) |
+
+---
+
+## 3. Famille A contre famille B
+
+### 3.1 Comparaison sur les critères du point 5.3
+
+| Critère | A : Astro + Keystatic + Git | B : Next.js + Payload + PostgreSQL |
+|---|---|---|
+| Administration par un non-technicien | Formulaires Keystatic aux libellés français, mais habillage de l'outil (boutons, menus) à moitié anglais. Pas de tableau de bord. « Enregistrer » crée un commit. | Administration complète et traduite en français, tableau de bord, boutons « Publier » et « Programmer ». Nettement plus confortable. |
+| Contrôle du code | Total : tout est dans le dépôt. | Total avec Payload (code ouvert, dans le dépôt). |
+| Contenu structuré et relations | Bon : schémas Zod, relations validées au build, relations inverses calculées au build. Les relations reposent sur le slug : un renommage casse la référence, mais le build le détecte et le signale. | Excellent : relations par identifiant, intégrité en base, requêtes. |
+| Référencement | Excellent : HTML statique, très rapide, rien à régler côté serveur. | Excellent si le rendu statique ou incrémental est bien réglé; plus de risques de régression de performance. |
+| Versions et historique | Git : historique complet, différences ligne à ligne, restauration par commit. Peu lisible sans l'interface de GitHub. | Versions natives dans l'administration, restauration en un clic. |
+| Brouillons et aperçu | Statut « brouillon » + aperçu instantané sur l'ordinateur de l'auteur (mode local), ou aperçu de branche en ligne après un build de 2 à 5 minutes. | Brouillons natifs, aperçu en direct instantané. |
+| Publication programmée | Émulée : date future filtrée au build, build déclenché par une tâche planifiée Cloudflare. Environ 10 minutes de latence en moyenne, 20 au pire. | Native, à la minute près, mais exige un exécuteur de tâches. |
+| Médias | Images dans le dépôt, optimisées au build. Le dépôt grossit (environ 150 Mo pour 500 images sources). | Médiathèque, stockage objet (R2 ou S3), recadrage. |
+| Recherche | Pagefind, gratuit et sans serveur. | Requêtes en base, Pagefind ou service tiers. |
+| Extensibilité | Limitée pour le dynamique (comptes, commentaires, espace membre). | Grande : API, crochets, comptes, rôles. |
+| Coût mensuel (0 / 1 000 / 10 000 visiteurs par jour), hors domaine et newsletter | 0 / 0 à 20 / 20 $ US (analytique au-delà du quota gratuit; section 18) | environ 20 / 20 à 40 / 40 à 60 $ US (s) (section 18) |
+| Exploitation par une personne seule | Très faible : pas de serveur, pas de base, pas de correctifs de système. Mises à jour d'Astro environ deux fois par an. | Moyenne à élevée : base à sauvegarder et restaurer, migrations de schéma, correctifs de sécurité fréquents, surveillance. |
+| Portabilité du contenu | Maximale : fichiers MDX et JSON lisibles par n'importe quel outil. | Export nécessaire (base, API). |
+
+### 3.2 Dans la famille B : Payload, Sanity ou Strapi
+
+État vérifié le 25 septembre 2026 (registre npm, dépôts et documentation sur GitHub). Les sites commerciaux (payloadcms.com, sanity.io, strapi.io, vercel.com) étaient inaccessibles. Next.js, cadre commun aux trois options, est en **16.3.6** (22 septembre 2026, aucune version 17 publiée).
+
+| Critère | **Payload 3.x** | Sanity (Studio v6) | Strapi 5 |
+|---|---|---|---|
+| Version | 3.90.2 (23 sept. 2026); **4.0 en préversion** (canary 37, 24 sept. 2026) avec changements incompatibles : Node 24.15, Next 16.2.6 et TypeScript 6 minimum, versions actives partout | 6.16.0 (22 sept. 2026); trois majeures en 11 mois (v4 juillet 2025, v5 décembre 2025, v6 juin 2026) | 5.55.1 (24 sept. 2026) |
+| Modèle | code ouvert (MIT), s'exécute dans Next.js, base PostgreSQL, SQLite ou MongoDB; racheté par Figma en juin 2025 (engagement de rester open source) | Studio ouvert (MIT), **données dans le « Content Lake » propriétaire** (hébergé en Belgique selon des sources communautaires) | code ouvert (MIT hors `ee/`), serveur Node permanent + base |
+| Administration en français | oui (fr-FR) | oui (paquet `locale-fr-fr`) | oui |
+| Contenu structuré et relations | relations natives entre collections | références entre documents | relations natives |
+| Référencement, recherche | identiques pour les trois : ils dépendent du site Next.js construit devant | | |
+| Médias | adaptateurs officiels S3, R2, Vercel Blob; recadrage par sharp | ressources dans le Content Lake; export « avec pertes » selon la documentation | médiathèque intégrée [À VÉRIFIER] |
+| Brouillons, versions | natifs, historique et restauration | natifs | brouillon et publication gratuits; historique réservé au forfait Growth |
+| Publication programmée | native, mais **exige un exécuteur de tâches** : sans lui, « les publications programmées ne seront jamais exécutées ». Sur Vercel gratuit, tâche planifiée quotidienne seulement (s), donc jusqu'à 24 h de retard sauf déclencheur externe | réservée aux forfaits payants depuis novembre 2025 (s) | « Releases » réservées au forfait Growth, environ 45 $ US par mois (s), ou greffon communautaire |
+| Aperçu en direct | oui | oui | forfait Growth |
+| Migrations de schéma | **obligatoires en production** à chaque modification du modèle (PostgreSQL et SQLite) | non (schéma côté Studio) | automatiques |
+| Sécurité récente | **au moins 27 avis de sécurité du 18 au 22 septembre 2026, dont au moins 6 critiques** (injections SQL, exécution de code à distance, contournements d'accès); 37 des 38 avis du dépôt datent de 2026 | service géré | 2 avis critiques en mai 2026 |
+| Extensibilité | élevée (crochets, points d'accès, greffons) | élevée (API, Studio personnalisable) | élevée (greffons) |
+| Exploitation par une personne seule | **élevée** : migrations SQL, exécuteur de tâches, correctifs à appliquer ensemble avec Next.js (Payload impose des versions précises de Next.js) | faible côté contenu (service géré), mais site Next.js à héberger et service propriétaire | **élevée** : serveur Node permanent et base à sauvegarder |
+| Portabilité | JSON Lexical en base; convertisseurs officiels Markdown ↔ Lexical | export NDJSON; format de texte riche propriétaire (Portable Text) | export de base |
+| Coût 0 / 1 000 / 10 000 visiteurs par jour (hors newsletter et analytique) | 20 / ~20 / 20 à 45 $ US (Vercel Pro (s), Neon, R2) | 0 à 35 $ US aux trois paliers (forfait gratuit sans publication programmée, ou Growth à 15 $ US par siège (s), plus l'hébergement du site) | 18 à 65 $ US ou plus (serveur, base, licence Growth éventuelle) (s) |
+
+Directus est écarté : sa licence a changé en 2026 (licence « Sustainable Core » avec clé obligatoire depuis la v12).
+
+**Verdict dans la famille B : Payload**, sur Vercel Pro + Neon (PostgreSQL) + Cloudflare R2. C'est le seul des trois dont le code et les données restent entièrement chez soi. La variante tout Cloudflare (Workers payant, D1, R2, environ 5 $ US par mois) repose sur un adaptateur D1 encore en bêta et sans redimensionnement d'images : trop jeune pour une personne seule.
+
+**Ce que la famille B coûterait vraiment à l'auteur.** L'argent pèse peu (20 à 45 $ US par mois), la charge d'exploitation beaucoup. Il faudrait :
+- appliquer vite, et ensemble, les correctifs de Payload et de Next.js;
+- maîtriser les migrations SQL;
+- faire tourner un exécuteur de tâches;
+- sauvegarder la base;
+- migrer vers Payload 4 dans les prochains mois.
+
+C'est incompatible avec la consigne « simple et très maintenable par une personne seule », tant que les besoins de la question 2 ne l'imposent pas.
+
+### 3.3 Règle de décision appliquée
+
+Le brief pose la règle : auteur seul pendant 12 mois et quelques publications par semaine, donc A. Plusieurs contributeurs, un relecteur juridique, un circuit de validation ou une publication à l'heure près dès la v1 : B devient raisonnable. Avec les hypothèses de la section 2, **A l'emporte**. La question 2 permet de le confirmer.
+
+Deux points pèsent en faveur de A au-delà de la règle :
+
+1. **La traçabilité prime sur le confort d'édition.** Un média juridique vit de sa fiabilité. Dans A, chaque modification est un commit horodaté et attribué à son auteur, restaurable et comparable ligne à ligne. Les commits ne sont signés cryptographiquement que si la signature est activée, ou lorsque GitHub les crée en ligne. Cet historique peut servir de trace pour la politique de correction; sa valeur probante reste à apprécier par l'auteur.
+2. **La pièce la plus coûteuse de B, la base de données, n'apporte rien au lecteur.** Tout ce que le lecteur voit peut être calculé à l'avance.
+
+---
+
+## 4. Interface d'édition dans la famille A
+
+### 4.1 Candidats
+
+État vérifié le 25 septembre 2026 : registre npm, dépôts GitHub et sources de la documentation. Les sites keystatic.com et sveltiacms.app étaient inaccessibles.
+
+| Critère | **Keystatic** | Sveltia CMS | Decap CMS | TinaCMS | Pages CMS |
+|---|---|---|---|---|---|
+| Version, activité | `@keystatic/core` 0.6.9 (26 août 2026), `@keystatic/astro` 6.0.0 (18 août 2026). 13 versions en 12 mois, mais **aucune pendant 8 mois** (juillet 2025 à mars 2026). Un seul développeur actif. | 0.221.0 (24 sept. 2026), très actif, un seul mainteneur, pas encore de 1.0 | 3.16.3 (22 sept. 2026), actif | 3.14.1, intégration Astro créée en mai 2026 | actif |
+| Compatible Astro 7 | oui (dépendance paire `astro 5 \|\| 6 \|\| 7`) | indépendant du cadriciel | indépendant | oui (`@tinacms/astro` 0.7) | indépendant |
+| Éditeur MDX à composants | **oui** : blocs, enveloppes, éléments en ligne, marques, chacun avec son formulaire | non : Markdown + composants par expressions régulières | non | oui (édition visuelle) | MDX édité comme du code |
+| Relations entre contenus | par slug (`relationship`, `multiRelationship`) | oui, avec rétroliens (s) | oui | oui | limitées |
+| Interface en français | libellés 100 % personnalisables, **habillage à moitié anglais** (27 chaînes traduites, dont des contresens) | environ 89 % traduite | locale `fr` disponible | non traduisible | non |
+| Authentification en ligne | GitHub App (3 secrets) ou Keystatic Cloud | jeton personnel (seul auteur) ou relais OAuth | relais OAuth | TinaCloud ou serveur avec **base de données** | service hébergé tiers ou Next.js + PostgreSQL |
+| Coût | gratuit (Cloud facultatif, gratuit jusqu'à 3 utilisateurs) | gratuit | gratuit | TinaCloud payant au-delà de 2 utilisateurs (s) | version hébergée : conditions non vérifiées |
+| Limites relevées | pas de champ couleur; `datetime` enregistre l'heure locale comme de l'UTC; notes de bas de page détruites à l'enregistrement; bogue ouvert sur les images par URL externe; aucun aperçu en direct pour Astro; pas de publication programmée ni de rôles | 0.x, un seul mainteneur | pas de MDX | exige un serveur | pas d'éditeur à composants |
+
+**Verdict.** Keystatic reste le meilleur choix pour ce projet, grâce à son éditeur MDX à composants, indispensable pour les blocs riches du point 6.15. Sa fragilité est réelle mais bornée : le contenu reste en fichiers standard validés par Zod, et Keystatic n'est qu'un formulaire au-dessus.
+
+**Plans de repli** documentés :
+- Sveltia CMS, qui lit un modèle proche et offre une interface française à 89 %, avec les blocs riches à réécrire en composants d'éditeur;
+- l'édition directe des fichiers avec Claude Code, qui connaît le modèle par `CLAUDE.md`.
+
+### 4.2 Deux modes d'utilisation de Keystatic
+
+1. **Mode local (recommandé au lancement).** L'auteur lance `npm run dev`, édite dans `http://127.0.0.1:4321/keystatic` et voit le rendu immédiatement dans la page du site. Il enregistre ensuite un commit et le pousse avec GitHub Desktop, le terminal ou Claude Code. Rien de Keystatic n'est déployé : pas de secret, pas de route serveur, pas de compte supplémentaire. C'est aussi le meilleur aperçu, puisqu'en mode en ligne les images n'apparaissent pas dans l'aperçu d'une branche non fusionnée (anomalie ouverte n° 1459).
+2. **Mode GitHub (prévu par le brief, activable à la demande).** `/keystatic` devient accessible sur le site, avec une authentification par GitHub : seuls les comptes ayant un accès en écriture au dépôt peuvent éditer, et chaque enregistrement est un commit sur une branche ou sur `main`. Activer ce mode demande :
+   - une GitHub App, créée en local;
+   - trois secrets chez l'hébergeur (lus à l'exécution) et la variable publique `PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` (lue au build);
+   - l'URL de rappel déclarée dans l'App;
+   - l'adaptateur `@astrojs/cloudflare`, pour rendre les routes `/keystatic` et `/api/keystatic` à la demande;
+   - des en-têtes de sécurité posés par un intergiciel (le fichier `_headers` ne s'applique pas aux réponses produites par du code).
+
+   Compter une demi-session de travail le jour où l'auteur veut éditer depuis un autre appareil (question A2). Revenir au mode local tient en une ligne de configuration.
+
+**À confirmer en phase 1** : que l'éditeur local fonctionne avec `astro dev` sans adaptateur (les routes de Keystatic sont rendues à la demande). Sinon, un adaptateur est ajouté pour le développement seulement, selon la recette officielle qui désactive l'éditeur en production.
+
+### 4.3 Garde-fous retenus
+
+- **Les schémas Zod des collections Astro sont la source de vérité**; `keystatic.config.ts` en est le miroir côté formulaire. La cohérence entre les deux est vérifiée sans code dédié :
+  - le contenu d'amorçage (point 10 du brief) remplit tous les champs, utilise tous les blocs, et compte au moins une entrée par collection et par singleton;
+  - il est enregistré une fois par l'éditeur Keystatic, puis validé par les schémas Zod à chaque build;
+  - si le formulaire écrit un champ que Zod refuse, ou si Zod exige un champ que le formulaire n'offre pas, le build échoue;
+  - après toute modification de schéma, on rouvre et on réenregistre une entrée de la collection touchée (règle inscrite dans `CLAUDE.md`).
+- **Versions de Keystatic épinglées exactement**, sans plage `^`, et mises à jour dans une branche dédiée, testée par un build.
+- **Pas de note de bas de page `[^1]` dans le MDX.** Un test d'aller-retour sur Keystatic 0.6.9 (25 septembre 2026) montre que l'éditeur la transforme en texte littéral (`\[^1]`) dès le premier enregistrement. On utilise à la place un composant `Note` numéroté au rendu (section 7.15).
+- **Keystatic réécrit le Markdown à l'enregistrement** selon sa propre normalisation : puces `-` changées en `*`, titre des liens perdu, `<` échappé. Le reste passe sans perte : titres, gras, liens, citations, listes imbriquées, tableaux, composants. Claude Code écrit directement dans ce format (règle de `CLAUDE.md`). Aucun outil de mise en forme ni crochet Git n'est ajouté : une différence de pure forme au premier enregistrement d'un fichier est acceptée.
+- **Keystatic reste remplaçable.** Son README se déclare toujours « expérimental » et le paquet reste en 0.x.
+- **Aucune image insérée par URL externe** dans le corps d'un article (bogue ouvert de corruption du contenu). Les images passent par le champ image ou par le bloc `Image`.
+- **Pas de champ `datetime` Keystatic**, qui enregistre l'heure saisie comme de l'UTC. On utilise un champ date et une heure choisie dans une liste, interprétées dans le fuseau America/Toronto (section 7.1).
+- **Couleurs** : Keystatic n'a pas de champ couleur. Les catégories choisissent un style de puce dans une liste fermée (section 7.13), et la palette elle-même se règle par des champs hexadécimaux validés. Le script `check` vérifie ensuite les contrastes.
+
+---
+
+## 5. Pile retenue et versions vérifiées
+
+Versions relevées le 25 septembre 2026 sur le registre npm (étiquette `latest`) et dans les dépôts officiels. Elles seront **épinglées exactement** dans `package.json` en phase 1, avec le fichier de verrouillage versionné.
+
+| Brique | Version | Publiée le | Rôle | Remarque |
+|---|---|---|---|---|
+| Node.js | 24.18.0 (LTS) | | exécution locale, CI, build | version installée par défaut dans l'image de build de Cloudflare; Astro exige ≥ 22.12 et Node 22 arrive en fin de vie le 30 avril 2027 |
+| npm | 12.1.0 | juill. 2026 | paquets | bloque par défaut les scripts d'installation : autorisation explicite (`allowScripts`) pour `esbuild` et `workerd` |
+| **Astro** | 7.3.5 | 24 sept. 2026 | générateur du site | 6.0 le 10 mars 2026, 7.0 le 22 juin 2026; Cloudflare a racheté l'entreprise Astro le 16 janvier 2026 (licence MIT et prise en charge des autres hébergeurs maintenues, selon l'annonce officielle) |
+| @astrojs/mdx | 8.0.2 | 22 sept. 2026 | MDX | le traitement Markdown passe par Sätteri, processeur en Rust encore en 0.x |
+| @astrojs/sitemap | 3.7.4 | 31 août 2026 | plan du site | `lastmod` par `serialize()` |
+| @astrojs/rss | 4.0.19 | 30 juin 2026 | flux | version minimale : elle corrige une injection XML |
+| @astrojs/check | 0.9.10 | 27 juill. 2026 | vérification des types | exige TypeScript 5 ou 6 |
+| TypeScript | 6.0.3 | 16 avril 2026 | typage strict | **pas la 7.0.2** (`latest`), incompatible avec `@astrojs/check` |
+| zod (via `astro/zod`) | 4.6.5 | 13 sept. 2026 | schémas | messages personnalisés `{ error: '…' }`, locale `fr-CA` disponible |
+| **@keystatic/core** | 0.6.9 | 26 août 2026 | interface d'édition | version exacte épinglée (dépendances `react-aria` 3.50.0 et `react-stately` 3.48.0 figées par Keystatic) |
+| **@keystatic/astro** | 6.0.0 | 18 août 2026 | intégration | minimum requis sur Cloudflare avec Astro 6 et 7 |
+| @astrojs/react | 7.0.0 | 22 sept. 2026 | nécessaire à l'éditeur seulement | majeure sortie trois jours avant cette vérification; compatibilité avec Keystatic non documentée : test en phase 1, repli sur la dernière 6.x |
+| react, react-dom | 19.3.0 | 9 sept. 2026 | éditeur seulement | aucun React sur le site public |
+| **Tailwind CSS** + @tailwindcss/vite | 4.3.3 | 16 juill. 2026 | styles | configuration en CSS; pas de `@astrojs/tailwind` (Tailwind 3 seulement); navigateurs visés : Safari 16.4+, Chrome 111+, Firefox 128+ |
+| **Pagefind** | 1.5.2 | 12 avril 2026 | recherche statique | projet devenu indépendant de CloudCannon; recherche insensible aux accents depuis 1.5; racinisation française |
+| satori | 0.33.5 | 22 sept. 2026 | images Open Graph (SVG) | moteur de texte changé le 20 août 2026 : version exacte, contrôle visuel |
+| sharp | 0.35.4 | 26 août 2026 | images, et PNG des images Open Graph | déjà requis par Astro; **remplace @resvg/resvg-js** (aucune version stable depuis mars 2024) |
+| @fontsource-variable/inter, @fontsource-variable/manrope | 5.3.0 | 19 juill. 2026 | polices web (woff2 variables, sous-ensemble latin) | servies par l'**API Fonts d'Astro** (stable depuis 6.0), sans appel réseau au build |
+| @fontsource-variable/source-serif-4 | [À VÉRIFIER en phase 1] | | citations juridiques | seulement si la serif est retenue (question A4) |
+| @fontsource/manrope | 5.3.0 | 19 juill. 2026 | police .woff statique pour les images Open Graph | satori ne lit ni le WOFF2 ni, de façon fiable, les polices variables; les images Open Graph utilisent toujours Manrope |
+| @lucide/astro | 1.48.0 | 24 sept. 2026 | icônes (SVG au build) | Lucide 1.0 a retiré les logos de marque : les icônes sociales viennent de Simple Icons (licence CC0), copiées en SVG |
+| Vitest | 5.0.1 | 15 sept. 2026 | tests unitaires | réservé aux fonctions pures (formatage, schémas, graphe de contenu) |
+| @playwright/test | 1.63.0 | 4 sept. 2026 | tests de fumée | avec @axe-core/playwright 4.13.0 pour l'accessibilité |
+| wrangler | 4.139.0 | 24 sept. 2026 | outil Cloudflare (développement local du Worker, secrets) | |
+| @astrojs/cloudflare | 14.3.3 | 22 sept. 2026 | **seulement si le mode GitHub de Keystatic est activé** | ne vise plus que Workers (Cloudflare Pages n'est plus pris en charge depuis la v13); à régler alors : `imageService: 'compile'`, `session: false`, `prerenderEnvironment: 'node'` |
+
+**Écartés** :
+- `@astrojs/tailwind`, qui ne gère que Tailwind 3;
+- `@tailwindcss/typography` : une feuille de mise en forme du texte d'une centaine de lignes, branchée sur les jetons, se maintient mieux que des surcharges;
+- `@resvg/resvg-js`, remplacé par sharp;
+- `astro-pagefind`, qui journalise les erreurs d'indexation sans faire échouer le build : on préfère appeler `pagefind` explicitement après le build;
+- l'adaptateur Cloudflare au lancement (section 15.1);
+- toute fonction expérimentale d'Astro.
+
+**Réglages Astro 7 à poser dès le départ** :
+- `compressHTML: true`. La nouvelle valeur par défaut, `'jsx'`, supprime les espaces entre éléments en ligne et casse des lignes comme « Par X · le 24 septembre ».
+- Ponctuation « intelligente » de Sätteri **désactivée**, car elle produit des guillemets et des apostrophes à l'anglaise.
+- Typographie française par un traitement dédié et testé, limité à l'insertion d'espaces insécables dans le texte courant (point 8.10 du brief) : avant le deux-points, avant `$` et `%`, à l'intérieur des guillemets « » et comme séparateur de milliers. Il ne remplace aucun caractère et ignore `TexteDeLoi`, `Citation`, le code et les URL. L'auteur tape des espaces ordinaires, le build les rend insécables.
+- `trailingSlash: 'always'`, `i18n` avec le français à la racine.
+- Aucun `experimental.*`.
+
+---
+
+## 6. Arborescence
+
+L'arborescence du point 4.2 du brief est conservée, avec des ajustements signalés par ★.
+
+```
+[NOM-DU-SITE]/
+├── content/
+│   ├── articles/              un fichier .mdx par article
+│   ├── dossiers/
+│   ├── guides/
+│   ├── juridictions/
+│   ├── organismes/
+│   ├── textes/
+│   ├── sources/
+│   ├── traitements-fiscaux/
+│   ├── lexique/
+│   ├── agenda/
+│   ├── auteurs/
+│   ├── newsletters/
+│   ├── taxonomies/
+│   │   ├── categories/        un .json par catégorie
+│   │   ├── themes/
+│   │   ├── formats/
+│   │   ├── activites-fiscales/        ★ proposition (section 7.7)
+│   │   └── types-contribuables/       ★ proposition
+│   ├── pages/
+│   └── images/                ★ images éditoriales (au lieu de public/images/)
+│       ├── articles/<slug>/
+│       ├── auteurs/
+│       └── …
+├── config/
+│   ├── site.json  navigation.json  homepage.json  theme.json  ticker.json
+│   ├── newsletter.json  legal.json  sources-veille.json  ads.json  redirects.json
+│   └── i18n/fr.json
+├── data/                      ★ données produites par des scripts, jamais éditées à la main
+│   └── veille/cache.json          cache de la veille officielle (point 8.4 du brief)
+├── public/                    fichiers servis tels quels : favicon, logo SVG, robots.txt, _headers
+├── src/
+│   ├── components/            composants .astro (aucune chaîne en dur, aucun contenu)
+│   ├── layouts/
+│   ├── pages/                 routes dynamiques
+│   ├── lib/                   formatage, graphe de contenu, fournisseurs (newsletter, analytique, recherche)
+│   ├── styles/                jetons → variables CSS, Tailwind
+│   └── content.config.ts      schémas Zod des collections (source de vérité)
+├── worker/                    ★ le Worker : formulaires et tâche planifiée (section 15.1)
+├── scripts/                   new-article, check, newsletter-draft, veille-fetch, og-generate, social-export, redirects
+├── tests/                     ★ tests unitaires et de fumée
+├── docs/                      ARCHITECTURE, DA, QUESTIONS, GUIDE-AUTEUR, A-VERIFIER, CHANGELOG
+├── .github/workflows/         veille, rapport hebdomadaire, vérifications
+├── keystatic.config.ts
+├── astro.config.mjs
+├── wrangler.jsonc             ★ configuration Cloudflare (fichiers statiques, Worker, tâche planifiée)
+├── CLAUDE.md
+└── README.md
+```
+
+Justification des ajustements :
+
+- **`content/images/` au lieu de `public/images/`.** `astro:assets` n'optimise pas les images de `public/`, alors que le brief exige des couvertures WebP en plusieurs tailles (point 3.4). D'après le code source d'Astro, le helper `image()` des schémas résout les chemins relativement au fichier de contenu : un dossier `content/images/` hors de `src/` devrait donc fonctionner. Ce n'est pas documenté explicitement, et ce sera le premier test de la phase 1. En cas d'échec, les images iront dans `src/assets/images/` (recette officielle de Keystatic), seule exception documentée à la règle « zéro contenu dans `src/` ».
+- **`data/`** sépare ce que produisent les scripts (cache de veille) de ce qu'écrit l'auteur.
+- **Taxonomies en sous-dossiers, un fichier par entrée** : c'est ce qu'exigent les relations Keystatic (une liste déroulante alimentée par une collection).
+- **`worker/` et `wrangler.jsonc`** : le petit programme serveur et sa configuration (section 15.1).
+- **`tests/`** : exigé par le point 14 du brief.
+- **Version anglaise** : chaque contenu porte un champ `lang` (`fr` par défaut). Les contenus anglais iront plus tard dans `content/en/<collection>/`, avec la même structure.
+
+---
+
+## 7. Modèle de contenu
+
+### 7.0 Principes
+
+1. **Identifiant = slug** : ASCII minuscule, tirets, sans date, 80 caractères au maximum, unique par collection. C'est aussi le nom du fichier.
+2. **Une relation est stockée d'un seul côté.** L'autre côté est calculé au build par un « graphe de contenu » (`src/lib/graph.ts`). Exemple : l'organisme porte sa juridiction, et la fiche juridiction calcule la liste de ses organismes. Pas de double saisie, donc pas d'incohérence. Les champs `key…` du brief (dossiers clés, traitements clés d'une juridiction) restent stockés, parce qu'ils expriment une **sélection éditoriale** et non la relation elle-même.
+3. **Classements modifiables par l'auteur = contenu.** Catégories, thèmes et formats sont des fichiers de taxonomie (point 6.13 du brief). Il est proposé d'y ajouter les activités fiscales et les types de contribuables de la matrice fiscale, qu'un fiscaliste voudra enrichir.
+4. **Énumérations qui pilotent l'affichage = code**, avec leurs libellés dans `config/i18n/fr.json` : statut de publication, statut réglementaire, type de texte, type d'organisme, niveau de guide, type d'échéance. Leurs valeurs changent rarement et déclenchent un rendu particulier (puce, icône, type schema.org).
+5. **Statut de publication commun à toutes les collections** : `brouillon`, `programme`, `publie`, `archive`.
+   - Visible en production si `publie`, ou `programme` avec une date passée.
+   - `archive` : page conservée et indexable, bandeau « Contenu archivé, susceptible d'être dépassé », retirée des listes, des flux et de la newsletter.
+   - Dépublier = repasser en `brouillon`. L'URL renvoie alors une page 404; la dépublication est listée dans le rapport `check` (section 8.3).
+6. **Marqueurs de gabarit bloquants.** Un contenu publié qui contient encore `[À COMPLÉTER`, `[À VÉRIFIER`, `[À VALIDER` ou `[EXEMPLE]` fait échouer le build de production. Les fiches d'amorçage et les articles de démonstration restent en `brouillon`. Ainsi, aucun squelette n'est mis en ligne ni référencé par les moteurs.
+7. **Groupes de champs** dans l'éditeur, dans l'ordre : Contenu, Classement, Publication, Révision, Réglementation, Fiscalité, Sources, Relations, Newsletter, Référencement. Les libellés sont ceux qu'un juriste emploie : « Date d'entrée en vigueur », « Source officielle », « Organisme émetteur ».
+8. **Messages d'erreur en français.** Chaque champ Zod porte son message (« Le chapô doit compter de 160 à 300 caractères (il en compte 142). »). Avant le build, une étape reformule les erreurs avec le chemin du fichier et le libellé du champ.
+
+### 7.1 Articles (`content/articles/`)
+
+Légende : **R** = requis; **R\*** = requis sous condition.
+
+| Groupe | Champ | Libellé dans l'éditeur | Type | Règle |
+|---|---|---|---|---|
+| Contenu | `title` | Titre | texte | R, 20 à 120 caractères (au-delà de 70, avertissement pour le référencement) |
+| | `slug` | Adresse (slug) | slug | R, généré depuis le titre |
+| | `dek` | Chapô | texte multiligne | R, 160 à 300 caractères |
+| | `cover.src` / `alt` / `credit` / `creditUrl` | Image de couverture, Texte alternatif, Crédit, Lien du crédit | image, textes, URL | `alt` et `credit` R\* si une image est fournie; sans image, couverture générée |
+| | `tldr` | L'essentiel | liste de 3 à 5 textes | R pour réglementation et fiscalité; facultatif ailleurs, encadré masqué s'il est vide |
+| | corps | Corps de l'article | MDX avec blocs (section 7.15) | R |
+| Classement | `category` | Catégorie | relation → catégories | R |
+| | `format` | Format | relation → formats | R |
+| | `themes` | Thèmes | relations → thèmes | 1 à 5 |
+| | `jurisdictions` | Juridictions | relations → juridictions | R pour réglementation et fiscalité |
+| | `tags` | Étiquettes | liste de textes | normalisées en minuscules |
+| Publication | `author` | Auteur | relation → auteurs | R |
+| | `status` | Statut de publication | liste | R, `brouillon` par défaut |
+| | `publishedAt` + `publishedTime` | Date de publication, Heure (Montréal) | date + liste d'heures par demi-heure | R\* sauf brouillon |
+| | `updatedAt` | Date de mise à jour | date | postérieure ou égale à la date de publication |
+| | `featured`, `editorsPick`, `breaking` | En vedette, Sélection de la rédaction, Dernière heure | cases | |
+| | `previousSlugs` | Anciennes adresses | liste de textes | génère des redirections 301 |
+| Révision | `asOf` | Vérifié le | date | R pour réglementation et fiscalité |
+| | `reviewEvery` | À réviser tous les | liste : aucun, 3, 6, 12 mois | |
+| | `reviewedBy` | Révisé par | texte | |
+| | `corrections` | Notes de correction | liste de { date, note } | affichées sous le titre |
+| | `disclaimerVariant` | Avertissement | liste lue dans `legal.json` | défaut selon la catégorie |
+| Sources | `sources` | Sources | liste : référence à une source réutilisable **ou** source ponctuelle { libellé, URL, type, date, URL d'archive } | réglementation et fiscalité : **au moins une source officielle**, sinon le build échoue |
+| Relations | `relatedDossiers`, `relatedTextes`, `relatedOrganismes`, `relatedTraitements`, `relatedArticles` | Dossiers liés, Textes liés, etc. | relations multiples | articles liés complétés automatiquement |
+| Newsletter | `newsletterEligible` | Proposer dans la newsletter | case | cochée par défaut |
+| Référencement | `seo.title`, `seo.description`, `seo.canonical`, `seo.socialImage`, `seo.noindex` | Titre pour les moteurs, etc. | | facultatifs, avec repli sur titre et chapô |
+| Calculé | `readingTime`, `url`, `wordCount` | | | 200 mots par minute |
+| Proposé | `lang`, `translationKey` | (invisibles en v1) | | langue du contenu (`fr` par défaut); lien futur vers la traduction anglaise |
+
+**Heure de publication.** Keystatic enregistre la valeur d'un champ `datetime` avec un suffixe UTC, alors que l'auteur saisit une heure de Montréal : une publication programmée partirait 4 ou 5 heures trop tôt. D'où deux champs :
+- une date (`publishedAt`);
+- une heure choisie dans une liste (`publishedTime`), affichée au format québécois (« 0 h », « 0 h 30 », … « 23 h 30 », « 8 h » par défaut). La valeur enregistrée reste technique (`08:00`).
+
+Le code les combine en un instant du fuseau America/Toronto, changement d'heure compris. Le brief parle d'un seul champ `publishedAt` : l'écart est signalé en section 25.
+
+**Sources officielles.** Liste proposée des types réputés officiels : `legislation`, `reglement`, `gouvernement`, `regulateur`, `decision-justice`, `doctrine-administrative`, `consultation`; un `communique` compte comme officiel quand son émetteur est un organisme de la collection. C'est une règle éditoriale : elle est placée dans `config/legal.json` (`officialSourceTypes`), modifiable sans code, et marquée [À VALIDER PAR L'AUTEUR].
+
+### 7.2 Dossiers (`content/dossiers/`)
+
+Champs du brief (6.2) conservés, avec un renommage. Le brief appelle `status` à la fois le statut éditorial (articles) et le statut juridique (dossiers et textes). Il est proposé de garder **`status`** pour le statut de publication partout, et d'introduire **`legalStatus`** (« Statut réglementaire ») pour `projet`, `consultation`, `adopte`, `en-vigueur`, `partiellement-en-vigueur`, `modifie`, `abroge`, `retire`.
+
+| Groupe | Champs |
+|---|---|
+| Contenu | `title`, `shortTitle`, `slug`, `summary`, `cover`, corps MDX, `faq` (liste de { question, réponse }, rendue en FAQPage) |
+| Réglementation | `legalStatus`, `jurisdictions`, `themes`, `authorities` (→ organismes), `proposalDate`, `publicationDate`, `adoptedDate`, `effectiveDate`, `implementationDate`, `repealDate`, `whoIsAffected` (multi), `keyChanges`, `obligations`, `sanctions` |
+| Fiscalité | `taxImplications` |
+| Chronologie | `timeline` : liste de { date, titre, description, URL } |
+| Sources et relations | `keyTextes` (→ textes), `sources` |
+| Révision | `asOf` (R), `reviewEvery`, `corrections` |
+| Publication | `status`, `publishedAt`, `updatedAt`, `featured` |
+| Calculé | articles liés (ceux qui citent ce dossier), prochaine échéance (agenda lié) |
+
+### 7.3 Guides (`content/guides/`)
+
+Même schéma de base que les articles (composition Zod, pas de copie), plus :
+- `level` (facile, moyen, avancé);
+- `duration` (en minutes, par défaut le temps de lecture);
+- `steps` (liste facultative de { titre, contenu });
+- `prerequisites`;
+- `audience` (particuliers, entreprises, professionnels).
+
+`category` y est facultative (écart signalé en section 25) : elle sert seulement à faire remonter un guide dans un hub.
+
+### 7.4 Juridictions (`content/juridictions/`)
+
+Champs du brief, plus deux propositions :
+
+- `name`, `slug`, `level` (federal, provincial, supranational, national, international), `country`, `description`, `icon`, `order`;
+- ★ `parent` (→ juridiction, facultatif) : le Québec a pour parent le Canada. Cela sert au fil d'Ariane et au regroupement « Provinces »;
+- ★ `badgeStyle` (« Style de la puce ») : `plein`, `contour-point` ou `contour`. Le style de la puce est ainsi réglé dans la fiche, et non codé en dur par juridiction (Canada : plein, Québec : contour avec point, autres : contour; DA, section 3.7);
+- `keyDossiers`, `keyTraitements` : sélections éditoriales;
+- les organismes rattachés sont **calculés**. Le brief prévoyait un champ `organismes`, qui ferait double emploi avec `organisme.jurisdiction`;
+- `seo`, corps MDX.
+
+### 7.5 Organismes (`content/organismes/`)
+
+- Champs : `name`, `acronym`, `slug`, `jurisdiction`, `authorityType`, `role`, `website`, `logo` (facultatif : on privilégie la vignette générée, DA section 7), ★ `asOf` (« Vérifié le », facultatif), corps MDX.
+- `authorityType` : liste du brief, ★ plus `assemblee-legislative` (Assemblée nationale, Parlement, qui émettent des projets de loi).
+- ★ `rssFeeds` est **retiré de la fiche**. Les flux sont déclarés une seule fois, dans `config/sources-veille.json`, chacun rattaché à un organisme; la fiche affiche la veille de l'organisme par ce rattachement.
+- Page composée : identité, dossiers et textes liés, dernières décisions (textes de type décision), derniers articles, guides, ressources, veille.
+
+### 7.6 Textes (`content/textes/`)
+
+`title`, `shortTitle`, `slug`, `type` (liste du brief), `issuer` (→ organisme), `jurisdiction`, `officialUrl` (R), `archivedUrl`, `documentNumber`, `citation`, `adoptedAt` (« Date d'adoption ou de décision »), `inForceAt`, `legalStatus`, `summary`, `keyProvisions`, corps MDX, `asOf`.
+
+### 7.7 Traitements fiscaux (`content/traitements-fiscaux/`)
+
+Champs : `title`, `slug`, `jurisdiction`, `taxpayerType` et `activity` (★ relations vers les taxonomies proposées), `taxType` (énumération), `taxableEvent`, `treatment`, `reportingRequirement`, `forms` (liste de { code, nom, URL officielle }), `sources` (au moins une officielle), `asOf` (R), `reviewEvery`, corps MDX.
+
+- **Unicité** : la combinaison juridiction × type de contribuable × activité × type d'impôt doit être unique. Le script `check` signale les doublons.
+- **Avertissement fiscal** : il s'affiche **toujours** sur ces fiches, sans possibilité de le désactiver.
+- **Page `/fiscalite/traitements/`** : tableau HTML statique trié par juridiction, type de contribuable et activité, lisible sans JavaScript et imprimable. Les filtres interactifs s'ajoutent quand la matrice dépasse une trentaine de fiches (question 17).
+
+### 7.8 Lexique (`content/lexique/`)
+
+`term`, `slug`, `shortDefinition` (une phrase de 200 caractères au plus, pour l'infobulle), corps MDX, `seeAlso` (→ lexique), `officialSources`, ★ `synonyms` (pour la recherche et le composant `Definition`).
+
+### 7.9 Sources (`content/sources/`)
+
+`title`, `sourceType` (liste du brief), `issuer` (→ organisme, facultatif), `issuerLabel` (texte libre si l'émetteur n'est pas un organisme de la base), `jurisdiction`, `url`, `archivedUrl`, `documentDate`, `accessedDate`, `documentNumber`, `citation`. Le caractère officiel est déduit du type (section 7.1).
+
+### 7.10 Agenda (`content/agenda/`)
+
+`title`, `date`, `endDate`, ★ `time` (facultatif), `type` (echeance-fiscale, consultation, entree-en-vigueur, audience, evenement), `jurisdiction`, `url`, `description`, `relatedDossier`, `status`. Exports : `/agenda.ics` pour tout l'agenda, et un fichier `.ics` par entrée.
+
+### 7.11 Auteurs (`content/auteurs/`)
+
+`name`, `slug`, `avatar`, `role`, `bio`, `mentionProfessionnelle`, `socials` (liste de { réseau, URL }), ★ `active`. Le nombre d'articles est calculé.
+
+### 7.12 Newsletters (`content/newsletters/`)
+
+`subject`, ★ `preheader`, `issueNumber` (unique), `sentAt`, ★ `status` (brouillon, envoye), ★ `articles` (→ articles, rempli par `newsletter:draft`), ★ `list` (identifiant de liste, `generale` en v1), corps MDX, `providerId`, `sponsor` (→ identifiant dans `ads.json`).
+
+### 7.13 Taxonomies (`content/taxonomies/`)
+
+- **Catégories** : `label`, `slug`, `description`, ★ `badgeStyle` (style de puce choisi dans une liste fermée définie dans `theme.json`, dont chaque entrée porte ses paires de couleurs claire et sombre déjà vérifiées; DA, section 3.7), `icon`, `order`, `seo`. Le script `check` refuse un style inconnu. L'auteur peut donc créer une catégorie sans risquer un contraste insuffisant (le brief prévoyait une « couleur parmi les jetons »).
+- **Thèmes** : `label`, `slug`, `description`, ★ `group` (reglementation, fiscalite, general), `order`.
+- **Formats** : `label`, `slug`, `description`, ★ `schemaType` (NewsArticle, AnalysisNewsArticle, OpinionNewsArticle, BackgroundNewsArticle, Article). Le format pilote ainsi le type schema.org sans code.
+- ★ **Activités fiscales et types de contribuables** : `label`, `slug`, `description`, `order`.
+
+Créer une catégorie crée son hub (`/[categorie]/`) et son flux RSS. Renommer le slug d'une catégorie change l'adresse de son hub : le script `check` réclame alors une redirection.
+
+### 7.14 Pages (`content/pages/`)
+
+`title`, `slug`, `updatedAt`, `noindex`, `seo`, corps MDX avec les blocs d'article et les blocs de page du brief (`Hero`, `ListeArticles` filtrable, `CarteAuteur`, `Newsletter`, `ListeSources`, `FAQ`, `Chronologie`, `Tableau`). Les gabarits légaux sont livrés en `brouillon` et marqués `[À VALIDER PAR L'AUTEUR]` : ils ne peuvent pas partir en production tels quels.
+
+★ **Proposition : une page « Déclaration d'intérêts »**, rattachée à la page transparence.
+- L'auteur y déclare les cryptoactifs qu'il détient au-delà d'un seuil qu'il fixe, et ses éventuels liens avec des plateformes ou des émetteurs.
+- Cryptoast publie l'équivalent (« Situation financière »).
+- Pour un auteur seul qui commente des plateformes et des émetteurs, c'est un signal de confiance peu coûteux.
+- Seul le gabarit est livré, avec le contenu marqué `[À COMPLÉTER PAR L'AUTEUR]`.
+
+### 7.15 Blocs riches
+
+La liste du point 6.15 du brief est reprise telle quelle : les 13 variantes de `Callout`, `TexteDeLoi`, `ExempleChiffre`, `Chronologie`, `Comparatif`, `Citation`, `Video`, `Definition`, `MiseEnGarde`, `StatutReglementaire` et `BlocPartenaire`. Deux ajouts :
+
+- ★ **`Note`** (en ligne) : note de bas de page numérotée automatiquement et regroupée en fin d'article. Elle remplace la syntaxe `[^1]`, que l'éditeur Keystatic détruit. C'est indispensable pour un contenu juridique.
+- ★ **`Image`** (bloc) : image du corps avec légende, crédit et texte alternatif obligatoires.
+
+Dans l'éditeur, chaque bloc s'insère depuis un menu, se remplit par un formulaire et s'affiche comme un aperçu schématique. Le rendu exact se voit dans la page du site.
+
+### 7.16 Schéma des relations
+
+```mermaid
+erDiagram
+  ARTICLE }o--|| AUTEUR : "auteur"
+  ARTICLE }o--|| CATEGORIE : "catégorie"
+  ARTICLE }o--|| FORMAT : "format"
+  ARTICLE }o--o{ THEME : "thèmes"
+  ARTICLE }o--o{ JURIDICTION : "juridictions"
+  ARTICLE }o--o{ DOSSIER : "dossiers liés"
+  ARTICLE }o--o{ TEXTE : "textes liés"
+  ARTICLE }o--o{ ORGANISME : "organismes liés"
+  ARTICLE }o--o{ TRAITEMENT : "traitements liés"
+  ARTICLE }o--o{ SOURCE : "sources"
+  ARTICLE }o--o{ ARTICLE : "articles liés"
+  GUIDE }o--|| AUTEUR : "auteur"
+  GUIDE }o--o| CATEGORIE : "catégorie"
+  GUIDE }o--|| FORMAT : "format"
+  GUIDE }o--o{ THEME : "thèmes"
+  GUIDE }o--o{ JURIDICTION : "juridictions"
+  GUIDE }o--o{ DOSSIER : "dossiers liés"
+  GUIDE }o--o{ TEXTE : "textes liés"
+  GUIDE }o--o{ ORGANISME : "organismes liés"
+  GUIDE }o--o{ TRAITEMENT : "traitements liés"
+  GUIDE }o--o{ SOURCE : "sources"
+  DOSSIER }o--o{ JURIDICTION : "juridictions"
+  DOSSIER }o--o{ THEME : "thèmes"
+  DOSSIER }o--o{ ORGANISME : "autorités"
+  DOSSIER }o--o{ TEXTE : "textes clés"
+  DOSSIER }o--o{ SOURCE : "sources"
+  ORGANISME }o--|| JURIDICTION : "juridiction"
+  TEXTE }o--|| ORGANISME : "émetteur"
+  TEXTE }o--|| JURIDICTION : "juridiction"
+  TRAITEMENT }o--|| JURIDICTION : "juridiction"
+  TRAITEMENT }o--|| TYPE_CONTRIBUABLE : "contribuable"
+  TRAITEMENT }o--|| ACTIVITE : "activité"
+  TRAITEMENT }o--o{ SOURCE : "sources"
+  JURIDICTION }o--o| JURIDICTION : "parent"
+  JURIDICTION }o--o{ DOSSIER : "dossiers clés"
+  JURIDICTION }o--o{ TRAITEMENT : "traitements clés"
+  AGENDA }o--|| JURIDICTION : "juridiction"
+  AGENDA }o--o| DOSSIER : "dossier lié"
+  LEXIQUE }o--o{ LEXIQUE : "voir aussi"
+  LEXIQUE }o--o{ SOURCE : "sources officielles"
+  SOURCE }o--o| ORGANISME : "émetteur"
+  FLUX_VEILLE }o--o| ORGANISME : "organisme"
+  NEWSLETTER }o--o{ ARTICLE : "articles"
+```
+
+**Relations inverses calculées** (jamais saisies) : articles d'un dossier, d'un organisme, d'une juridiction ou d'un texte; organismes d'une juridiction; textes émis par un organisme; décisions récentes d'un organisme; entrées d'agenda d'un dossier; traitements d'une juridiction; veille d'un organisme.
+
+**Articles liés** (point 7.2, étape 18 du brief), six au plus, sans doublon et triés par date décroissante, dans cet ordre de priorité :
+1. la sélection manuelle;
+2. les articles du même dossier;
+3. les articles qui partagent le plus de thèmes;
+4. les articles de la même catégorie.
+
+**Bloc « Cette réglementation »** : quand un article a un dossier lié, le statut, l'autorité, la juridiction, la date d'entrée en vigueur et les sources officielles du dossier s'affichent automatiquement, sans ressaisie.
+
+### 7.17 Singletons de configuration
+
+Chaque fichier de `config/` est un singleton Keystatic au format JSON, avec un formulaire adapté :
+
+- listes réordonnables pour les sections d'accueil et les menus;
+- sections d'accueil en blocs typés (un formulaire par type);
+- jetons de couleur en champs hexadécimaux validés.
+
+**`homepage.json`** reprend les types du point 7.3 : `hero-selection`, `content-block`, `dossiers-strip`, `essentials`, `watchlist`, `veille-latest`, `lexique-spotlight`, `market-brief`, `trending-assets`, `most-read`, `newsletter-cta`, `partner-block`, `custom-html`. Champs communs : `type`, `title`, `subtitle`, `enabled`, `source`, `filters`, `manualSelection`, `count`, `layout`, `background`, `cta`. Keystatic enregistre les blocs sous la forme `{ "discriminant": "…", "value": { … } }`. Le fichier réel aura donc cette forme, et non exactement celle de l'exemple du brief; le schéma Zod lit ce format et le normalise. L'auteur n'y touche que par le formulaire.
+
+**Visibilité des rubriques** : aucune règle cachée. Une rubrique apparaît dans le menu ou à l'accueil parce que l'auteur l'a activée (`enabled`), jamais parce qu'elle a atteint un nombre de contenus. Seul le `noindex` des pages trop pauvres est automatique (section 13).
+
+Chaque fichier de configuration est validé au build par un schéma Zod, avec des messages en français, exactement comme le contenu.
+
+---
+
+## 8. Architecture des URL
+
+### 8.1 Options et recommandation
+
+| Option | Pour | Contre |
+|---|---|---|
+| **A** (brief) : `/[categorie]/[slug]/` pour les articles, `/dossiers/[slug]/` pour les dossiers | Lisible (« /reglementation/… »). Fil d'Ariane calqué sur l'URL. Conforme au tableau de routes du point 7.1. | L'URL dépend du classement : reclasser un article publié change son adresse et impose une redirection. Le cas sera fréquent au début, quand les catégories « Analyses » et « Opinion » ouvriront (question 16). |
+| **B** (brief) : `/actualites/[slug]/` pour tous les articles, `/reglementation/[juridiction]/[slug]/` pour les dossiers, `/fiscalite/[juridiction]/[slug]/` pour traitements et guides | Toutes les URL d'articles au même endroit | Contredit le tableau de routes du brief (`/dossiers/[slug]/`, `/guides/[slug]/`, `/fiscalite/traitements/[slug]/`). La juridiction dans l'URL est fragile : un dossier CARF concerne le Canada **et** l'international, et un dossier peut changer de juridiction principale. Une analyse fiscale rangée sous « actualités » brouille la hiérarchie. |
+| **C** (proposée) : `/articles/[slug]/` pour tous les articles, le reste du tableau de routes du brief inchangé (`/dossiers/[slug]/`, `/guides/[slug]/`, hubs `/[categorie]/`…) | **L'adresse ne dépend d'aucun classement** : on peut reclasser, changer de catégorie ou de format sans redirection. Espace de noms simple. Fil d'Ariane et type schema.org tirés des données, pas de l'URL. | Le mot de la catégorie n'apparaît pas dans l'adresse. Google affiche de toute façon le fil d'Ariane structuré dans ses résultats, et le poids des mots de l'URL est marginal. |
+
+**Recommandation : C.** Trois raisons :
+
+1. **Un public de juristes cite des URL** dans des avis, des mémoires, des courriels. La stabilité de l'adresse prime sur tout le reste, et une URL qui ne dépend pas du classement est la plus stable.
+2. **Moins de maintenance** : aucune redirection à créer quand un classement évolue.
+3. **Cryptoast fait le même choix** : ses articles sont à la racine, sans catégorie dans l'adresse (constaté sur des copies archivées, section 26). Ici, un préfixe `/articles/` évite de partager l'espace racine avec les pages et les hubs.
+
+Si l'auteur préfère rester dans les deux options du brief, **A** est la bonne : le contrôle des URL disparues (section 8.3) couvre alors les reclassements. **B** est à écarter.
+
+### 8.2 Table des routes
+
+| Route | Contenu | Remarques |
+|---|---|---|
+| `/` | accueil composé depuis `homepage.json` | |
+| `/[categorie]/` et `/[categorie]/page/[n]/` | hubs (actualites, reglementation, fiscalite, analyses, opinion) | pages paginées indexables |
+| `/articles/`, `/articles/page/[n]/` | tous les articles, du plus récent au plus ancien | |
+| `/articles/[slug]/` | article (option C; `/[categorie]/[slug]/` en option A) | |
+| `/[categorie]/rss.xml` | flux par catégorie | |
+| `/dossiers/`, `/dossiers/[slug]/` | dossiers | |
+| `/guides/`, `/guides/[slug]/` | guides | |
+| `/juridictions/`, `/juridictions/[slug]/` | juridictions | |
+| `/organismes/`, `/organismes/[slug]/` | organismes | |
+| `/textes/`, `/textes/[slug]/` | textes | |
+| `/fiscalite/traitements/`, `/fiscalite/traitements/[slug]/` | matrice fiscale | en option A, `traitements` devient un slug d'article réservé |
+| `/lexique/`, `/lexique/[slug]/` | lexique avec index alphabétique | |
+| `/veille/` | veille officielle | liste paginée; les éléments renvoient aux sites officiels |
+| `/agenda/`, `/agenda.ics` | agenda, export | |
+| `/auteurs/`, `/auteurs/[slug]/` | auteurs | |
+| `/newsletter/`, `/newsletter/[numero]/` | abonnement, archive | pages de confirmation et de remerciement en `noindex` |
+| `/recherche/` | recherche, et résultats filtrés des hubs | `noindex` |
+| `/themes/[theme]/`, `/tags/[tag]/`, `/formats/[format]/` | listes | `noindex` sous 3 contenus |
+| `/[page]/` | pages statiques | a-propos, methodologie, politique-editoriale, politique-de-correction, transparence, declaration-d-interets, contact, mentions-legales, confidentialite, avertissement, faq |
+| `/rss.xml`, `/feed.json`, `/sitemap-index.xml`, `/robots.txt` | flux | |
+| `/og/…png` | images Open Graph générées | |
+| `/api/newsletter`, `/api/contact` | Worker | |
+| `/keystatic/`, `/api/keystatic/…` | éditeur en ligne | seulement si le mode GitHub est activé; `noindex`, exclues du plan du site |
+| `/a-verifier/`, `/exemple/` | rapport de révision, article de référence de tous les blocs | **développement seulement** |
+| `/404` | page personnalisée | |
+| `/en/…` | réservé à la version anglaise | |
+
+### 8.3 Règles
+
+- **Barre oblique finale partout** (`trailingSlash: 'always'`) : une seule forme canonique par page.
+- **Espace de noms racine partagé** entre hubs de catégories et pages statiques. Le script `check` refuse les collisions (une page `contact` et une catégorie `contact`) et les slugs réservés (`articles`, `dossiers`, `guides`, `api`, `en`, `og`, `keystatic`, `page`, `exemple`…).
+- **Les anciennes URL ne meurent jamais.** Un script écrit `dist/_redirects` à partir de `previousSlugs` et de `config/redirects.json` : 301 servies par Cloudflare, dans la limite de 2 000 règles.
+- **Filet de sécurité** : à chaque build de production, le script compare les URL produites à celles du plan du site en ligne.
+  - Si le site est injoignable ou si le plan est absent (premier déploiement), il émet un avertissement et le build continue.
+  - Une URL disparue ne fait échouer le build que si le contenu existe encore sous un autre slug sans `previousSlugs`, ou (en option A) a changé de catégorie. Le message dit quelle redirection ajouter.
+  - Un contenu repassé en `brouillon` est une dépublication voulue : il est listé dans le rapport `check`, sans bloquer le build.
+- **Filtres des hubs** : ils mènent à `/recherche/` avec la catégorie et les filtres présélectionnés (section 10). Ils ne produisent donc pas de nouvelles pages indexables.
+
+---
+
+## 9. Rendu, composition et fraîcheur
+
+- **Tout est calculé au build**, sauf les deux fonctions du Worker.
+- **Graphe de contenu.** Un module charge toutes les collections une fois par build, résout les relations, calcule les relations inverses, les articles liés, les temps de lecture et les URL. Les pages ne font que lire ce graphe : c'est le point unique où vit la logique de relations.
+- **Visibilité.** Une seule fonction `isVisible(entry, now)` applique les règles de statut et de date. Elle sert partout : pages, listes, flux, plan du site, recherche, newsletter.
+- **Composition de l'accueil.** `homepage.json` est une liste ordonnée de sections typées. Chaque type correspond à un composant qui reçoit la configuration de sa section et le graphe. Ajouter un type de section est une tâche de code. Ajouter, retirer, réordonner ou filtrer une section est une tâche de contenu.
+- **Aperçu des brouillons.** Sur les aperçus de branche, les brouillons sont visibles avec un bandeau « Brouillon, non publié », en `noindex`. En production, jamais.
+- **Dates relatives.** Une page statique vieillit : « Il y a 2 heures » devient faux une heure plus tard. Le HTML contient donc toujours la date absolue dans une balise `<time datetime>`, et un script de moins de 1 ko la convertit en relatif côté navigateur jusqu'à sept jours (`Intl.RelativeTimeFormat` en `fr-CA`, fuseau America/Toronto). Sans JavaScript, le lecteur voit la date absolue, qui reste exacte; les moteurs aussi.
+- **Sections qui dépendent du jour** (« À surveiller », dossiers en consultation) : une reconstruction quotidienne vers minuit, heure de Montréal, les garde exactes (section 15.3).
+- **Îlots JavaScript**, et seulement eux :
+  - bascule de thème (petit script intégré en tête de page, pour éviter un clignotement du mauvais thème au chargement);
+  - menus et tiroir mobile;
+  - recherche, chargée à la première ouverture;
+  - formulaires, améliorés progressivement; le script Turnstile n'est chargé que lorsque le lecteur entre dans un champ;
+  - dates relatives;
+  - sommaire actif.
+
+  Aucun cadriciel JavaScript sur le site public : React ne sert qu'à l'éditeur.
+
+---
+
+## 10. Recherche
+
+**Pagefind**, exécuté après le build sur le dossier de sortie. Il produit un index statique découpé en fragments, chargés à la demande.
+
+- **Indexation pilotée par attributs** posés par les gabarits :
+  - `data-pagefind-body` sur le contenu principal;
+  - `data-pagefind-filter` pour le type (Articles, Dossiers, Guides, Organismes, Textes, Juridictions, Lexique, Auteurs), la juridiction, la catégorie, le thème, le format et l'année;
+  - `data-pagefind-sort` pour la date;
+  - `data-pagefind-meta` pour le type, l'image, la date et la catégorie;
+  - pondération plus forte sur les titres et les termes du lexique.
+- **Interface.** Un composant maison `SearchModal` (élément `dialog` natif, raccourci clavier `Ctrl`/`⌘ K`) interroge Pagefind par son API JavaScript. Il **groupe les résultats par type**, cinq par groupe, avec un lien « Voir plus de résultats », et propose des filtres par type, juridiction et date. La page `/recherche/?q=` réutilise le même composant en pleine page. Pas de raccourci d'un seul caractère : il contreviendrait au critère d'accessibilité WCAG 2.1.4.
+- **Filtres des hubs.** Chaque hub reste une page statique paginée, lisible sans JavaScript. Un petit formulaire (Thème, Format, Juridiction) mène à `/recherche/` avec la catégorie et les filtres présélectionnés (`/recherche/?categorie=reglementation&juridiction=quebec`). Pagefind accepte en effet une recherche sans terme, avec des filtres seulement. Le site n'a ainsi qu'une seule interface de résultats côté navigateur, sans second rendu des cartes d'articles.
+- **Évolutivité.** L'interface ne connaît qu'un contrat `SearchProvider` (`search(query, { filters, page }) → résultats groupés`), dont Pagefind est la première implémentation. Un moteur dédié ou une recherche sémantique (v3) viendra en seconde implémentation, derrière une fonction serveur, sans toucher à l'interface.
+
+**Précisions sur Pagefind 1.5** (vérifiées le 25 septembre 2026) :
+
+- **Langue.** Pagefind lit `<html lang="fr-CA">` et active la racinisation française. La recherche ignore les accents (« reglementation » trouve « réglementation ») tout en favorisant la correspondance exacte.
+- **Poids.** Une recherche sur un site de 10 000 pages coûte moins de 300 ko de transfert, et environ 100 ko pour la plupart des sites. Elle tourne dans un Web Worker.
+- **Sous-résultats.** Les titres Markdown portent un `id`, donc les sous-résultats par section fonctionnent sans réglage.
+- **Regroupement par type.** La nouvelle interface officielle en composants web (« Component UI ») est accessible et prête à l'emploi, mais **elle ne sait pas grouper les résultats par type**, que le brief exige (point 8.1). D'où un composant maison d'environ 150 lignes : une recherche, les 30 premiers résultats chargés, regroupés par la métadonnée `type`. Si l'auteur accepte des facettes par type à la place des groupes, la Component UI suffit et ce code disparaît.
+- **Sécurité.** Une CSP stricte devra autoriser `wasm-unsafe-eval` et `worker-src 'self' blob:`.
+- **Couleurs.** Celles de l'interface de recherche sont reliées aux jetons de la DA, en clair comme en sombre.
+- **Contrôle.** Pagefind est lancé explicitement après le build, et un test vérifie la présence de l'index : un déploiement ne part jamais sans recherche.
+- **Références juridiques.** Les références ponctuées (« art. 248(1) LIR ») perdent leur ponctuation à l'indexation. Le réglage `include_characters` sera testé en phase 2.
+
+---
+
+## 11. Newsletter
+
+### 11.1 Principes
+
+- **Abstraction `NewsletterProvider`** (`src/lib/newsletter/`), avec les cinq opérations du brief : `subscribe`, `confirm`, `unsubscribe`, `tag`, `list`, plus une implémentation « mémoire » pour les tests.
+  - En v1, l'implémentation du fournisseur réalise `subscribe` (liste, étiquettes, attributs de consentement) par de simples appels HTTP à son API, sans trousse de développement : ces trousses changent souvent (celle de Brevo a été réécrite trois fois en 2026).
+  - `confirm` et `unsubscribe` passent par les liens du fournisseur, `list` par son export.
+  - Les méthodes non utilisées renvoient une erreur explicite « non utilisé en v1 ».
+- **Tous les textes** (titres, sous-titres, bouton, texte de consentement, messages de succès et d'erreur, fréquence) viennent de `config/newsletter.json`.
+- **Cinq emplacements** alimentés par le même composant : article, barre latérale, page dédiée, pied de page et section d'accueil.
+- **Plusieurs listes prévues**, une seule active en v1 : `lists: [{ id: "generale", enabled: true }, { id: "reglementation", enabled: false }, …]`.
+
+### 11.2 Parcours d'inscription et preuve de consentement
+
+```mermaid
+sequenceDiagram
+  participant L as Lecteur
+  participant F as Formulaire (page statique)
+  participant W as Worker /api/newsletter
+  participant T as Turnstile
+  participant P as Fournisseur de newsletter
+  L->>F: courriel + case de consentement cochée
+  F->>W: POST courriel, jeton Turnstile, page d'origine, version du texte de consentement
+  W->>T: vérification du jeton
+  W->>W: validation, empreinte salée de l'IP
+  W->>P: abonné « en attente » + attributs de consentement
+  P-->>L: courriel de confirmation (double opt-in)
+  L->>P: clic sur le lien de confirmation
+  P->>P: statut « confirmé »
+```
+
+**Preuve de consentement sans base de données.** Chaque abonné porte, **chez le fournisseur**, des attributs personnalisés :
+
+| Attribut | Contenu |
+|---|---|
+| `consent_at` | horodatage ISO de la demande |
+| `consent_source` | URL de la page d'origine et emplacement du formulaire |
+| `consent_text_version` | empreinte courte du texte de consentement affiché |
+| `consent_ip_hash` | SHA-256 de l'IP concaténée à un sel secret, jamais l'IP elle-même |
+| `list`, `tags`, `preferences` | liste, étiquettes, préférences |
+
+**Date de confirmation du double opt-in.** Selon le fournisseur, elle est enregistrée nativement, ou reste à relever :
+- Buttondown : l'historique `transitions` la donne (par déduction);
+- Brevo : la requête de double opt-in ne transporte ni IP ni horodatage;
+- MailerLite : le champ `opted_in_at` est rempli par l'intégrateur.
+
+Point à confirmer en phase 4. À défaut, la date de confirmation est relevée par l'API de liste du fournisseur ou par un webhook.
+
+**Texte affiché.** Le texte exact du consentement est dans `newsletter.json`, versionné par Git. Son empreinte est calculée au build et envoyée avec le formulaire. Le Worker l'enregistre telle quelle, sans refuser l'inscription si elle diffère du texte courant (cas d'une page ouverte avant une modification). Le texte correspondant à chaque empreinte se retrouve mot pour mot dans l'historique Git.
+
+**Préalable, une fois pour toutes** : créer les attributs `consent_at`, `consent_source`, `consent_text_version` et `consent_ip_hash` dans l'interface du fournisseur (étape décrite dans le guide de l'auteur).
+
+**Si le fournisseur retenu ne sait pas déclencher un double opt-in par API**, le Worker envoie lui-même un lien de confirmation signé (code d'authentification HMAC, valable 48 heures), puis inscrit l'abonné confirmé. C'est plus de code : à éviter si le fournisseur le fait nativement.
+
+### 11.3 Choix du fournisseur
+
+**Critères** : double opt-in natif déclenchable par API, attributs personnalisés (preuve de consentement), export complet, interface française, lieu d'hébergement, coût.
+
+**Sources.** Vérifié le 25 septembre 2026 dans la documentation et les SDK officiels publiés sur GitHub, quand ils existent (Buttondown, Brevo, MailerLite, Resend, Kit, Beehiiv). Sinon, par extraits de pages officielles obtenus par recherche, marqués « (s) ». Les pages de tarifs étaient inaccessibles : les prix sont à revérifier le jour du choix. Plusieurs fournisseurs ont changé leurs offres en 2026 :
+- MailerLite et Mailchimp ont réduit leurs forfaits gratuits;
+- Buttondown a relevé ses prix le 12 septembre 2026;
+- Resend a remplacé ses « Audiences ».
+
+| Fournisseur | Données | Double opt-in par API | Preuve de consentement | Interface FR | Gratuit | ~1 000 / 5 000 / 10 000 abonnés, envoi hebdomadaire |
+|---|---|---|---|---|---|---|
+| **Brevo** | UE : France, Allemagne; sauvegardes en Belgique (s) | oui (`createDoiContact`, avec attributs) | attributs personnalisés | présumée (entreprise française) | jusqu'à 100 000 contacts, **300 envois par jour** (s) | ~9 / 19 à 32 / 29 à 69 $ US (s) (facturation au volume d'envois) |
+| **Cyberimpact** | **Canada (Montréal)** (s) | oui, « Opt-in a member » (s) | **champs LCAP natifs** (s) : preuve, source, IP, type de consentement, expiration du consentement tacite | bilingue (s) | 250 contacts, **sans API** (s) | API à partir du forfait Plus : **38,59 $ CA par mois** au départ (s); paliers supérieurs non trouvés |
+| MailerLite | UE : Allemagne, Pays-Bas (s) | oui, sur réglage (s) | champs natifs `opted_in_at`, `optin_ip` + champs personnalisés | oui, dont français du Québec (s) | 250 abonnés depuis juin 2026 (s) | ~19 / 49 / 89 $ US (s) |
+| Buttondown | États-Unis (s) | **obligatoire** et natif | attributs payants; date de confirmation, page d'origine et IP natives | côté abonné seulement | 100 abonnés | ~9 à 15 / 29 à 75 / 79 à 150 $ US |
+| Kit | États-Unis (s) | indirect (via un formulaire) | champs personnalisés | non | 10 000 abonnés (s) | 39 / ~89 / n. d. $ US (s) |
+| Resend | États-Unis (stockage) (s) | **non** (à coder) | propriétés de contact | non | 1 000 contacts (s) | n. d. / 40 / 80 $ US (s) |
+| Beehiiv | États-Unis (s) | oui | champs personnalisés | non | 2 500 (s) | écarté : pas de création de campagne par API hors offre Entreprise |
+| Mailchimp | États-Unis (s) | incertain | pas de champ LCAP | oui | 250 contacts, 500 envois (s) | écarté (coût, API) |
+
+n. d. : non disponible.
+
+**Recommandation par défaut : Brevo**, sous réserve de confirmer, depuis un accès web complet, trois points non recoupés : la localisation des données, le plafond du forfait gratuit et l'interface française.
+- Son double opt-in est natif par API, avec des attributs de consentement.
+- Le coût est nul tant que la liste compte moins de 300 abonnés, puis d'environ 9 $ US par mois au forfait d'entrée (s).
+- Brevo **pourrait** aussi envoyer les courriels du formulaire de contact, ce qui éviterait un fournisseur de plus. Ce point n'a pas été vérifié, ni le partage éventuel du plafond de 300 envois par jour. À défaut, Resend, comme le prévoit le brief.
+
+**Alternative « conformité maximale » : Cyberimpact.** C'est le seul candidat annoncé comme hébergeant les données au Québec et gérant nativement les notions de la LCAP (consentement exprès ou tacite, expiration, preuve automatique). C'est donc le seul qui éviterait toute communication hors du Québec des renseignements personnels de la liste d'abonnés. Coût : environ 39 $ CA par mois dès le premier jour, puisque l'API n'est incluse qu'à partir du forfait Plus (s). Sa documentation d'API, non consultable, reste à lire avant de s'engager (phase 4).
+
+Le choix entre les deux relève de l'analyse de la Loi 25 et de la LCAP par l'auteur : ce document ne qualifie pas juridiquement les transferts. L'abstraction `NewsletterProvider` rend un changement ultérieur possible : export CSV avec les attributs de consentement, import chez le nouveau fournisseur, un seul fichier d'adaptateur à réécrire.
+
+**Archive publique** : toujours sur notre site (`/newsletter/[numero]/`), générée depuis le même MDX que le numéro. On ne dépend donc pas de l'archive du fournisseur (Brevo n'en a pas).
+
+**Adresse IP** : certains fournisseurs recommandent de leur transmettre l'IP réelle pour leur anti-pourriel. Le brief prévoit seulement une empreinte hachée : seule l'empreinte est envoyée, sauf décision contraire de l'auteur (arbitrage de minimisation des données).
+
+### 11.4 Rédaction des numéros
+
+`npm run newsletter:draft` :
+
+1. rassemble les articles `newsletterEligible` publiés depuis le dernier numéro;
+2. écrit `content/newsletters/AAAA-NNN.mdx` en brouillon : sujet, pré-en-tête, introduction `[À COMPLÉTER PAR L'AUTEUR]`, liste d'articles;
+3. après relecture, produit un fichier HTML de courriel (tableaux, styles en ligne, jetons de la DA, version texte brut), prêt à coller dans l'éditeur « code HTML » du fournisseur. Il contient l'identification de l'expéditeur et le lien de désabonnement prévus au point 9 du brief, plus un emplacement configurable dans `legal.json` pour les autres mentions que l'auteur jugera requises (par exemple une adresse postale) [À VALIDER PAR L'AUTEUR].
+
+L'envoi reste une action humaine, faite dans l'interface du fournisseur. La création de campagne par API est reportée en v2, si ce geste hebdomadaire d'environ une minute devient pénible. Cela évite une clé d'API sur l'ordinateur de l'auteur et tout risque d'envoi involontaire.
+
+---
+
+## 12. Formulaires, anti-pourriel, analytique, données de marché
+
+Vérifié le 25 septembre 2026. Les prix marqués « (s) » viennent d'extraits de recherche.
+
+### 12.1 Formulaires et anti-pourriel
+
+- **Cloudflare Turnstile**, forfait gratuit : défis illimités, 20 widgets, interface en français, rendu invisible possible.
+  - La validation **côté serveur** est obligatoire : le jeton vaut 5 minutes et ne sert qu'une fois.
+  - La préautorisation reste désactivée, ce qui évite le témoin `cf_clearance`.
+  - Le script n'est chargé que lorsque le lecteur entre dans un champ du formulaire.
+- **Champ piège** (invisible pour un humain, rempli par les robots).
+- **Limitation de débit** : le mécanisme de limitation de Cloudflare Workers, s'il est disponible en forfait gratuit (à tester en phase 4; sa documentation le dit « permissif » et approximatif). À défaut, pas de compteur maison, qui serait inopérant sur des Workers répartis : Turnstile, le champ piège et le double opt-in tiennent lieu de protection, et l'écart avec les points 8.5 et 8.8 du brief sera signalé à l'auteur avec les options disponibles.
+- **Contact** : fonction `/api/contact` du Worker, qui valide, vérifie Turnstile et transmet le message par courriel transactionnel à l'adresse de l'auteur, sans rien stocker. Service d'envoi : Brevo si ce point est confirmé, sinon Resend (3 000 courriels par mois, 100 par jour en gratuit, données stockées aux États-Unis (s)).
+- **« Suggérer un sujet » et « Signaler une erreur »** : liens `mailto` préremplis avec le titre et l'URL de l'article. Aucune infrastructure.
+
+### 12.2 Analytique
+
+Contrat `Analytics` : `pageview`, `newsletterSignup`, `search`, `outboundClick`. Une implémentation par outil, chargée seulement en production, avec domaine et identifiant dans la configuration.
+
+| Outil | Coût | Témoins | Données | Événements personnalisés | API (« les plus lus » en v2) |
+|---|---|---|---|---|---|
+| **Umami Cloud** | forfait gratuit : environ 100 000 événements par mois, rétention de 6 mois (s); Pro à 20 $ US par mois (s) | aucun | États-Unis ou UE | oui | oui (accès en forfait gratuit à confirmer) |
+| Cloudflare Web Analytics | gratuit, sans limite | aucun, selon Cloudflare | non précisé | **non** | GraphQL, données échantillonnées |
+| Plausible | 9 $ US par mois au premier palier (s); l'API exige le forfait Business, environ 19 $ US (s) | aucun | UE (Allemagne) | oui | forfait Business seulement |
+| Auto-hébergement (Plausible CE, Umami) | serveur + base | aucun | au choix | oui | oui |
+
+**Recommandation : Umami Cloud**, région UE, forfait gratuit. C'est le seul outil gratuit qui mesure les événements exigés par le brief (inscription, recherche, clic sortant) et qui offre une API pour « les plus lus ».
+- **Quota.** Chaque page vue et chaque propriété d'événement compte pour un événement. Le quota gratuit couvre donc environ 1 000 visiteurs par jour au plus, selon les hypothèses de la section 18.
+- **Au-delà**, deux voies : Umami Pro (20 $ US par mois) ou Cloudflare Web Analytics (gratuit, mais sans événements).
+- **L'auto-hébergement est exclu** : serveur et base à maintenir.
+
+### 12.3 Données de marché (ticker et « Les cryptos en bref »)
+
+- **CoinGecko**, API « Demo » gratuite : clé obligatoire, dollars canadiens pris en charge (`vs_currency=cad`, vérifié dans la spécification officielle), environ 10 000 appels par mois (s).
+  - **Point à confirmer : le forfait gratuit n'autoriserait pas l'usage commercial (s).** Si le site est un jour monétisé, il faudra le forfait payant (environ 35 $ US par mois (s)) ou retirer le module.
+  - Attribution « CoinGecko » obligatoire, avec lien (s).
+- **Alternatives gratuites** : en recul en 2025-2026 (s). CoinCap v2 a fermé et CryptoCompare est devenu payant. Binance est techniquement possible, mais c'est une source délicate pour un média réglementaire canadien.
+- **Architecture v1** : les valeurs sont récupérées **au build**.
+  - Un appel à CoinGecko pendant le build inscrit les cours et leur heure dans le HTML (« au 25 septembre à 14 h 10 »), soit quelques centaines d'appels par mois.
+  - Le module est absent du HTML si l'appel échoue ou si le module est désactivé : aucun décalage de mise en page, aucune route serveur, aucun appel depuis le navigateur.
+  - La clé ne sert qu'au build.
+  - Si l'auteur veut des cours plus frais, une route serveur pourra s'ajouter (une session de travail).
+- **Recommandation** : module livré mais désactivé au lancement (question 8).
+
+---
+
+## 13. Référencement
+
+- **Balises** :
+  - `title` et `description` (avec repli sur le titre et le chapô), canonique absolue;
+  - Open Graph : `article:published_time`, `article:modified_time`, `article:author`, `article:section`, `article:tag`;
+  - cartes X `summary_large_image`, avec les libellés « Écrit par » et « Durée de lecture estimée »;
+  - `theme-color` clair et sombre;
+  - `robots` avec `max-image-preview:large`.
+- **Images Open Graph** 1200 × 630 générées au build **pour chaque page** (point 3.4 du brief), sur le gabarit de la DA.
+- **Schema.org (JSON-LD), v1** : les types exigés par le brief (point 8.3).
+
+| Page | Types |
+|---|---|
+| Toutes | `Organization` (éditeur, logo, `sameAs`), `WebSite` |
+| Article | `NewsArticle`, ou type dérivé du format (`AnalysisNewsArticle`, `OpinionNewsArticle`, `BackgroundNewsArticle`), `BreadcrumbList`, `Person` (auteur) |
+| Dossier | `Article`, `FAQPage` si une FAQ existe, `BreadcrumbList` |
+| Guide | `Article`, `BreadcrumbList` |
+| Organisme | `GovernmentOrganization` (ou `Organization` pour un organisme d'autoréglementation), `sameAs` vers le site officiel |
+| Lexique | `DefinedTerm` dans un `DefinedTermSet` |
+| Auteur | `Person` |
+
+  `Legislation` (textes de loi), `HowTo` (guides à étapes), `Event` (agenda) et `SearchAction` sont reportés en v2, si un bénéfice est constaté. L'affichage enrichi de certains types est limité par Google depuis 2023 (FAQ réservées aux sites gouvernementaux et de santé, HowTo retiré) [À VÉRIFIER : non couvert par la vérification du 25 septembre 2026].
+- **Flux** :
+  - `/rss.xml` : 20 derniers contenus, en résumé avec lien, car le texte intégral ne rend pas les composants MDX;
+  - `/[categorie]/rss.xml` : un flux par catégorie;
+  - `/feed.json` : JSON Feed 1.1.
+- **Plan du site** : `@astrojs/sitemap` avec `lastmod` tiré de `updatedAt`. Exclusions : brouillons, pages `noindex`, pages de confirmation, éditeur.
+- **`hreflang`** : `fr-CA` autoréférent et `x-default` dès la v1; `en-CA` ajouté avec la version anglaise.
+- **Pages au contenu trop pauvre** (que Google juge peu utiles) : étiquettes et thèmes de moins de trois contenus en `noindex, follow`; lexique sans corps rédigé en `noindex`; fiches d'amorçage non publiées (section 7.0).
+- **Critères de qualité de Google** (E-E-A-T : expérience, expertise, autorité, fiabilité), appliqués plus sévèrement aux sujets qui touchent l'argent des lecteurs. Le gabarit y répond par :
+  - la carte auteur avec mention professionnelle;
+  - les pages méthodologie et correction, liées depuis chaque article;
+  - la date « Vérifié le »;
+  - les sources officielles.
+- **Performance** : Lighthouse ≥ 95 sur les quatre axes sur mobile, LCP < 2 s, CLS < 0,05, INP < 200 ms. Budget de 300 ko hors images sur la page d'accueil (HTML, CSS, JavaScript et polices), dont quelques dizaines de ko de JavaScript.
+
+---
+
+## 14. Veille officielle
+
+- **Script `veille:fetch`**, en cinq étapes :
+  1. lit `config/sources-veille.json` : URL, organisme, juridiction, langue, filtre de mots-clés facultatif, actif ou non;
+  2. télécharge chaque flux, avec un délai d'attente;
+  3. normalise : titre, lien, date au fuseau America/Toronto, résumé tronqué;
+  4. dédoublonne sur l'URL canonique et une empreinte du titre;
+  5. fusionne avec `data/veille/cache.json`.
+
+  Une source en panne n'efface jamais ce qui est en cache, et les erreurs sont listées dans le rapport `check`.
+- **Exécution** : par une tâche GitHub Actions, deux fois par jour ouvrable (8 h et 14 h, heure de Montréal), qui ne crée un commit du cache **que s'il a changé** (« chore(veille): 3 nouvelles publications »). Ce commit déclenche le déploiement. Le build lit le cache et ne télécharge rien : **un build ne dépend jamais de la disponibilité d'un site gouvernemental** (écart avec le point 8.4, signalé en section 25).
+- **Affichage** : `/veille/` (filtres par source, date et juridiction), frise dans les barres latérales, section d'accueil `veille-latest`, veille propre à chaque organisme. Chaque élément est étiqueté comme publication officielle externe (titre, organisme, date, lien sortant). Le texte intégral n'est jamais republié.
+- **Rétention** : 12 mois dans le cache (paramétrable). Au-delà, les éléments sont retirés.
+
+### 14.1 État des sources (relevé préliminaire du 25 septembre 2026)
+
+**Aucun site officiel n'a pu être ouvert directement** depuis l'environnement de travail. Les URL ci-dessous viennent d'extraits de recherche, de copies de pages officielles et de code tiers qui interroge ces flux en 2026. Cette partie n'a pas été contre-vérifiée. **Chaque URL sera testée en accès direct en phase 4** avant d'entrer dans `sources-veille.json`, comme le demande le brief.
+
+| Source | Statut | Voie retenue | Remarque |
+|---|---|---|---|
+| Ministère des Finances du Canada | flux confirmé | API du Centre des nouvelles de Canada.ca (`api.io.canada.ca/io-server/gc/news/fr/v2?dept=departmentfinance&…&format=atom`) | la page de nouvelles HTML est désormais générée côté navigateur à partir de cette API |
+| ARC | flux confirmés | Centre des nouvelles (`dept=revenueagency`) + fils de l'ARC (salle de presse, bulletins, TPS/TVH) | fils déplacés sous `canada.ca/content/dam/cra-arc/migration/…`; variantes françaises à confirmer |
+| CANAFE | flux mentionné | Centre des nouvelles (`dept=financialtransactionsreportsanalysis`) + page de nouvelles de CANAFE | les communiqués récents paraissent sur le site propre de CANAFE : le Centre des nouvelles pourrait être incomplet |
+| Banque du Canada | flux confirmés | fils RSS officiels (communiqués, nouvelles, avis) | page `banqueducanada.ca/fils-rss/` |
+| Gazette du Canada | flux confirmés | Parties I, II et III (`gazette.gc.ca/rss/p1-fra.xml`, `p2-fra.xml`, `en-ls-fra.xml`) | un élément = un **numéro** de la Gazette, pas un règlement : lecture de la table des matières nécessaire |
+| LEGISinfo | flux confirmé | fil RSS et exports JSON des projets de loi | anciennes URL (`RSS.aspx`) périmées |
+| Assemblée nationale du Québec | flux existant, **interdit aux robots** | pas d'interrogation automatique : le `robots.txt` l'interdit, et un pare-feu bloquait les clients automatisés en mai 2026; jeu de données Données Québec des projets de loi, ou suivi manuel | licence du jeu de données à vérifier (non commerciale selon un tiers) |
+| AMF (Québec) | flux mentionné | fils « Actualités » et « Mises en garde » (URL à trouver) | repli : Info par courriel, Bulletin de l'Autorité |
+| CVMO | flux mentionné | page officielle des fils RSS (URL à trouver) | surtout en anglais |
+| Revenu Québec | flux mentionné, **abandon annoncé** | fils « Nouvelles fiscales » et « Actualités » tant qu'ils vivent | repli : listes d'envoi par courriel |
+| ACVM | pas de flux trouvé | abonnement par courriel | site sous WordPress : un `/feed/` est possible mais non confirmé |
+| OCRI | pas de flux trouvé | ePublications par courriel | |
+| BSIF | pas de flux confirmé | avis par courriel, page « Publié récemment » | site refondu, URL contradictoires |
+| Gazette officielle du Québec | **ni flux ni API** (PDF hebdomadaires) | consultation manuelle hebdomadaire | |
+| Ministère des Finances du Québec (hors liste) | abonnement par courriel | à ajouter pour les budgets et bulletins d'information fiscale | |
+
+**Conséquences de conception.**
+
+1. La veille automatique ne couvrira qu'environ la moitié des sources. Les autres passent par des abonnements par courriel de l'auteur.
+2. **Contrôle de santé par source** dans le rapport `check`. Il distingue trois cas, pour qu'un fil mort ne ressemble jamais à une semaine calme :
+   - « erreur ou 404 »;
+   - « contenu illisible ou pare-feu »;
+   - « aucun nouvel élément depuis N jours ».
+3. Proposition, décidée après mesure de la couverture réelle en phase 4 : une petite collection d'**entrées de veille saisies à la main** (titre, organisme, date, URL), pour signaler en trente secondes une publication repérée par courriel.
+
+**Bonne conduite du robot** : agent utilisateur explicite avec une adresse de contact, délai d'attente, deux passages par jour ouvrable, respect du `robots.txt`. Seuls le titre, l'organisme, la date et le lien sont republiés, jamais le contenu.
+
+---
+
+## 15. Déploiement et publication programmée
+
+### 15.1 Hébergeur : Cloudflare Workers, forfait gratuit, sans adaptateur au lancement
+
+Faits vérifiés le 25 septembre 2026 dans la documentation officielle (sources GitHub de developers.cloudflare.com) :
+
+- **Plateforme recommandée.** Cloudflare demande de démarrer tout nouveau projet sur Workers plutôt que sur Pages. Pages n'est pas voué à disparaître, mais n'est plus la plateforme principale. L'adaptateur Astro pour Cloudflare ne vise plus que Workers depuis sa version 13 (mars 2026).
+- **Coût des requêtes.** Les requêtes vers les fichiers statiques sont gratuites et illimitées. Seules comptent celles qui exécutent du code : 100 000 par jour en gratuit, avec 10 ms de temps processeur par requête.
+- **Workers Builds** (un build à chaque poussée Git) : 3 000 minutes de build par mois en gratuit, un build à la fois, 20 minutes au plus par build. Le cache conserve les images déjà optimisées. Des « chemins surveillés » évitent de reconstruire quand seul `docs/` change.
+- **Deploy Hooks** : disponibles pour Workers depuis le 1er avril 2026. L'appel est idempotent : pas de doublon si un build est déjà en file.
+- **Aperçus par branche** (« Worker Previews »), lancés le 22 septembre 2026 : une URL stable par branche, en `noindex`, publique par défaut (protégeable par Cloudflare Access). Fonction très récente, à éprouver en phase 1.
+- **Tâches planifiées** (Cron Triggers) : 5 par compte en gratuit, en UTC seulement, sans garantie écrite de ponctualité.
+- **Limites des fichiers statiques** : 20 000 fichiers par déploiement, 25 Mio par fichier, `_redirects` limité à 2 000 règles statiques et 100 dynamiques, `_headers` à 100 règles. Ces deux fichiers ne s'appliquent pas aux réponses produites par le Worker.
+- **Domaine personnalisé : les serveurs de noms doivent être chez Cloudflare.** Workers exige une zone Cloudflare active, même pour un sous-domaine; la configuration partielle est réservée aux offres Business et Entreprise. Le domaine peut être acheté chez n'importe quel registraire, y compris un registraire canadien pour un `.ca`, mais son DNS est délégué à Cloudflare.
+- **Journaux et métadonnées** : aucune offre ne permet de les localiser au Canada (l'offre Entreprise propose seulement l'UE ou les États-Unis).
+
+**Montage retenu : sans adaptateur Astro.**
+- Astro produit un site entièrement statique dans `dist/`.
+- Un seul Worker (`worker/index.ts`, une centaine de lignes) sert `dist/` et porte trois choses : `/api/newsletter`, `/api/contact` et le traitement `scheduled()` de la tâche planifiée. Seules les requêtes `/api/*` exécutent le Worker; tout le reste est servi comme fichier statique.
+- Un script de build écrit `dist/_redirects` (redirections 301).
+- Ce montage évite les pièges de l'adaptateur relevés pendant la vérification :
+  - des valeurs par défaut qui engagent des services Cloudflare (Images, KV);
+  - le prérendu dans le moteur de Cloudflare au lieu de Node, qui pose problème avec sharp et satori;
+  - deux versions majeures en 2026;
+  - une régression avec Keystatic.
+- L'adaptateur n'est ajouté que si le mode GitHub de Keystatic est activé (question A2).
+- **Coût** : les formulaires se testent en local avec `wrangler dev` après un build, et non avec `astro dev`.
+
+**Alternatives écartées** (d'après des extraits de recherche, sites bloqués) :
+- Vercel gratuit : réservé à un usage personnel **non commercial** (s); publicité, affiliation ou promotion d'une activité professionnelle l'excluent (s). Tâches planifiées limitées à une par jour (s).
+- Netlify gratuit : 300 crédits par mois, soit environ 20 déploiements de production, puis **mise en pause de tous les sites** (s).
+- Cloudflare Pages : 500 builds par mois, pas de tâches planifiées ni de limitation de débit natives; et l'adaptateur Astro ne le prend plus en charge.
+
+### 15.2 Chaîne de publication
+
+```mermaid
+flowchart LR
+  K["Keystatic (local)<br/>ou Claude Code, éditeur"] -->|commit| G[("GitHub<br/>main + branches")]
+  G -->|poussée sur une branche| PB["Workers Builds"] --> PV["Aperçu de branche<br/>(noindex)"]
+  G -->|poussée sur main| B["Workers Builds<br/>check + build + pagefind"] --> P["Production"]
+  CR["Tâche planifiée Cloudflare<br/>toutes les 15 min"] -->|échéance atteinte| H["Deploy Hook"] --> B
+  CR -->|chaque nuit| H
+  GA["GitHub Actions<br/>2 fois par jour ouvrable"] -->|veille:fetch, commit si nouveau| G
+  GA -->|chaque lundi| R["Rapport check<br/>(ticket GitHub)"]
+```
+
+1. **Enregistrement.** L'auteur enregistre dans Keystatic et crée un commit, directement sur `main` pour publier, ou sur une branche pour obtenir un aperçu en ligne.
+2. **Contrôle et build.** Workers Builds exécute `check` (validation, marqueurs bloquants, URL disparues), le build, puis Pagefind. Toute erreur arrête le déploiement et la production reste sur la version précédente.
+3. **Mise en ligne** en 2 à 5 minutes (estimation, à mesurer en phase 1). Le brief annonçait 1 à 2 minutes : écart signalé en section 25.
+4. **Retour arrière.** Restaurer un commit dans GitHub (bouton « Revert »), ce qui reconstruit la version précédente. On peut aussi réactiver un déploiement antérieur dans le tableau de bord Cloudflare, en un clic et sans build. La procédure pas à pas figurera dans le guide de l'auteur.
+
+**Règle de branche.**
+- L'auteur (Keystatic, GitHub Desktop) et la tâche de veille écrivent directement sur `main`. La barrière de qualité est le build : s'il échoue, rien n'est mis en ligne.
+- Les sessions Claude Code travaillent toujours sur une branche, avec demande de fusion (règle écrite dans `CLAUDE.md`, conformément au point 14 du brief).
+
+### 15.3 Publication programmée
+
+**Le planificateur est Cloudflare, pas GitHub.** La documentation de GitHub qualifie ses tâches planifiées de « best effort » : elles peuvent être retardées ou abandonnées aux heures chargées. Des retards de 4 à 14 heures, voire des exécutions jamais lancées, sont signalés par la communauté en 2026, sur des dépôts privés comme publics, sans réponse de GitHub.
+
+Fonctionnement :
+
+1. À chaque build, le site publie un petit fichier `schedule.json` : la liste des contenus programmés et leur instant de publication (calculé dans le fuseau America/Toronto, puis converti en UTC).
+2. La tâche planifiée Cloudflare s'exécute toutes les 15 minutes, à 7, 22, 37 et 52 minutes après l'heure, pour éviter les quarts d'heure ronds où les serveurs sont les plus chargés. Elle lit `schedule.json` et n'appelle le Deploy Hook **que si une échéance est passée**.
+3. Le build suivant rend le contenu visible, puisque sa date est désormais passée.
+
+- **Latence attendue** : 0 à 15 minutes d'attente, plus la durée du build (2 à 5 minutes estimées), soit **au pire une vingtaine de minutes**, en moyenne une dizaine. Cloudflare n'offre pas de garantie écrite de ponctualité : la latence réelle sera mesurée en phase 4.
+- **Coût** : quelques builds par mois. Une reconstruction horaire systématique consommerait 720 builds par mois : on l'évite.
+- **Reconstruction quotidienne** vers minuit, heure de Montréal, par la même tâche. L'heure glisse d'une heure selon l'heure d'été, les tâches Cloudflare étant en UTC. Elle rafraîchit les sections qui dépendent du jour (« À surveiller », statuts d'agenda) et les cours de marché si le module est actif.
+- **Fréquence** : réglée dans `wrangler.jsonc`, donc par une modification de configuration et non dans `config/` (écart avec le « paramétrable » du point 8.2, signalé en section 25).
+- **Secret** : l'URL du Deploy Hook suffit à déclencher un build. Elle est stockée comme secret Cloudflare, jamais dans le dépôt.
+
+### 15.4 Tâches GitHub Actions (tolérantes au retard)
+
+| Tâche | Fréquence | Rôle |
+|---|---|---|
+| `veille` | 2 fois par jour ouvrable (fuseau America/Toronto, désormais pris en charge par GitHub) | `veille:fetch`, commit du cache seulement s'il a changé, ce qui déclenche un build |
+| `rapport` | chaque lundi | `check` complet (liens externes compris), rapport « À vérifier » publié dans un ticket GitHub : notification par courriel |
+| `ci` | à chaque demande de fusion qui touche le code (`src/`, `worker/`, `scripts/`, `tests/`, fichiers de configuration du projet) | types, tests unitaires, build, tests de fumée |
+
+**Coût estimé** : environ 44 exécutions de veille d'environ une minute chacune, 4 rapports de quelques minutes, et 10 à 20 vérifications de code de 5 à 8 minutes, soit **100 à 250 minutes par mois**, sur les 2 000 gratuites d'un dépôt privé.
+
+**Si les retards de GitHub devenaient gênants pour la veille**, la tâche planifiée Cloudflare peut lancer ces tâches à distance (appel `workflow_dispatch` avec un jeton limité). Un seul planificateur, plus régulier que GitHub Actions d'après les témoignages mais sans garantie écrite, au prix d'un secret de plus.
+
+### 15.5 Budget de builds (Workers Builds gratuit : 3 000 minutes par mois)
+
+| Source | Builds par mois (estimation) |
+|---|---|
+| Enregistrements et poussées de l'auteur (branches d'aperçu comprises) | 60 à 150 |
+| Veille (au plus 2 par jour ouvrable, seulement si nouveau) | 20 à 44 |
+| Reconstruction quotidienne | 30 |
+| Publications programmées | 5 à 15 |
+| **Total** | **115 à 240, soit 230 à 1 200 minutes à 2 à 5 minutes par build** |
+
+Marge confortable. Si la durée de build grandit avec le contenu : builds incrémentaux d'Astro une fois stabilisés, ou Workers payant (5 $ US par mois, 6 000 minutes).
+
+### 15.6 Surveillance
+
+- **Échec de build** : notification par courriel de Cloudflare, si Workers Builds la propose en forfait gratuit [À VÉRIFIER en phase 5]; à défaut, statut du commit visible sur GitHub.
+- **Échec d'une tâche GitHub** : courriel automatique de GitHub.
+- **Disponibilité** : un service de sonde externe gratuit (choix en phase 5), qui vérifie l'accueil et `/api/newsletter` toutes les 5 minutes.
+- **Rapport hebdomadaire** `check` (section 15.4).
+
+---
+
+## 16. Sécurité, sauvegarde, comptes et secrets
+
+### 16.1 Sécurité
+
+- **Surface d'attaque minimale** : pas de base de données, pas de serveur d'application permanent, deux routes serveur (`/api/newsletter`, `/api/contact`).
+- **Worker** :
+  - validation Zod de chaque entrée et taille de requête limitée;
+  - vérification de Turnstile côté serveur;
+  - réponses génériques : on ne révèle jamais si un courriel est déjà inscrit;
+  - journalisation minimale, sans données personnelles.
+- **En-têtes de sécurité** (`public/_headers` pour les fichiers statiques, posés par le Worker pour ses propres réponses) :
+  - `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`;
+  - `Permissions-Policy` restrictive, `frame-ancestors 'none'`;
+  - politique de sécurité du contenu (CSP) explicite : scripts du site, Turnstile, analytique, Pagefind; cadres vers `youtube-nocookie.com` et Turnstile.
+
+  La CSP intégrée d'Astro n'est pas activée au lancement : elle ne se teste pas en développement et gère mal certains styles en ligne. Elle sera réévaluée en phase 5.
+- **Section `custom-html` de l'accueil** : contenu échappé à l'affichage, aucun script exécuté.
+- **Éditeur en ligne** (si activé) : authentification GitHub, accès limité aux comptes ayant l'écriture sur le dépôt. La GitHub App est restreinte à ce seul dépôt, avec les permissions minimales. Protection supplémentaire facultative par Cloudflare Access.
+- **Secrets** : uniquement chez Cloudflare et dans les secrets GitHub Actions, avec analyse des secrets activée sur GitHub.
+  - `.env.example` documente chaque variable.
+  - Depuis Astro 6, `import.meta.env` est figé au build : aucun secret n'y passe.
+- **Dépendances** : peu nombreuses, versions épinglées, mises à jour groupées et testées, alertes de sécurité GitHub activées. Astro a publié une vingtaine d'avis de sécurité entre avril et août 2026, dont plusieurs de gravité élevée, notamment :
+  - une exécution de code à distance, critique, par une image AVIF malveillante (corrigée en 7.2.8);
+  - une injection de script intersites (XSS) de gravité modérée (corrigée en 7.1.0).
+
+  Rester sur la dernière version corrective n'est pas optionnel. En pratique, la majeure précédente n'a pas reçu ces correctifs, malgré la politique écrite.
+- **Dépôt privé** (il l'est; question 14).
+
+### 16.2 Sauvegarde (point 8.8 du brief)
+
+- **Contenu et configuration** : le dépôt GitHub, plus un clone local sur l'ordinateur de l'auteur, mis à jour à chaque session.
+- **Abonnés et preuves de consentement** : ils n'existent que chez le fournisseur (section 11.2).
+  - Export CSV complet, avec les attributs de consentement, **chaque mois**.
+  - L'export est conservé hors du dépôt, car il contient des données personnelles, dans un emplacement chiffré choisi par l'auteur [À COMPLÉTER PAR L'AUTEUR].
+  - La procédure pas à pas figurera dans le guide de l'auteur (phase 4).
+
+### 16.3 Comptes et secrets à tenir
+
+| Élément | Où | Rôle | Renouvellement | Si perdu |
+|---|---|---|---|---|
+| Compte GitHub | GitHub | dépôt, historique, tâches | double authentification | récupération GitHub; clone local |
+| Compte Cloudflare | Cloudflare | hébergement, DNS, Turnstile, tâches planifiées | double authentification | récupération Cloudflare; le site se redéploie depuis le dépôt |
+| Compte du fournisseur de newsletter | Brevo ou Cyberimpact | abonnés, envois | double authentification | exports mensuels |
+| Compte Umami | Umami | mesure d'audience | | données d'audience perdues, sans effet sur le site |
+| Registraire du domaine | au choix | nom de domaine | renouvellement annuel | risque majeur : renouvellement automatique conseillé |
+| Sonde de disponibilité | au choix | alerte en cas de panne | | à recréer |
+| `TURNSTILE_SECRET_KEY` | secret Cloudflare | vérification anti-pourriel | au besoin | régénérer dans Cloudflare |
+| `NEWSLETTER_API_KEY` | secret Cloudflare | inscription | annuel conseillé | régénérer chez le fournisseur |
+| `IP_HASH_SALT` | secret Cloudflare | empreinte des IP | jamais (sinon les empreintes changent) | en créer un nouveau; les anciennes empreintes restent valables comme preuves |
+| `DEPLOY_HOOK_URL` | secret Cloudflare | publication programmée | si divulguée | régénérer dans Workers Builds |
+| Plus tard, si activés | | | | |
+| `KEYSTATIC_GITHUB_CLIENT_ID`, `KEYSTATIC_GITHUB_CLIENT_SECRET`, `KEYSTATIC_SECRET` + `PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` | secrets Cloudflare, variable de build | éditeur en ligne | au besoin | recréer la GitHub App |
+| `COINGECKO_API_KEY` | variable de build | données de marché | | nouvelle clé CoinGecko |
+
+**Au lancement : 6 comptes et 4 secrets.**
+
+---
+
+## 17. Données personnelles et conformité : mécanismes
+
+Ce document ne rédige aucun texte juridique définitif et n'ajoute aucune exigence : il prévoit les emplacements et les mécanismes. Tout texte légal livré porte `[À VALIDER PAR L'AUTEUR]`.
+
+**Inventaire des données personnelles collectées** (à reporter dans la politique de confidentialité) :
+
+| Traitement | Données | Où | Localisation | Conservation |
+|---|---|---|---|---|
+| Newsletter | courriel, attributs de consentement, empreinte d'IP, préférences, statistiques d'envoi | fournisseur de newsletter | selon le fournisseur (question 4) | [À COMPLÉTER PAR L'AUTEUR] |
+| Contact | nom, courriel, message | boîte courriel de l'auteur, via le service de courriel transactionnel (Brevo si confirmé, sinon Resend); rien n'est stocké par le site | selon le service [À VÉRIFIER] | [À COMPLÉTER PAR L'AUTEUR] |
+| Anti-pourriel | signaux techniques du navigateur | Cloudflare Turnstile | Cloudflare, possiblement aux États-Unis | selon Cloudflare [À VÉRIFIER] |
+| Mesure d'audience | aucune donnée personnelle, sans témoin | selon l'outil (question 13) | selon l'outil | selon l'outil |
+| Journaux techniques | IP et navigateur dans les journaux de l'hébergeur | Cloudflare | centres de données de Cloudflare dans le monde; aucune localisation possible au Canada | [À VÉRIFIER] |
+
+**Mécanismes prévus** :
+
+- `legal.json` : responsable de la protection des renseignements personnels (nom, titre, courriel), variantes d'avertissement, mentions, types de sources réputés officiels.
+- Page de confidentialité générée en partie depuis cet inventaire (tableau), le reste étant rédigé par l'auteur.
+- Demandes d'accès, de rectification ou de suppression : lien `mailto` vers le responsable. La suppression se fait chez le fournisseur.
+- Aucun bandeau de témoins si l'analytique retenue n'en pose pas. Un composant de consentement minimal est prévu mais désactivé; il ne serait activé que si un service tiers en posait un jour.
+- LCAP (Loi canadienne anti-pourriel) :
+  - case de consentement non cochée par défaut;
+  - identification de l'expéditeur et lien de désabonnement dans chaque envoi;
+  - preuves conservées chez le fournisseur et exportées chaque mois (section 16.2).
+- Charte de la langue française : interface et contenus en français. La version anglaise viendra en plus, jamais à la place.
+
+---
+
+## 18. Coûts mensuels estimés
+
+En dollars américains sauf mention contraire, relevés le 25 septembre 2026. Les prix de fournisseurs tiers viennent souvent d'extraits de recherche : ce sont des ordres de grandeur à revérifier avant engagement.
+
+Hypothèses d'audience :
+- 1 000 visiteurs par jour ≈ 60 000 à 100 000 pages vues par mois, et environ 500 à 1 000 abonnés;
+- 10 000 visiteurs par jour ≈ 600 000 à 1 000 000 de pages vues par mois, et environ 3 000 à 5 000 abonnés;
+- une newsletter par semaine.
+
+### 18.1 Famille A (recommandée)
+
+| Poste | 0 visiteur par jour | 1 000 par jour | 10 000 par jour |
+|---|---|---|---|
+| Cloudflare Workers : fichiers statiques illimités, 100 000 appels de fonctions par jour, 3 000 minutes de build | 0 | 0 | 0 |
+| GitHub : dépôt privé, 2 000 minutes d'Actions | 0 | 0 | 0 |
+| Recherche (Pagefind), images, flux, Turnstile | 0 | 0 | 0 |
+| Newsletter : Brevo (s) | 0 | ~9 | ~19 à 32 |
+| *ou* Newsletter : Cyberimpact (s) | ~39 $ CA | ~39 $ CA et plus | paliers non publiés |
+| Analytique : Umami Cloud (s) | 0 | 0 à 20 | 20 |
+| Données de marché (si activées et site monétisé) (s) | 0 | 0 à 35 | 0 à 35 |
+| Domaine `.ca` (environ 15 à 30 $ CA par an) | ~2 $ CA | ~2 $ CA | ~2 $ CA |
+| **Total (Brevo, Umami, sans ticker)** | **~2 $ CA** | **~9 à 29 $ US + 2 $ CA** | **~39 à 52 $ US + 2 $ CA** |
+
+**Paliers possibles** :
+- l'éditeur en ligne dépasse les 10 ms de processeur par requête du forfait gratuit;
+- le site dépasse 20 000 fichiers.
+
+Dans les deux cas, il faudrait Workers payant : **5 $ US par mois**, avec 10 millions de requêtes, 6 000 minutes de build et 100 000 fichiers inclus.
+
+### 18.2 Famille B (pour comparaison : Payload + Next.js sur Vercel Pro + Neon + R2)
+
+| Poste | 0 | 1 000 par jour | 10 000 par jour |
+|---|---|---|---|
+| Vercel Pro (le forfait gratuit interdit l'usage commercial) (s) | 20 | 20 | 20 (dépassements non vérifiés) |
+| PostgreSQL Neon | 0 | 0 | 0 à 20 |
+| Stockage d'images R2 (10 Go gratuits) | 0 | 0 | 0 à 2 |
+| Newsletter, analytique, domaine | comme A | comme A | comme A |
+| **Total** | **~20 $ US + 2 $ CA** | **~29 à 49 $ US + 2 $ CA** | **~59 à 94 $ US + 2 $ CA** |
+
+À quoi s'ajoute le coût non monétaire (section 3.2) : correctifs, migrations SQL, sauvegardes, exécuteur de tâches, migration vers Payload 4.
+
+### 18.3 Lecture
+
+En famille A, le coût vient presque entièrement de la **newsletter**, qui dépend du nombre d'abonnés, et de l'**analytique** au-delà de son quota gratuit. L'hébergement reste gratuit jusqu'à 10 000 visiteurs par jour et bien au-delà. Rien de payant n'est activé sans l'accord de l'auteur.
+
+---
+
+## 19. Risques et parades
+
+### 19.1 Risques techniques
+
+| Risque | Probabilité | Impact | Parade |
+|---|---|---|---|
+| Keystatic s'essouffle (un seul développeur actif, 8 mois sans version en 2025-2026) | moyenne | moyen | Zod reste la source de vérité; contenu en fichiers standard; Keystatic isolé dans un fichier; plans de repli : Sveltia CMS, ou édition directe avec Claude Code |
+| Rythme des majeures d'Astro (6.0 en mars, 7.0 en juin 2026); correctifs de sécurité livrés en pratique sur la dernière majeure seulement, malgré la politique écrite | élevée | moyen | Versions épinglées, mises à jour groupées, une journée de migration par majeure prévue au budget, jamais de fonction expérimentale en production |
+| Chaîne de traitement Markdown récente (Sätteri 0.x, par défaut depuis Astro 7) : régressions de rendu sur les tableaux et la typographie | moyenne | moyen | Article de référence `/exemple/` (développement seulement) couvrant tous les blocs, relu à l'œil après chaque mise à jour d'Astro, de Sätteri ou de satori; repli possible sur l'ancienne chaîne (unified) |
+| Ponctuation « intelligente » à l'anglaise activée par défaut | élevée | faible | Désactivée; espaces insécables insérées par un traitement dédié et testé |
+| Dérive entre schémas Zod et formulaires Keystatic | moyenne | moyen | Contenu d'amorçage enregistré par l'éditeur et validé à chaque build (section 4.3) |
+| Relation rompue par renommage de slug | moyenne | faible | Le build échoue avec un message clair; `check` propose la correction |
+| Tâches planifiées GitHub en retard ou abandonnées | élevée | faible | Réservées à la veille et au rapport; publication confiée à Cloudflare |
+| Ponctualité des tâches planifiées Cloudflare non garantie par écrit | faible | moyen | Mesure en phase 4; tolérance d'une vingtaine de minutes acceptée à la question 2 |
+| Croissance du dépôt par les images | faible à 3 ans | faible | Compression à l'import, limite de poids dans `check`; au-delà de 1 Go, stockage objet |
+| Durée de build | faible | faible | Environ 6 000 pages en 75 secondes selon les mesures publiées pour Astro 7; builds incrémentaux si nécessaire, une fois stabilisés |
+| Plafond de 20 000 fichiers par déploiement en Workers gratuit (index Pagefind, variantes d'images et images Open Graph de chaque page comptent) | faible à 2 ans, moyenne au-delà | moyen | Trois largeurs d'image au plus; décompte des fichiers dans `check`, alerte à 15 000; au besoin Workers payant (100 000 fichiers, 5 $ US par mois), ou une image Open Graph commune pour les pages de liste, écart à soumettre à l'auteur |
+| L'éditeur en ligne (si activé) dépasse 10 ms de processeur par requête en forfait gratuit | moyenne | faible | Test lors de l'activation; retour au mode local, ou Workers payant (5 $ US par mois) |
+| Flux officiels supprimés ou modifiés | élevée | faible | Cache, contrôle de santé par source, veille dégradée sans casser le site |
+
+### 19.2 Risques de référencement
+
+| Risque | Parade |
+|---|---|
+| Domaine neuf, sujet que Google juge sensible (argent des lecteurs) | Signaux de confiance dans le gabarit (auteur qualifié, sources, dates de vérification, politique de correction); publication régulière; dossiers comme pages de référence |
+| Pages au contenu trop pauvre (étiquettes, lexique vide, fiches d'amorçage) | `noindex` automatique sous un seuil; publication d'un gabarit incomplet impossible |
+| Contenu dupliqué (veille qui reprend des titres officiels, filtres) | Veille en liens sortants seulement, sans page par élément; filtres des hubs servis par la page de recherche en `noindex` |
+| URL perdues (renommage de slug, dépublication) | Redirections automatiques et contrôle des URL disparues à chaque build |
+| Informations périmées (règles fiscales annuelles) | `asOf` et `reviewEvery`, rapport « À vérifier », bandeau d'archive |
+| Concurrence entre un article, un dossier et un guide dans les résultats de Google pour une même recherche | Le dossier est la page de référence; articles et guides y renvoient par le bloc « Cette réglementation » |
+
+### 19.3 Risques éditoriaux
+
+| Risque | Parade |
+|---|---|
+| Erreur de droit ou information dépassée publiée | Sources officielles obligatoires, « Vérifié le », révisions périodiques, notes de correction datées, avertissements |
+| Contenu inventé par un outil d'IA | Règle dans `CLAUDE.md`; marqueurs `[À VÉRIFIER]` et `[À COMPLÉTER PAR L'AUTEUR]` bloquants en production |
+| Confusion entre information et conseil | Avertissements par variante, affichage systématique sur les traitements fiscaux, distinction information et opinion par le format |
+| Publicité perçue comme éditoriale | Blocs partenaires désactivés par défaut, toujours signalés, page transparence |
+| Droits sur les images | Crédit obligatoire; couvertures générées par défaut; aucun logo officiel d'organisme |
+| Citation d'un texte légal dans une version périmée | `TexteDeLoi` exige la version citée et un lien officiel |
+
+---
+
+## 20. Décisions irréversibles
+
+Irréversible veut dire ici : très coûteux à défaire une fois le site en ligne et référencé.
+
+| Décision | Pourquoi c'est coûteux à défaire | Quand la prendre |
+|---|---|---|
+| Famille A ou B | La migration est possible (section 23), mais c'est un projet à part entière | Maintenant (question 2) |
+| Architecture des URL (option A, B ou C) | Chaque URL référencée devra être redirigée pour toujours | Avant la phase 2 (question 6) |
+| Politique de slugs (ASCII, sans date) | Même raison | Phase 1 |
+| Nom du site et domaine | Notoriété, liens entrants, référencement, adresse d'envoi de la newsletter | Avant la phase 4 (question 1) |
+| Délégation du DNS à Cloudflare | Serveurs de noms, enregistrements de courriel (SPF, DKIM) et zone à migrer en cas de départ | Avant la phase 4 (question 3) |
+| Fournisseur de newsletter | Liste, preuves de consentement, réputation d'envoi et domaine d'envoi à migrer | Phase 4 (question 4) |
+| Lieu d'hébergement des données personnelles | Décrit dans la politique de confidentialité : le changer impose de la mettre à jour et de réévaluer | Phase 4 |
+| Dépôt public ou privé | Un historique rendu public, brouillons compris, ne se reprend pas | Phase 1 (question 14) |
+| Modèle de relations (slugs comme identifiants, relations d'un seul côté) | Toute la base de connaissances en dépend | Phase 1 |
+
+Tout le reste se défait en quelques minutes ou quelques heures : couleurs, polices, menus, sections d'accueil, analytique, ticker, mode de l'éditeur.
+
+---
+
+## 21. Ce qui doit être prévu dès la v1
+
+1. Chaînes d'interface par locale (`config/i18n/fr.json`), et utilitaires de formatage qui prennent la locale en paramètre.
+2. Routage i18n configuré (français à la racine, `/en/` réservé) et `hreflang` autoréférent.
+3. Champs `lang` et `translationKey` dans les schémas.
+4. Auteur en relation (plusieurs auteurs possibles sans migration), `reviewedBy`, statut de publication commun.
+5. Abstractions `NewsletterProvider`, `Analytics` et `SearchProvider`.
+6. Listes multiples dans `newsletter.json` et attribut `list` chez le fournisseur.
+7. Schéma de `ads.json` et composant `PartnerBlock` (désactivé).
+8. Sources structurées avec `archivedUrl`.
+9. `previousSlugs`, `redirects.json` et contrôle des URL disparues.
+10. Juridiction comme entité, avec niveau, parent et style de puce.
+11. Graphe de contenu central.
+12. Marqueurs bloquants en production et rapport « À vérifier ».
+13. Contrôle des contrastes à partir de `theme.json`, styles de puce en liste fermée.
+14. Export mensuel des abonnés (section 16.2).
+
+---
+
+## 22. Feuille de route v1, v2, v3
+
+| Évolution | Version | Ce que la v1 prévoit |
+|---|---|---|
+| Plusieurs contributeurs, rôles, relecture juridique ou fiscale | v2 (A), v3 (B si rôles fins) | Auteurs en collection, `reviewedBy`, travail par branche et demande de fusion (Keystatic crée une branche automatiquement quand une règle GitHub l'exige), relecture obligatoire par règle de branche |
+| Plusieurs listes de newsletter | v2 | Listes dans `newsletter.json`, attribut `list`, formulaire paramétrable |
+| « Les plus lus » par l'analytique | v2 | Section `most-read` avec `source: manual` en v1; en v2, un script de build interroge l'API de l'outil d'analytique et met le résultat en cache |
+| Archivage automatique des sources | v2 | Champ `archivedUrl` et liste des manques dans `check`; en v2, appel à l'archive du Web (API à vérifier) |
+| Commanditaires et contenus partenaires | v2 | `ads.json`, `PartnerBlock`, champ `sponsor` des numéros, page transparence |
+| Création des campagnes de newsletter par API | v2 | HTML de courriel généré par `newsletter:draft` |
+| Version anglaise | v3 | Section 21, points 1 à 3; contenus anglais dans `content/en/<collection>/` |
+| Recherche sémantique et assistant qui ne répond qu'en citant | v3 | `SearchProvider`, contenu structuré avec sources et `asOf`; en v3, index vectoriel construit au build et fonction serveur; chaque réponse cite un contenu et sa date de vérification, sinon elle n'est pas donnée |
+| Commentaires | v3 | Rien en v1, hors la politique de modération à rédiger; en v3, service tiers ou famille B |
+| Migration vers la famille B | si besoin | Section 23 |
+
+---
+
+## 23. Chemin de migration de A vers B
+
+Rien dans A n'enferme le contenu. Si la famille B s'impose un jour (plusieurs rédacteurs avec rôles, publication à la minute, espace membre), la migration se fait en quatre étapes :
+
+1. **Modèle.**
+   - Chaque collection Zod devient une collection Payload.
+   - Les relations par slug deviennent des relations par identifiant, grâce à une table de correspondance slug → identifiant tenue pendant l'import.
+   - Les taxonomies deviennent des collections, les singletons de `config/` des réglages globaux (« globals » de Payload).
+2. **Import.** Un script :
+   - lit `content/**` et valide chaque entrée avec les schémas existants;
+   - crée les documents par l'API locale de Payload, dans l'ordre des dépendances (taxonomies, juridictions, organismes, auteurs, sources, textes, dossiers, articles);
+   - remplit les relations dans une seconde passe.
+3. **Corps MDX** : conversion en texte riche Lexical avec les fonctions officielles `convertMarkdownToLexical` et `convertLexicalToMarkdown` de `@payloadcms/richtext-lexical` (vérifié le 25 septembre 2026).
+   - Chaque bloc (`Callout`, `TexteDeLoi`…) devient un bloc Lexical de même nom et de mêmes champs, par les propriétés `jsx.import` et `jsx.export` de chaque bloc.
+   - Les images doivent d'abord être importées comme médias, puis les liens réécrits.
+   - C'est l'étape la plus coûteuse; elle est d'autant plus simple que les blocs ont des schémas fixes.
+4. **URL** : la table des routes reste la même. Aucune redirection n'est donc nécessaire si les slugs sont conservés.
+
+**Version cible** : Payload 4, en préversion aujourd'hui, sera la version stable au moment d'une éventuelle migration. On migrerait directement vers elle.
+
+**La v1 facilite ce chemin** : champs nommés en anglais et stables, blocs à schéma fixe, aucune syntaxe MDX libre (pas de JSX arbitraire), relations explicites.
+
+---
+
+## 24. Estimation d'effort par phase
+
+Estimations pour Claude Code guidé par ce document. Le temps de l'auteur correspond à la relecture, aux tests et aux comptes à créer.
+
+| Phase | Contenu | Sessions de travail | Temps de l'auteur |
+|---|---|---|---|
+| 1. Fondations | scaffold, jetons, layouts, en-tête, tiroir, pied de page, annonce, sombre, accueil composé, taxonomies, amorçage, `check` | 3 à 4 | 3 à 4 h |
+| 2. Contenu | tous les gabarits, recherche, flux, images Open Graph, schema.org, plan du site, redirections | 5 à 7 | 4 à 6 h |
+| 3. Édition | Keystatic complet en mode local (collections, singletons, blocs), scripts, publication programmée, guide de l'auteur, `CLAUDE.md` | 3 à 4 | 3 à 4 h |
+| 4. Services | Worker (newsletter, contact, tâche planifiée), analytique, Turnstile, pages légales et de confiance, veille, notifications | 3 à 4 | 4 à 6 h (comptes, DNS, textes légaux) |
+| 5. Qualité | Lighthouse, accessibilité, tests, intégration continue, hébergement, README, CHANGELOG | 2 à 3 | 2 à 3 h |
+| **Total** | | **16 à 22** | **16 à 23 h** |
+
+Non comptés : la rédaction des contenus réels et des textes juridiques, la création d'un logo, et l'activation éventuelle de l'éditeur en ligne (une demi-session).
+
+---
+
+## 25. Écarts avec le brief et décisions prises par défaut
+
+### 25.1 Écarts et incohérences relevés
+
+| # | Point du brief | Constat | Proposition |
+|---|---|---|---|
+| B1 | Bandeau d'annonce (3.3 et 8.1) | Le point 3.3 le place **avant** l'en-tête, le point 8.1 **sous** l'en-tête | Ticker (facultatif) au-dessus de l'en-tête, annonce sous l'en-tête; tous deux rendus au build, donc sans décalage de mise en page |
+| B2 | `public/images/` (4.2) et `astro:assets` (3.4) | Les images de `public/` ne sont pas optimisées | `content/images/` (section 6) |
+| B3 | `status` (6.1, 6.2, 6.6) | Le même nom désigne le statut éditorial et le statut juridique | `status` et `legalStatus` (section 7.2) |
+| B4 | `juridiction.organismes` et `organisme.jurisdiction` (6.4, 6.5) | Double saisie | Relation stockée côté organisme, inverse calculé |
+| B5 | `organisme.rssFeeds` et `sources-veille.json` (6.5, 8.4) | Double saisie | Flux déclarés seulement dans `sources-veille.json` |
+| B6 | Format de `homepage.json` (7.3) | Keystatic enregistre les blocs sous la forme `discriminant` et `value` | Le schéma lit ce format; l'exemple du brief est conservé comme intention |
+| B7 | « Sélecteur de couleur » (11.1) et couleur de catégorie « parmi les jetons » (6.13) | Keystatic n'a pas de champ couleur; une couleur libre peut casser le contraste | Champs hexadécimaux validés pour la palette, styles de puce en liste fermée pour les catégories, contrôle de contraste |
+| B8 | `publishedAt` (6.1) | Keystatic enregistre l'heure saisie comme de l'UTC | Date + heure choisie dans une liste, fuseau America/Toronto |
+| B9 | Options d'URL A et B (7.1) | B contredit le tableau de routes; A lie l'adresse au classement | Option C, `/articles/[slug]/` (A en repli) |
+| B10 | Notes de bas de page | Nécessaires en contenu juridique, détruites par l'éditeur MDX | Composant `Note` |
+| B11 | Hébergeur (5.1) | « Cloudflare Pages ou Vercel » : l'adaptateur Astro ne prend plus en charge Pages, et Vercel gratuit interdit l'usage commercial (s) | Cloudflare Workers, sans adaptateur au lancement (section 15.1; question 3) |
+| B12 | Reconstruction planifiée (5.1, 8.2) | GitHub Actions « toutes les heures aux heures ouvrables, toutes les six heures sinon, paramétrable » : les tâches GitHub accusent des heures de retard en 2026 | Tâche Cloudflare toutes les 15 minutes, qui ne lance un build que si une échéance est passée, plus une reconstruction nocturne. Fréquence réglée dans `wrangler.jsonc`, pas dans `config/`. GitHub Actions garde la veille et le rapport |
+| B13 | Images Open Graph (5.1) | « satori et resvg » : resvg n'a aucune version stable depuis mars 2024 | satori et sharp (déjà requis par Astro) |
+| B14 | Courriel du formulaire de contact (5.1, 8.6) | Le brief nomme Resend | Brevo si l'envoi transactionnel est confirmé (un compte et une clé de moins), Resend sinon |
+| B15 | Veille au build (8.4) | « exécuté au build et par le cron » | Tâche planifiée seulement : le build lit le cache versionné et ne dépend jamais d'un site gouvernemental |
+| B16 | Délai de mise en ligne (11.2) | « une à deux minutes » | 2 à 5 minutes estimées, à mesurer en phase 1 |
+| B17 | `tldr` (6.1, 7.2 étape 9) et `category` des guides (6.3) | Implicitement obligatoires | `tldr` obligatoire en réglementation et fiscalité seulement, encadré masqué s'il est vide; `category` facultative pour les guides |
+| B18 | Polices modifiables sans code (4) | Satori et l'API Fonts exigent des paquets installés | Choix parmi une liste de polices préinstallées dans `theme.json`; ajouter une police hors liste demande Claude Code (question A4). Les images Open Graph utilisent toujours Manrope |
+| B19 | Ticker « mis en cache » (8.1) | Rafraîchissement en direct non exigé | Valeurs récupérées au build, heure affichée, aucune route serveur en v1 |
+| B20 | Filtres des hubs (7.1) | « avec filtres par thème, format et juridiction » | Filtres servis par la page de recherche avec des présélections, pour ne pas dupliquer le rendu des cartes |
+| B21 | Types schema.org (8.3) | Liste du brief | Liste du brief en v1; `Legislation`, `HowTo`, `Event` et `SearchAction` en v2 |
+| B22 | Éditeur en ligne sur `/keystatic` (5.1, 7.1, 11.2) | Mode GitHub en production | Mode local au lancement, mode GitHub prêt à activer (question A2) |
+| B23 | Fond du mode sombre (3.1) | brand-950 est dit « fond du mode sombre », puis le fond est fixé à `#0A0E27` | Fond `#0A0E27`; brand-950 réservé au texte sur fond clair et aux sections de marque (DA, section 3) |
+| B24 | Barre latérale (3.3) | « 4 colonnes » d'une grille de 12 à gouttière de 24 px ne font pas 340 px (environ 376 à 397 px) | Largeur fixe de 340 px, le contenu occupant le reste (DA, section 6) |
+
+### 25.2 Décisions techniques prises sans solliciter l'auteur
+
+- **Contenu et images** : contenu hors de `src/`, graphe de contenu central.
+- **Rendu** : dates relatives côté navigateur; aucun cadriciel JavaScript sur le site public.
+- **Newsletter** : preuve de consentement enregistrée chez le fournisseur.
+- **Typographie** : espaces insécables insérées au build; polices servies par l'API Fonts d'Astro; Lucide rendu au build.
+- **Sécurité** : CSP par en-têtes plutôt que par la fonction intégrée d'Astro.
+- **Outillage** : TypeScript 6 (section 5); pas d'outil de mise en forme ni de crochet Git; tests visuels faits à l'œil sur `/exemple/`.
+
+---
+
+## 26. Journal des vérifications
+
+Toutes les vérifications ont eu lieu le **25 septembre 2026**.
+
+### 26.1 Conditions d'accès
+
+La politique réseau de l'environnement de travail bloquait la plupart des sites officiels et commerciaux : cryptoast.fr, keystatic.com, docs.astro.build, developers.cloudflare.com, vercel.com, les sites des fournisseurs, les sites gouvernementaux et web.archive.org. Les vérifications ont donc suivi, par ordre de fiabilité :
+
+1. **Registre npm** (versions, dates de publication, dépendances) : accès direct.
+2. **Sources officielles de la documentation publiées sur GitHub**, c'est-à-dire les fichiers qui produisent les sites de documentation : withastro/docs, withastro/astro, Thinkmill/keystatic, cloudflare/cloudflare-docs, tailwindlabs/tailwindcss.com, Pagefind/pagefind, payloadcms/payload, strapi/documentation, github/docs, plausible/docs, umami-software/docs, buttondown/docs, getbrevo/brevo-node, mailerlite/mailerlite-nodejs, resend/resend-openapi, coingecko/coingecko-api-oas, nodejs/Release.
+3. **Pages GitHub** (tickets, discussions, avis de sécurité, historiques de commits).
+4. **Moteur de recherche** : extraits seulement, marqués « (s) » dans ce document. Le quota de recherche de la session a été épuisé en fin de parcours.
+5. **Copies archivées par des tiers sur GitHub**, pour cryptoast.fr : une page complète de janvier 2023 et un article d'avril 2026.
+
+Les affirmations décisives de cinq domaines (Astro, Keystatic, hébergement, famille B, newsletter) ont ensuite été **contre-vérifiées par une seconde instance de Claude** (agent automatisé), lancée séparément et chargée de les réfuter à partir d'une autre source. Aucune vérification humaine n'a eu lieu. Les outils front-end, l'analytique, CoinGecko, Turnstile, Cryptoast et la veille n'ont pas été contre-vérifiés.
+
+Résultats de la contre-vérification :
+- Astro : 11 confirmées, 3 précisées;
+- Keystatic : 11 confirmées, 3 précisées, dont un test d'aller-retour de l'éditeur MDX;
+- hébergement : 10 confirmées, 4 précisées;
+- famille B : 11 confirmées, 2 précisées (le nombre d'avis de sécurité de Payload était sous-estimé), 1 invérifiable (tarifs Sanity);
+- newsletter : 7 confirmées, 2 précisées, 5 invérifiables faute d'accès (plafond et hébergement de Brevo, plafond et double opt-in par API de MailerLite, hébergement de Buttondown).
+
+Aucune affirmation n'a été réfutée. Les corrections sont intégrées au texte; les points invérifiables sont marqués « (s) » ou listés en 26.3. Les trois livrables ont enfin été relus par cinq instances automatisées distinctes (conformité au brief, exactitude, simplicité, langue, direction artistique) avant le commit.
+
+### 26.2 Principales sources
+
+| Sujet | Source | Type |
+|---|---|---|
+| Versions de toutes les briques | `registry.npmjs.org/<paquet>` | registre npm |
+| Astro 6 et 7, migrations | `withastro/docs` : `guides/upgrade-to/v6.mdx`, `v7.mdx`; billets `astro-7.mdx` et `joining-cloudflare.mdx` (withastro/astro.build) | documentation officielle |
+| Adaptateur Cloudflare, déploiement | `withastro/docs` : `guides/integrations-guide/cloudflare.mdx`, `guides/deploy/cloudflare.mdx`; `withastro/astro` : `packages/integrations/cloudflare/CHANGELOG.md` | documentation officielle |
+| Content Layer, image(), polices | `withastro/docs` : `guides/content-collections.mdx`, `reference/content-loader-reference.mdx`, `guides/fonts.mdx` | documentation officielle |
+| Avis de sécurité | `github.com/withastro/astro/security/advisories`, `payloadcms/payload`, `vercel/next.js`, `strapi/strapi` | dépôts officiels |
+| Keystatic | `Thinkmill/keystatic` : `docs/src/content/pages/*.mdoc`, CHANGELOG, tickets n° 990, 1459, 1554, 1578, 1615, 1625, discussions n° 1442, 1467, 1513; code du paquet 0.6.9 | documentation, code et dépôt officiels |
+| Alternatives d'édition | `sveltia/sveltia-cms`, `decaporg/decap-cms`, `tinacms/docs`, `pages-cms/pages-cms` | dépôts officiels |
+| Tailwind | `tailwindlabs/tailwindcss.com` (installation Astro, thème, mode sombre, compatibilité), CHANGELOG | documentation officielle |
+| Pagefind | `Pagefind/pagefind` : `docs/content/docs/*.md`, CHANGELOG | documentation officielle |
+| Images Open Graph | `vercel/satori` README et demande de fusion n° 735; `yisibl/resvg-js` CHANGELOG | dépôts officiels |
+| Cloudflare | `cloudflare/cloudflare-docs` : limites Workers et Pages, Workers Builds, Deploy Hooks (1er avril 2026), Worker Previews (22 septembre 2026), Cron Triggers, fichiers statiques, domaines, Turnstile, Web Analytics, localisation des données, tarifs D1, R2 et Images | documentation officielle |
+| GitHub Actions | `github/docs` : délais de `schedule`, fuseau horaire, quotas, tarifs; discussions communautaires n° 156282, 201738, 207346 | documentation officielle et témoignages |
+| Famille B | `payloadcms/payload` (branche 3.x : brouillons, publication programmée, migrations, modèles Vercel et D1; guide de migration v4), `sanity-io/sanity`, `strapi/documentation`, `directus/directus` (licence), `neondatabase/website`, `supabase/supabase` | documentation officielle |
+| Newsletter | `buttondown/docs` et `buttondown/openapi`, `getbrevo/brevo-node`, `mailerlite/mailerlite-nodejs`, `resend/resend-openapi`, `beehiiv/typescript-sdk`, `Kit/ConvertKitSDK-PHP`, `knadh/listmonk`; aide Brevo, MailerLite, Cyberimpact (extraits) | SDK officiels et extraits |
+| Analytique, marché | `plausible/docs`, `umami-software/docs`, `coingecko/coingecko-api-oas`; tarifs (extraits) | documentation officielle et extraits |
+| Veille officielle | extraits des pages « fils RSS » des organismes; copies de pages de Canada.ca; code tiers qui interroge ces flux en 2026 | extraits et sources tierces : **tout est à revérifier en phase 4** |
+| Cryptoast | copies archivées par des tiers sur GitHub (2023 et avril 2026), extraits de recherche, captures et PDF fournis | sources indirectes |
+
+### 26.3 À revérifier depuis un accès web complet avant engagement
+
+- **Brevo** : localisation des données, plafond du forfait gratuit, interface française, envoi transactionnel et son quota.
+- **Cyberimpact** : paliers de prix, documentation de l'API.
+- **MailerLite** : forfait gratuit, double opt-in par API. **Buttondown** : hébergement des données.
+- **Umami Cloud** : quota gratuit et accès à l'API. **Plausible** : tarifs.
+- **CoinGecko** : usage commercial du forfait gratuit, attribution.
+- **Vercel et Netlify** : conditions des forfaits gratuits (pour mémoire).
+- **Cloudflare** : disponibilité du mécanisme de limitation de débit en forfait gratuit, notification d'échec de build, conditions de Turnstile concernant les témoins.
+- **Veille** : URL exactes de chaque flux (phase 4).
+- **Cryptoast** : menu, recherche et pages actuels, si l'analyse doit aller plus loin que les captures fournies.
