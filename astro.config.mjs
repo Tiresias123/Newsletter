@@ -3,6 +3,7 @@ import { defineConfig, fontProviders } from 'astro/config';
 import mdx from '@astrojs/mdx';
 import { satteri } from '@astrojs/markdown-satteri';
 import tailwindcss from '@tailwindcss/vite';
+import { contentCacheGuard } from './src/lib/content-cache.ts';
 import { devPages } from './src/lib/dev-pages.ts';
 import { notesPlugin } from './src/lib/mdx/notes.ts';
 import { typographyPlugin } from './src/lib/mdx/typography.ts';
@@ -55,7 +56,7 @@ export default defineConfig({
   // Ponctuation « intelligente » désactivée : elle produirait des guillemets à l'anglaise.
   // Notes numérotées d'abord, pour que leur texte, reparsé, reçoive ensuite la typographie.
   markdown: { processor: satteri({ features: { smartPunctuation: false }, mdastPlugins: [notesPlugin, typographyPlugin] }) },
-  integrations: [mdx(), devPages()],
+  integrations: [contentCacheGuard(), mdx(), devPages()],
   fonts,
   vite: {
     plugins: [tailwindcss(), themePlugin()],
