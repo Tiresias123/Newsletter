@@ -108,7 +108,7 @@ export function checkGraph(graph: Graph): GraphProblem[] {
   // 3. Avertissements choisis parmi les variantes de config/legal.json.
   const disclaimers = new Set(graph.config.legal.disclaimers.map((d) => d.id));
   const validDisclaimer = (v: string) => !v || v === 'aucun' || disclaimers.has(v);
-  for (const collection of ['articles', 'guides'] as const) {
+  for (const collection of ['articles', 'guides', 'dossiers'] as const) {
     for (const entry of graph.all(collection)) {
       if (!validDisclaimer(entry.data.disclaimerVariant)) add(entry.file, ['disclaimerVariant'], `Variante « ${entry.data.disclaimerVariant} » absente de config/legal.json.`, 'avertissement');
     }

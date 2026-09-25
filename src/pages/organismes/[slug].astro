@@ -1,0 +1,145 @@
+---
+// Fiche d'un organisme (brief 6.5 ; DA, maquettes 12.7 et 12.8) : vignette au sigle, rôle, site officiel,
+// présentation, dossiers liés, dernières décisions, textes de référence, articles, guides, ressources ;
+// agenda lié et veille de l'organisme en barre latérale. Les listes vides ne s'affichent pas.
+import CardGrid from '../../components/cards/CardGrid.astro';
+import LinkList from '../../components/editorial/LinkList.astro';
+import PageSection from '../../components/editorial/PageSection.astro';
+import SourceList from '../../components/editorial/SourceList.astro';
+import FicheHeader from '../../components/fiche/FicheHeader.astro';
+import { mdxComponents } from '../../components/mdx/index.ts';
+import NewsletterBox from '../../components/sidebar/NewsletterBox.astro';
+import UpcomingList from '../../components/sidebar/UpcomingList.astro';
+import VeilleFeed from '../../components/sidebar/VeilleFeed.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import JurisdictionBadge from '../../components/ui/JurisdictionBadge.astro';
+import PreviewBadge from '../../components/ui/PreviewBadge.astro';
+import FicheLayout from '../../layouts/FicheLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph, renderEntry } from '../../lib/content/astro.ts';
+import { breadcrumbs } from '../../lib/content/breadcrumbs.ts';
+import { organismeView } from '../../lib/content/fiches.ts';
+import { enumLabel, t } from '../../lib/i18n.ts';
+import { organismeJsonLd } from '../../lib/seo/json-ld.ts';
+import { ogImagePath } from '../../lib/seo/meta.ts';
+import { pageToc } from '../../lib/toc.ts';
+
+export async function getStaticPaths() {
+  const graph = await getGraph();
+  return graph
+    .all('organismes')
+    .filter((e) => e.visibility.visible)
+    .map((e) => ({ params: { slug: e.id } }));
+}
+
+const graph = await getGraph();
+const entry = graph.get('organismes', Astro.params.slug);
+if (!entry) throw new Error(`Organisme introuvable : ${Astro.params.slug}.`);
+const { site } = getConfig();
+const d = entry.data;
+const view = organismeView(graph, entry);
+const { Content, headings } = await renderEntry('organismes', entry.id);
+const path = entry.url ?? '/';
+const title = d.acronym ? `${d.name} (${d.acronym})` : d.name;
+// Vignette : le sigle, sinon les initiales des mots significatifs du nom.
+const mark = d.acronym || d.name.split(/\s+/).filter((w) => w.length > 3).map((w) => w[0]).join('').slice(0, 4).toUpperCase();
+
+const { toc, id } = pageToc(
+  headings,
+  [],
+  [
+    { id: 'dossiers', title: t('organisme.dossiers'), show: view.dossiers.length > 0 },
+    { id: 'decisions', title: t('organisme.decisions'), show: view.decisions.length > 0 },
+    { id: 'textes', title: t('organisme.textes'), show: view.textes.length > 0 },
+    { id: 'articles', title: t('organisme.articles'), show: view.articles.length > 0 },
+    { id: 'guides', title: t('organisme.guides'), show: view.guides.length > 0 },
+    { id: 'ressources', title: t('organisme.resources'), show: view.resources.length > 0 },
+  ],
+);
+
+const seo = {
+  title: d.seo?.title || title,
+  description: d.seo?.description || d.role,
+  canonical: d.seo?.canonical,
+  noindex: d.seo?.noindex,
+  image: ogImagePath(path),
+  imageAlt: title,
+  jsonLd: [
+    organismeJsonLd(site.url, {
+      name: d.name,
+      acronym: d.acronym,
+      path,
+      website: d.website,
+      description: d.role,
+      selfRegulatory: d.authorityType === 'organisme-autoreglementation',
+    }),
+  ],
+};
+---
+
+<FicheLayout crumbs={breadcrumbs.organisme(entry)} seo={seo} identity={view.identity} toc={toc} searchType={t('search.types.organismes')}>
+  <FicheHeader slot="header" title={title} lead={d.role} mark={mark}>
+    <Fragment slot="badges">
+      {view.jurisdictions.map((j) => <JurisdictionBadge jurisdiction={j} link />)}
+      <Badge label={enumLabel('authorityType', d.authorityType)} styleClass="badge--ardoise" />
+      {entry.visibility.previewOnly && <PreviewBadge state={entry.visibility.state === 'programme' ? 'programme' : 'brouillon'} />}
+    </Fragment>
+    <div class="flex flex-wrap gap-2 pt-1">
+      <Button href={d.website} variant="secondary" external>{t('fiche.officialSite')}</Button>
+      {view.feed && <Button href={view.feed} variant="ghost" icon="rss" external>{t('fiche.rssFeed')}</Button>}
+    </div>
+  </FicheHeader>
+
+  <div class="prose">
+    <Content components={mdxComponents} />
+  </div>
+  {
+    view.dossiers.length > 0 && (
+      <PageSection id={id('dossiers')} title={t('organisme.dossiers')}>
+        <LinkList items={view.dossiers} />
+      </PageSection>
+    )
+  }
+  {
+    view.decisions.length > 0 && (
+      <PageSection id={id('decisions')} title={t('organisme.decisions')}>
+        <LinkList items={view.decisions} />
+      </PageSection>
+    )
+  }
+  {
+    view.textes.length > 0 && (
+      <PageSection id={id('textes')} title={t('organisme.textes')}>
+        <LinkList items={view.textes} />
+      </PageSection>
+    )
+  }
+  {
+    view.articles.length > 0 && (
+      <PageSection id={id('articles')} title={t('organisme.articles')}>
+        <CardGrid cards={view.articles} columns={3} />
+      </PageSection>
+    )
+  }
+  {
+    view.guides.length > 0 && (
+      <PageSection id={id('guides')} title={t('organisme.guides')}>
+        <CardGrid cards={view.guides} variant="horizontal" />
+      </PageSection>
+    )
+  }
+  {
+    view.resources.length > 0 && (
+      <PageSection id={id('ressources')} title={t('organisme.resources')}>
+        <SourceList items={view.resources} />
+      </PageSection>
+    )
+  }
+
+  <Fragment slot="aside-bottom">
+    <UpcomingList entries={view.agenda} id="barre-agenda-organisme" />
+    <VeilleFeed items={view.veille} count={5} id="barre-veille-organisme" />
+    <NewsletterBox />
+  </Fragment>
+</FicheLayout>

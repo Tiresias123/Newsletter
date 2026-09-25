@@ -1,0 +1,38 @@
+---
+// En-tête d'une fiche (dossier, juridiction, organisme, texte, traitement) : vignette générée au sigle ou à
+// l'icône (jamais le logo officiel, DA section 7), puces, titre, chapô, puis métadonnées et liens d'action.
+import type { IconName } from '../../lib/icons.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  title: string;
+  lead?: string;
+  mark?: string;
+  icon?: IconName;
+}
+
+const { title, lead, mark, icon } = Astro.props;
+---
+
+<header class="flex flex-col gap-5 sm:flex-row sm:items-start">
+  {
+    (mark || icon) && (
+      <div
+        class:list={[
+          'generated-cover grid size-16 shrink-0 place-items-center rounded-card p-2 text-center font-heading font-extrabold leading-tight text-inverse sm:size-24',
+          (mark?.length ?? 0) > 4 ? 'text-xs sm:text-base' : 'text-base sm:text-xl',
+        ]}
+        aria-hidden="true"
+      >
+        {mark ?? (icon && <Icon name={icon} size={36} />)}
+      </div>
+    )
+  }
+  <div class="min-w-0 flex-1 space-y-3">
+    <div class="flex flex-wrap items-center gap-1.5"><slot name="badges" /></div>
+    <h1 class="text-3xl lg:text-4xl">{frenchTypography(title)}</h1>
+    {lead && <p class="text-lg text-secondary lg:text-xl">{frenchTypography(lead)}</p>}
+    <slot />
+  </div>
+</header>

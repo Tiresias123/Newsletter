@@ -1,0 +1,37 @@
+---
+// Liste de fiches liées (dossiers, textes, traitements, organismes, formulaires) : titre, puce de statut et
+// précision. Toute la ligne est cliquable ; un lien externe porte une flèche sortante et sa mention.
+import type { FicheLink } from '../../lib/content/views.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+import StatusBadge from '../ui/StatusBadge.astro';
+
+interface Props {
+  items: FicheLink[];
+}
+
+const { items } = Astro.props;
+---
+
+<ul class="divide-y divide-subtle rounded-card border border-border bg-surface">
+  {
+    items.map((item) => (
+      <li class="relative flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3">
+        {item.status && <StatusBadge status={item.status} />}
+        <p class="min-w-0 flex-1 font-semibold">
+          {item.url ? (
+            <a href={item.url} class="stretched-link hover:underline" rel={item.external ? 'noopener' : undefined}>
+              {frenchTypography(item.label)}
+              {item.external && <span class="sr-only">{` ${t('a11y.externalLink')}`}</span>}
+            </a>
+          ) : (
+            frenchTypography(item.label)
+          )}
+        </p>
+        {item.meta && (item.datetime ? <time datetime={item.datetime} class="text-sm text-meta">{item.meta}</time> : <span class="text-sm text-meta">{item.meta}</span>)}
+        {item.external && <Icon name="arrow-up-right" size={16} class="text-meta" />}
+      </li>
+    ))
+  }
+</ul>

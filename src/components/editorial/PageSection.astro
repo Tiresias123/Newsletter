@@ -1,0 +1,17 @@
+---
+// Section de page ancrée (« Sur cette page ») : un titre H2 et son contenu.
+import { frenchTypography } from '../../lib/typo.ts';
+
+interface Props {
+  id: string;
+  title: string;
+  class?: string;
+}
+
+const { id, title, class: className } = Astro.props;
+---
+
+<section id={id} aria-labelledby={`${id}-titre`} class:list={['scroll-mt-24', className]}>
+  <h2 id={`${id}-titre`} class="mb-4 text-2xl">{frenchTypography(title)}</h2>
+  <slot />
+</section>

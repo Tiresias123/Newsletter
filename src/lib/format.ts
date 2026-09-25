@@ -65,6 +65,24 @@ export function formatPercent(value: number, options: { decimals?: number; signe
   return `${sign}${body}${NBSP}%`;
 }
 
+// Nom d'un pays ou d'une région à partir de son code ISO (« CA » → « Canada », « EU » → « Union européenne »).
+export function formatRegion(code: string, locale = DEFAULT_LOCALE): string {
+  try {
+    return new Intl.DisplayNames([locale], { type: 'region' }).of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+// Adresse d'un site sans protocole ni « www. » (« https://www.lautorite.qc.ca/ » → « lautorite.qc.ca »).
+export function formatHost(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return url;
+  }
+}
+
 export type RelativeMessages = {
   justNow: string;
   minutesAgo: { one: string; other: string };

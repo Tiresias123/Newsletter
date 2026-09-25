@@ -1,7 +1,8 @@
 ---
 // Gabarit des pages de contenu (article, guide, dossier, fiches) : fil d'Ariane, colonne principale et barre
-// latérale de 340 px en deux zones (DA, section 12.3). La zone haute (présentation, sommaire collant) longe
-// le corps ; la zone basse longe les blocs de fin. Sur mobile, tout s'empile et la zone haute disparaît.
+// latérale de 340 px en deux zones (DA, section 12.3). La zone haute (présentation ou fiche d'identité, puis
+// sommaire collant) longe le corps ; la zone basse longe les blocs de fin. Sur mobile, tout s'empile et la
+// zone haute disparaît : la page reprend alors dans sa colonne ce qu'elle y montrait.
 import Breadcrumb from '../components/layout/Breadcrumb.astro';
 import type { Crumb } from '../lib/content/breadcrumbs.ts';
 import { t } from '../lib/i18n.ts';
@@ -26,10 +27,8 @@ const hasBottom = Astro.slots.has('aside-bottom');
       </div>
       {
         Astro.slots.has('aside-top') && (
-          <div class="layout-top hidden lg:block">
-            <div class="sticky top-[calc(var(--header-h)+1.5rem)] space-y-8">
-              <slot name="aside-top" />
-            </div>
+          <div class="layout-top hidden lg:flex lg:flex-col lg:gap-8">
+            <slot name="aside-top" />
           </div>
         )
       }

@@ -1,7 +1,7 @@
 ---
 // Questions fréquentes en accordéon natif (details), lisibles sans JavaScript. Les données structurées
 // FAQPage sont produites par la page ou par le bloc qui l'affiche.
-import { frenchTypography } from '../../lib/typo.ts';
+import { frenchTypography, paragraphs } from '../../lib/typo.ts';
 import Icon from '../ui/Icon.astro';
 
 interface Props {
@@ -9,7 +9,6 @@ interface Props {
 }
 
 const { items } = Astro.props;
-const paragraphs = (text: string) => text.split(/\n{2,}/).map((p) => p.trim()).filter(Boolean);
 ---
 
 <div class="not-prose divide-y divide-subtle rounded-card border border-border bg-surface">

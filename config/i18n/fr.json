@@ -715,5 +715,154 @@
       "traitements": "Traitements fiscaux",
       "pages": "Pages"
     }
+  },
+  "pagination": {
+    "label": "Pagination",
+    "previous": "Précédente",
+    "next": "Suivante",
+    "page": "Page {n}",
+    "current": "Page {n} sur {total}"
+  },
+  "fiche": {
+    "identity": "Fiche d'identité",
+    "onThisPage": "Sur cette page",
+    "officialSite": "Site officiel",
+    "rssFeed": "Flux RSS officiel",
+    "verifiedOn": "Vérifié le",
+    "updatedOn": "Mis à jour le",
+    "jurisdiction": "Juridiction",
+    "type": "Type",
+    "website": "Site",
+    "level": "Niveau",
+    "country": "Pays",
+    "parent": "Fait partie de",
+    "issuer": "Émetteur",
+    "number": "Numéro",
+    "citation": "Référence",
+    "adoptedAt": "Adoption ou décision",
+    "inForceAt": "Entrée en vigueur",
+    "legalStatus": "Statut",
+    "officialText": "Texte officiel",
+    "archivedCopy": "Copie archivée",
+    "taxpayer": "Type de contribuable",
+    "activity": "Activité",
+    "taxType": "Type d'impôt",
+    "review": "Révision",
+    "authorities": "Autorités",
+    "whoIsAffected": "Qui est visé",
+    "keyDates": "Dates clés",
+    "children": "Juridictions rattachées",
+    "keyProvisions": "Dispositions clés",
+    "taxableEvent": "Événement imposable",
+    "reporting": "Déclaration",
+    "forms": "Formulaires",
+    "seeAll": "Tout voir"
+  },
+  "emptyState": {
+    "default": "Rien à afficher pour le moment.",
+    "articles": "Aucun article publié pour le moment.",
+    "list": "Cette liste est vide pour le moment."
+  },
+  "dossier": {
+    "sheet": "Fiche du dossier",
+    "keyChanges": "Ce qui change",
+    "obligations": "Obligations",
+    "sanctions": "Sanctions",
+    "taxImplications": "Incidences fiscales",
+    "timeline": "Chronologie",
+    "keyTextes": "Textes clés",
+    "faq": "Questions fréquentes",
+    "sources": "Sources",
+    "articles": "Articles sur ce dossier",
+    "presentation": "Présentation"
+  },
+  "juridiction": {
+    "presentation": "Présentation",
+    "news": "Actualités",
+    "newsAll": "Tous les contenus sur cette juridiction",
+    "regulation": "Réglementation",
+    "tax": "Fiscalité",
+    "organismes": "Organismes",
+    "agenda": "À surveiller",
+    "faq": "Questions fréquentes",
+    "veille": "Veille officielle",
+    "noNews": "Aucun contenu publié sur cette juridiction pour le moment."
+  },
+  "organisme": {
+    "presentation": "Présentation",
+    "dossiers": "Dossiers liés",
+    "decisions": "Dernières décisions",
+    "textes": "Textes publiés",
+    "articles": "Derniers articles",
+    "guides": "Guides",
+    "resources": "Ressources",
+    "veille": "Veille de l'organisme"
+  },
+  "texte": {
+    "keyProvisions": "Dispositions clés",
+    "presentation": "Présentation",
+    "dossiers": "Dossiers qui citent ce texte",
+    "articles": "Articles sur ce texte",
+    "officialText": "Consulter le texte officiel",
+    "archivedCopy": "Copie archivée"
+  },
+  "traitement": {
+    "treatment": "Traitement fiscal",
+    "reporting": "Déclaration",
+    "forms": "Formulaires",
+    "explanations": "Explications",
+    "sources": "Sources",
+    "articles": "Articles sur ce traitement",
+    "form": "{code} : {name}"
+  },
+  "filters": {
+    "title": "Filtrer",
+    "theme": "Thème",
+    "format": "Format",
+    "jurisdiction": "Juridiction",
+    "all": "Tous",
+    "allFeminine": "Toutes",
+    "submit": "Filtrer",
+    "hint": "Les résultats filtrés s'affichent sur la page de recherche."
+  },
+  "lists": {
+    "featured": "À la une",
+    "latest": "Les plus récents",
+    "count": {
+      "one": "{count} contenu",
+      "other": "{count} contenus"
+    },
+    "byLevel": "Par niveau",
+    "letters": "Index alphabétique",
+    "letter": "Lettre {letter}",
+    "terms": {
+      "one": "{count} terme",
+      "other": "{count} termes"
+    },
+    "pageTitle": "{title}, page {n}",
+    "levels": {
+      "federal": "Fédéral",
+      "provincial": "Provinces et territoires",
+      "supranational": "Organisations supranationales",
+      "national": "Autres pays",
+      "international": "International"
+    },
+    "textesTable": {
+      "caption": "Textes officiels, du plus récent au plus ancien",
+      "title": "Titre",
+      "type": "Type",
+      "issuer": "Émetteur",
+      "date": "Date",
+      "status": "Statut"
+    },
+    "verifiedOn": "Vérifié le {date}",
+    "matrix": {
+      "caption": "Traitements fiscaux : {taxpayer}",
+      "treatment": "Traitement",
+      "activity": "Activité",
+      "jurisdiction": "Juridiction",
+      "taxType": "Type d'impôt",
+      "verifiedOn": "Vérifié le"
+    }
   }
 }

@@ -1,0 +1,47 @@
+---
+// Gabarit des fiches (dossier, juridiction, organisme, texte, traitement fiscal ; DA, maquettes 12.7 et 12.8) :
+// en-tête, puis sections ancrées sans onglets. Sur ordinateur, la fiche d'identité et le sommaire collant
+// occupent la zone haute de la barre latérale ; sur mobile, la fiche devient repliable et le sommaire une
+// ligne d'ancres, sous l'en-tête.
+import FicheIdentity from '../components/fiche/IdentityCard.astro';
+import TableOfContents from '../components/editorial/TableOfContents.astro';
+import type { Crumb } from '../lib/content/breadcrumbs.ts';
+import type { IdentityItem } from '../lib/content/views.ts';
+import { t } from '../lib/i18n.ts';
+import type { SeoProps } from '../lib/seo/meta.ts';
+import type { Heading } from '../lib/toc.ts';
+import ContentLayout from './ContentLayout.astro';
+
+interface Props {
+  crumbs: Crumb[];
+  seo: SeoProps;
+  identity: IdentityItem[];
+  identityTitle?: string;
+  toc: Heading[];
+  // Type de contenu pour les filtres de la recherche (Dossiers, Organismes…).
+  searchType: string;
+}
+
+const { crumbs, seo, identity, identityTitle, toc, searchType } = Astro.props;
+const onThisPage = t('fiche.onThisPage');
+---
+
+<ContentLayout crumbs={crumbs} seo={seo}>
+  <article data-pagefind-body data-pagefind-filter={`type:${searchType}`}>
+    <slot name="header" />
+    <div class="mt-8 space-y-6 lg:hidden">
+      <FicheIdentity items={identity} title={identityTitle} collapsible />
+      <TableOfContents headings={toc} variant="anchors" title={onThisPage} />
+    </div>
+    <div class="mt-10 space-y-12">
+      <slot />
+    </div>
+  </article>
+  <Fragment slot="aside-top">
+    <FicheIdentity items={identity} title={identityTitle} />
+    <TableOfContents headings={toc} variant="sidebar" title={onThisPage} />
+  </Fragment>
+  {Astro.slots.has('end') && <div slot="end" class="space-y-12"><slot name="end" /></div>}
+  {Astro.slots.has('aside-bottom') && <Fragment slot="aside-bottom"><slot name="aside-bottom" /></Fragment>}
+  {Astro.slots.has('after') && <Fragment slot="after"><slot name="after" /></Fragment>}
+</ContentLayout>

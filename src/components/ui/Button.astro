@@ -1,6 +1,9 @@
 ---
 // Bouton ou lien d'action : primaire, secondaire, fantôme, pastille de lien, inversé (fonds bleu foncé).
+// Un lien externe reçoit rel="noopener", une flèche sortante et la mention « (site externe) » pour les
+// lecteurs d'écran.
 import type { HTMLAttributes } from 'astro/types';
+import { t } from '../../lib/i18n.ts';
 import type { IconName } from '../../lib/icons.ts';
 import Icon from './Icon.astro';
 
@@ -10,19 +13,22 @@ type Props = {
   type?: 'button' | 'submit';
   icon?: IconName;
   iconAfter?: IconName;
+  external?: boolean;
   class?: string;
 } & Omit<HTMLAttributes<'button'>, 'type' | 'class'>;
 
-const { href, variant = 'primary', type = 'button', icon, iconAfter, class: className, ...attrs } = Astro.props;
+const { href, variant = 'primary', type = 'button', icon, iconAfter, external = false, class: className, ...attrs } = Astro.props;
 const classes = ['btn', `btn-${variant}`, className];
+const after = iconAfter ?? (external ? 'arrow-up-right' : undefined);
 ---
 
 {
   href ? (
-    <a href={href} class:list={classes}>
+    <a href={href} class:list={classes} rel={external ? 'noopener' : undefined}>
       {icon && <Icon name={icon} size={16} />}
       <slot />
-      {iconAfter && <Icon name={iconAfter} size={16} />}
+      {external && <span class="sr-only">{t('a11y.externalLink')}</span>}
+      {after && <Icon name={after} size={16} />}
     </a>
   ) : (
     <button type={type} class:list={classes} {...attrs}>

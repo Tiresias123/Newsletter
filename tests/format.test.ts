@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatChipDate, formatDate, formatDateTime, formatMoney, formatNumber, formatPercent, formatRelative, formatTime } from '../src/lib/format.ts';
+import { formatChipDate, formatDate, formatDateTime, formatHost, formatMoney, formatNumber, formatPercent, formatRegion, formatRelative, formatTime } from '../src/lib/format.ts';
 import { relativeDateMessages } from '../src/lib/i18n.ts';
 
 const NB = ' ';
@@ -74,5 +74,17 @@ describe('formatRelative', () => {
   it('renvoie null au-delà de sept jours ou dans le futur', () => {
     expect(at('2026-09-10T12:00:00Z')).toBeNull();
     expect(at('2026-09-26T12:00:00Z')).toBeNull();
+  });
+});
+
+describe('formatRegion et formatHost', () => {
+  it('nomme un pays ou une région à partir de son code, et garde un code inconnu', () => {
+    expect(formatRegion('CA')).toBe('Canada');
+    expect(formatRegion('eu')).toBe('Union européenne');
+    expect(formatRegion('not a code')).toBe('not a code');
+  });
+  it('réduit une adresse à son hôte, sans « www. »', () => {
+    expect(formatHost('https://www.lautorite.qc.ca/grand-public/')).toBe('lautorite.qc.ca');
+    expect(formatHost('pas une adresse')).toBe('pas une adresse');
   });
 });

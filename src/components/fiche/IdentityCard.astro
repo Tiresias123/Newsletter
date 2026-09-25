@@ -1,0 +1,41 @@
+---
+// Fiche d'identité : paires libellé et valeurs (liens internes ou externes, dates). En barre latérale sur
+// ordinateur ; repliable dans la colonne principale sur mobile (DA, maquette 12.8).
+import type { IdentityItem } from '../../lib/content/views.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+interface Props {
+  items: IdentityItem[];
+  title?: string;
+  id?: string;
+  collapsible?: boolean;
+  class?: string;
+}
+
+const { items, title = t('fiche.identity'), id = 'fiche-identite', collapsible = false, class: className } = Astro.props;
+const Container = collapsible ? 'details' : 'section';
+---
+
+{
+  items.length > 0 && (
+    <Container class:list={['rounded-card border border-border bg-surface', className]} aria-labelledby={collapsible ? undefined : id} data-pagefind-ignore>
+      {collapsible ? (
+        <summary class="cursor-pointer p-4 font-heading font-bold">{title}</summary>
+      ) : (
+        <h2 id={id} class="px-5 pt-5 text-lg">
+          {title}
+        </h2>
+      )}
+      <dl class:list={['space-y-3 text-sm', collapsible ? 'px-4 pb-4' : 'p-5 pt-3']}>
+        {items.map((item) => (
+          <div>
+            <dt class="text-meta">{item.label}</dt>
+            {/* Valeurs sur une seule ligne de gabarit : aucun blanc parasite avant les virgules. */}
+            <dd class="font-semibold break-words">{item.values.map((value, i) => [i > 0 ? ', ' : '', value.url ? <a href={value.url} class="text-link" rel={value.external ? 'noopener' : undefined}>{frenchTypography(value.text)}{value.external && <span class="sr-only">{` ${t('a11y.externalLink')}`}</span>}</a> : value.datetime ? <time datetime={value.datetime}>{value.text}</time> : frenchTypography(value.text)])}</dd>
+          </div>
+        ))}
+      </dl>
+    </Container>
+  )
+}

@@ -42,6 +42,8 @@ import {
 } from './fields.ts';
 
 const textList = () => z.array(z.string().min(1)).default([]);
+// Questions fréquentes d'une fiche, rendues en accordéon et en données structurées FAQPage.
+const faq = () => z.array(z.strictObject({ question: z.string().min(1), answer: z.string().min(1) })).default([]);
 
 type Check = z.RefinementCtx;
 
@@ -125,7 +127,7 @@ export const dossierSchema = (ctx: SchemaContext) =>
       shortTitle: optionalText(),
       summary: z.string().min(80).max(400),
       cover: cover(ctx),
-      faq: z.array(z.strictObject({ question: z.string().min(1), answer: z.string().min(1) })).default([]),
+      faq: faq(),
       legalStatus: z.enum(LEGAL_STATUS),
       jurisdictions: z.array(slug()).min(1),
       themes: slugList(),
@@ -149,6 +151,7 @@ export const dossierSchema = (ctx: SchemaContext) =>
       asOf: optionalDate(),
       reviewEvery: reviewEvery(),
       corrections: corrections(),
+      disclaimerVariant: optionalText(),
       status: status(),
       publishedAt: optionalDate(),
       publishedTime: time(),
@@ -179,6 +182,7 @@ export const jurisdictionSchema = (ctx: SchemaContext) =>
     badgeStyle: z.enum(JURISDICTION_BADGE).default('contour'),
     keyDossiers: slugList(),
     keyTraitements: slugList(),
+    faq: faq(),
     status: status(),
     seo: seo(ctx),
     lang: lang(),

@@ -1,0 +1,183 @@
+---
+// Page d'un dossier (brief 6.2) : page vivante sur une réglementation. Fiche du dossier, ce qui change, corps,
+// obligations, sanctions, incidences fiscales, chronologie, textes clés, FAQ, sources et articles liés.
+import type { ImageMetadata } from 'astro';
+import ArticleMeta from '../../components/article/ArticleMeta.astro';
+import DisclaimerBox from '../../components/editorial/DisclaimerBox.astro';
+import FaqList from '../../components/editorial/FaqList.astro';
+import Figure from '../../components/editorial/Figure.astro';
+import KeyPoints from '../../components/editorial/KeyPoints.astro';
+import LinkList from '../../components/editorial/LinkList.astro';
+import PageSection from '../../components/editorial/PageSection.astro';
+import RelatedCards from '../../components/editorial/RelatedCards.astro';
+import ShareButtons from '../../components/editorial/ShareButtons.astro';
+import SourceList from '../../components/editorial/SourceList.astro';
+import Timeline from '../../components/editorial/Timeline.astro';
+import TrustBlock from '../../components/editorial/TrustBlock.astro';
+import FicheHeader from '../../components/fiche/FicheHeader.astro';
+import { mdxComponents } from '../../components/mdx/index.ts';
+import FeaturedDossiers from '../../components/sidebar/FeaturedDossiers.astro';
+import NewsletterBox from '../../components/sidebar/NewsletterBox.astro';
+import UpcomingList from '../../components/sidebar/UpcomingList.astro';
+import JurisdictionBadge from '../../components/ui/JurisdictionBadge.astro';
+import PreviewBadge from '../../components/ui/PreviewBadge.astro';
+import StatusBadge from '../../components/ui/StatusBadge.astro';
+import FicheLayout from '../../layouts/FicheLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph, renderEntry } from '../../lib/content/astro.ts';
+import { breadcrumbs } from '../../lib/content/breadcrumbs.ts';
+import { dossierView } from '../../lib/content/fiches.ts';
+import type { LegalStatus } from '../../lib/content/enums.ts';
+import { t } from '../../lib/i18n.ts';
+import { absolute, articleJsonLd, faqJsonLd } from '../../lib/seo/json-ld.ts';
+import { ogImagePath } from '../../lib/seo/meta.ts';
+import { pageToc } from '../../lib/toc.ts';
+import { frenchTypography, paragraphs } from '../../lib/typo.ts';
+
+export async function getStaticPaths() {
+  const graph = await getGraph();
+  return graph
+    .all('dossiers')
+    .filter((e) => e.visibility.visible)
+    .map((e) => ({ params: { slug: e.id } }));
+}
+
+const graph = await getGraph();
+const entry = graph.get('dossiers', Astro.params.slug);
+if (!entry) throw new Error(`Dossier introuvable : ${Astro.params.slug}.`);
+const { site } = getConfig();
+const d = entry.data;
+const view = dossierView(graph, entry);
+const { Content, headings } = await renderEntry('dossiers', entry.id);
+const path = entry.url ?? '/';
+const published = entry.visibility.instant?.toISOString();
+
+const { toc, id } = pageToc(
+  headings,
+  [{ id: 'ce-qui-change', title: t('dossier.keyChanges'), show: d.keyChanges.length > 0 }],
+  [
+    { id: 'obligations', title: t('dossier.obligations'), show: d.obligations.length > 0 },
+    { id: 'sanctions', title: t('dossier.sanctions'), show: d.sanctions.length > 0 },
+    { id: 'incidences-fiscales', title: t('dossier.taxImplications'), show: Boolean(d.taxImplications) },
+    { id: 'chronologie', title: t('dossier.timeline'), show: view.timeline.length > 0 },
+    { id: 'textes-cles', title: t('dossier.keyTextes'), show: view.keyTextes.length > 0 },
+    { id: 'questions', title: t('dossier.faq'), show: d.faq.length > 0 },
+    { id: 'sources', title: t('dossier.sources'), show: view.sources.length > 0 },
+    { id: 'articles', title: t('dossier.articles'), show: view.articles.length > 0 },
+  ],
+);
+
+const seo = {
+  title: d.seo?.title || d.title,
+  description: d.seo?.description || d.summary,
+  canonical: d.seo?.canonical,
+  noindex: d.seo?.noindex,
+  type: 'article' as const,
+  image: ogImagePath(path),
+  imageAlt: d.title,
+  article: { publishedTime: published, modifiedTime: d.updatedAt, section: t('hubs.dossiers.title') },
+  jsonLd: [
+    articleJsonLd(site.url, {
+      type: 'Article',
+      path,
+      headline: d.title,
+      description: d.summary,
+      image: absolute(site.url, ogImagePath(path)),
+      datePublished: published,
+      dateModified: d.updatedAt ?? published,
+      section: t('hubs.dossiers.title'),
+    }),
+    ...(d.faq.length > 0 ? [faqJsonLd(d.faq)] : []),
+  ],
+};
+---
+
+<FicheLayout crumbs={breadcrumbs.dossier(entry)} seo={seo} identity={view.identity} identityTitle={t('dossier.sheet')} toc={toc} searchType={t('search.types.dossiers')}>
+  <div slot="header" class="space-y-5">
+    <FicheHeader title={d.title} lead={d.summary}>
+      <Fragment slot="badges">
+        <StatusBadge status={d.legalStatus as LegalStatus} />
+        {view.summary.jurisdictions.map((j) => <JurisdictionBadge jurisdiction={j} link />)}
+        {entry.visibility.previewOnly && <PreviewBadge state={entry.visibility.state === 'programme' ? 'programme' : 'brouillon'} />}
+      </Fragment>
+      <ArticleMeta instant={entry.visibility.instant} updatedAt={d.updatedAt} timezone={site.timezone} />
+    </FicheHeader>
+    {entry.visibility.state === 'archive' && <p class="callout callout--warning text-sm font-semibold">{t('editorial.archived')}</p>}
+    <TrustBlock asOf={d.asOf} jurisdictions={view.summary.jurisdictions} effectiveDate={d.effectiveDate} corrections={d.corrections} />
+    {d.cover?.src && <Figure image={d.cover.src as ImageMetadata} alt={d.cover.alt} credit={d.cover.credit} creditUrl={d.cover.creditUrl} priority />}
+    <ShareButtons title={d.title} print />
+  </div>
+
+  <KeyPoints points={d.keyChanges} title={t('dossier.keyChanges')} id={id('ce-qui-change')} family="strong" class="" />
+  <div class="prose">
+    <Content components={mdxComponents} />
+  </div>
+  {
+    [
+      { key: 'obligations', items: d.obligations },
+      { key: 'sanctions', items: d.sanctions },
+    ].map(
+      (list) =>
+        list.items.length > 0 && (
+          <PageSection id={id(list.key)} title={t(`dossier.${list.key as 'obligations' | 'sanctions'}`)}>
+            <div class="prose">
+              <ul>
+                {list.items.map((item) => (
+                  <li>{frenchTypography(item)}</li>
+                ))}
+              </ul>
+            </div>
+          </PageSection>
+        ),
+    )
+  }
+  {
+    d.taxImplications && (
+      <PageSection id={id('incidences-fiscales')} title={t('dossier.taxImplications')}>
+        <div class="prose">
+          {paragraphs(d.taxImplications).map((p) => (
+            <p>{frenchTypography(p)}</p>
+          ))}
+        </div>
+      </PageSection>
+    )
+  }
+  {
+    view.timeline.length > 0 && (
+      <PageSection id={id('chronologie')} title={t('dossier.timeline')}>
+        <Timeline items={view.timeline} />
+      </PageSection>
+    )
+  }
+  {
+    view.keyTextes.length > 0 && (
+      <PageSection id={id('textes-cles')} title={t('dossier.keyTextes')}>
+        <LinkList items={view.keyTextes} />
+      </PageSection>
+    )
+  }
+  {
+    d.faq.length > 0 && (
+      <PageSection id={id('questions')} title={t('dossier.faq')}>
+        <FaqList items={d.faq} />
+      </PageSection>
+    )
+  }
+
+  <Fragment slot="end">
+    {
+      view.sources.length > 0 && (
+        <PageSection id={id('sources')} title={t('dossier.sources')}>
+          <SourceList items={view.sources} />
+        </PageSection>
+      )
+    }
+    {view.disclaimer && <DisclaimerBox disclaimer={view.disclaimer} />}
+  </Fragment>
+  <Fragment slot="aside-bottom">
+    <UpcomingList entries={view.agenda} />
+    <FeaturedDossiers exclude={entry.url} />
+    <NewsletterBox />
+  </Fragment>
+  <RelatedCards slot="after" title={t('dossier.articles')} cards={view.articles} id={id('articles')} />
+</FicheLayout>

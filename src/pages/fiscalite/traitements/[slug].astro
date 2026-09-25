@@ -1,0 +1,129 @@
+---
+// Fiche d'un traitement fiscal (brief 6.7) : juridiction × type de contribuable × activité × type d'impôt.
+// Traitement résumé, déclaration, formulaires, explications (corps), sources et articles liés.
+// L'avertissement fiscal s'affiche toujours : ce n'est jamais un conseil personnalisé.
+import CardGrid from '../../../components/cards/CardGrid.astro';
+import DisclaimerBox from '../../../components/editorial/DisclaimerBox.astro';
+import LinkList from '../../../components/editorial/LinkList.astro';
+import PageSection from '../../../components/editorial/PageSection.astro';
+import ShareButtons from '../../../components/editorial/ShareButtons.astro';
+import SourceList from '../../../components/editorial/SourceList.astro';
+import TrustBlock from '../../../components/editorial/TrustBlock.astro';
+import FicheHeader from '../../../components/fiche/FicheHeader.astro';
+import { mdxComponents } from '../../../components/mdx/index.ts';
+import NewsletterBox from '../../../components/sidebar/NewsletterBox.astro';
+import Badge from '../../../components/ui/Badge.astro';
+import JurisdictionBadge from '../../../components/ui/JurisdictionBadge.astro';
+import PreviewBadge from '../../../components/ui/PreviewBadge.astro';
+import FicheLayout from '../../../layouts/FicheLayout.astro';
+import { getConfig } from '../../../lib/config/index.ts';
+import { getGraph, renderEntry } from '../../../lib/content/astro.ts';
+import { breadcrumbs } from '../../../lib/content/breadcrumbs.ts';
+import { traitementView } from '../../../lib/content/fiches.ts';
+import { enumLabel, t } from '../../../lib/i18n.ts';
+import { webPageJsonLd } from '../../../lib/seo/json-ld.ts';
+import { ogImagePath } from '../../../lib/seo/meta.ts';
+import { pageToc } from '../../../lib/toc.ts';
+import { frenchTypography, paragraphs } from '../../../lib/typo.ts';
+
+export async function getStaticPaths() {
+  const graph = await getGraph();
+  return graph
+    .all('traitements')
+    .filter((e) => e.visibility.visible)
+    .map((e) => ({ params: { slug: e.id } }));
+}
+
+const graph = await getGraph();
+const entry = graph.get('traitements', Astro.params.slug);
+if (!entry) throw new Error(`Traitement fiscal introuvable : ${Astro.params.slug}.`);
+const { site } = getConfig();
+const d = entry.data;
+const view = traitementView(graph, entry);
+const { Content, headings } = await renderEntry('traitements', entry.id);
+const path = entry.url ?? '/';
+
+const { toc, id } = pageToc(
+  headings,
+  [
+    { id: 'traitement', title: t('traitement.treatment') },
+    { id: 'declaration', title: t('traitement.reporting'), show: Boolean(d.reportingRequirement) },
+    { id: 'formulaires', title: t('traitement.forms'), show: view.forms.length > 0 },
+  ],
+  [
+    { id: 'sources', title: t('traitement.sources'), show: view.sources.length > 0 },
+    { id: 'articles', title: t('traitement.articles'), show: view.articles.length > 0 },
+  ],
+);
+
+const seo = {
+  title: d.seo?.title || d.title,
+  description: d.seo?.description || paragraphs(d.treatment)[0]?.slice(0, 160),
+  canonical: d.seo?.canonical,
+  noindex: d.seo?.noindex,
+  image: ogImagePath(path),
+  imageAlt: d.title,
+  jsonLd: [webPageJsonLd(site.url, { path, name: d.title, dateModified: d.updatedAt })],
+};
+---
+
+<FicheLayout crumbs={breadcrumbs.traitement(graph, entry)} seo={seo} identity={view.identity} toc={toc} searchType={t('search.types.traitements')}>
+  <div slot="header" class="space-y-5">
+    <FicheHeader title={d.title}>
+      <Fragment slot="badges">
+        {view.jurisdictions.map((j) => <JurisdictionBadge jurisdiction={j} link />)}
+        <Badge label={enumLabel('taxType', d.taxType)} styleClass="badge--ardoise" />
+        {entry.visibility.previewOnly && <PreviewBadge state={entry.visibility.state === 'programme' ? 'programme' : 'brouillon'} />}
+      </Fragment>
+    </FicheHeader>
+    <TrustBlock asOf={d.asOf} jurisdictions={view.jurisdictions} />
+    <ShareButtons title={d.title} print />
+  </div>
+
+  <section id={id('traitement')} class="callout callout--strong" aria-labelledby={`${id('traitement')}-titre`}>
+    <h2 id={`${id('traitement')}-titre`} class="callout-title text-lg">{t('traitement.treatment')}</h2>
+    <div class="callout-body">{paragraphs(d.treatment).map((p) => <p>{frenchTypography(p)}</p>)}</div>
+  </section>
+  {
+    d.reportingRequirement && (
+      <PageSection id={id('declaration')} title={t('traitement.reporting')}>
+        <div class="prose">
+          {paragraphs(d.reportingRequirement).map((p) => (
+            <p>{frenchTypography(p)}</p>
+          ))}
+        </div>
+      </PageSection>
+    )
+  }
+  {
+    view.forms.length > 0 && (
+      <PageSection id={id('formulaires')} title={t('traitement.forms')}>
+        <LinkList items={view.forms} />
+      </PageSection>
+    )
+  }
+  <div class="prose">
+    <Content components={mdxComponents} />
+  </div>
+
+  <Fragment slot="end">
+    {
+      view.sources.length > 0 && (
+        <PageSection id={id('sources')} title={t('traitement.sources')}>
+          <SourceList items={view.sources} />
+        </PageSection>
+      )
+    }
+    {view.disclaimer && <DisclaimerBox disclaimer={view.disclaimer} />}
+    {
+      view.articles.length > 0 && (
+        <PageSection id={id('articles')} title={t('traitement.articles')}>
+          <CardGrid cards={view.articles} variant="horizontal" />
+        </PageSection>
+      )
+    }
+  </Fragment>
+  <Fragment slot="aside-bottom">
+    <NewsletterBox />
+  </Fragment>
+</FicheLayout>

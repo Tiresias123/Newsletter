@@ -38,11 +38,18 @@ export function resolveSources(graph: Graph, cited: readonly CitedSource[]): Sou
   return [...items.filter((i) => i.official), ...items.filter((i) => !i.official)];
 }
 
-// Sources réutilisables (bloc de page ListeSources) : toutes, ou celles demandées, officielles d'abord.
-export function reusableSources(graph: Graph, filter: { ids?: readonly string[]; jurisdiction?: string; type?: string } = {}): SourceItem[] {
+// Sources réutilisables (bloc de page ListeSources, ressources d'un organisme) : toutes, ou celles demandées,
+// officielles d'abord.
+export function reusableSources(graph: Graph, filter: { ids?: readonly string[]; jurisdiction?: string; type?: string; issuer?: string } = {}): SourceItem[] {
   const cited = graph
     .all('sources')
-    .filter((e) => (!filter.ids || filter.ids.includes(e.id)) && (!filter.jurisdiction || e.data.jurisdiction === filter.jurisdiction) && (!filter.type || e.data.sourceType === filter.type))
+    .filter(
+      (e) =>
+        (!filter.ids || filter.ids.includes(e.id)) &&
+        (!filter.jurisdiction || e.data.jurisdiction === filter.jurisdiction) &&
+        (!filter.type || e.data.sourceType === filter.type) &&
+        (!filter.issuer || e.data.issuer === filter.issuer),
+    )
     .map((e): CitedSource => ({ kind: 'reference', source: e.id }));
   return resolveSources(graph, cited);
 }

@@ -20,9 +20,9 @@ const AuthorTag = author?.visibility.visible ? 'a' : 'span';
 
 <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-meta">
   {instant && <time datetime={instant.toISOString()}>{formatDateTime(instant, t('editorial.meta.publishedAt'), timezone)}</time>}
-  {updatedAt && <span aria-hidden="true">·</span>}
+  {updatedAt && instant && <span aria-hidden="true">·</span>}
   {updatedAt && <time datetime={updatedAt}>{t('editorial.meta.updated', { date: formatDate(updatedAt) })}</time>}
-  {readingTime && <span aria-hidden="true">·</span>}
+  {readingTime && (instant || updatedAt) && <span aria-hidden="true">·</span>}
   {readingTime && <span>{t('editorial.meta.readingTime', { count: readingTime })}</span>}
   {
     author && (

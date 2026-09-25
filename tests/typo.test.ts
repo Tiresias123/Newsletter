@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { frenchTypography } from '../src/lib/typo.ts';
+import { frenchTypography, paragraphs } from '../src/lib/typo.ts';
 import { t } from '../src/lib/i18n.ts';
 
 const NB = ' ';
@@ -36,5 +36,11 @@ describe('t()', () => {
   });
   it('applique la typographie française', () => {
     expect(t('footer.dataHosting', { place: 'Canada' })).toBe(`Données hébergées${NB}: Canada`);
+  });
+});
+
+describe('paragraphs()', () => {
+  it('découpe un texte saisi aux lignes vides et ignore les blancs', () => {
+    expect(paragraphs('Premier.\n\n\nDeuxième,\nsur deux lignes.\n\n  ')).toEqual(['Premier.', 'Deuxième,\nsur deux lignes.']);
   });
 });

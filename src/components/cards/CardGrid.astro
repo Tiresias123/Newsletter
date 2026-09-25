@@ -1,0 +1,49 @@
+---
+// Grille ou liste de cartes d'articles et de guides (listes, hubs, fiches). Avec mobile="horizontal", la grille
+// devient sur mobile une liste de cartes horizontales (DA, maquette 12.6).
+import type { CardModel } from '../../lib/content/cards.ts';
+import ArticleCard, { type CardVariant } from './ArticleCard.astro';
+
+interface Props {
+  cards: CardModel[];
+  variant?: CardVariant;
+  columns?: 2 | 3;
+  level?: 2 | 3;
+  mobile?: 'stack' | 'horizontal';
+}
+
+const { cards, variant = 'medium', columns = 3, level = 3, mobile = 'stack' } = Astro.props;
+const list = variant === 'horizontal' || variant === 'compact';
+const mobileList = !list && mobile === 'horizontal';
+---
+
+{
+  list ? (
+    <ul class="divide-y divide-subtle">
+      {cards.map((card) => (
+        <li>
+          <ArticleCard card={card} variant={variant} level={level} surface="plain" />
+        </li>
+      ))}
+    </ul>
+  ) : (
+    <>
+      <ul class:list={['grid-cols-1 gap-6 sm:grid-cols-2', mobileList ? 'hidden sm:grid' : 'grid', columns === 3 && 'lg:grid-cols-3']}>
+        {cards.map((card) => (
+          <li>
+            <ArticleCard card={card} variant={variant} level={level} />
+          </li>
+        ))}
+      </ul>
+      {mobileList && (
+        <ul class="divide-y divide-subtle sm:hidden">
+          {cards.map((card) => (
+            <li>
+              <ArticleCard card={card} variant="horizontal" level={level} surface="plain" />
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  )
+}

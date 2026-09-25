@@ -115,3 +115,20 @@ export function definedTermJsonLd(siteUrl: string, term: { name: string; descrip
     inDefinedTermSet: { '@type': 'DefinedTermSet', name: setName, url: absolute(siteUrl, '/lexique/') },
   };
 }
+
+// Page de fiche ou de liste : WebPage (ou un sous-type), avec le sujet décrit (juridiction, texte…).
+export function webPageJsonLd(
+  siteUrl: string,
+  p: { type?: 'WebPage' | 'CollectionPage' | 'ProfilePage' | 'AboutPage' | 'ContactPage'; path: string; name: string; description?: string; about?: JsonLd; dateModified?: string },
+): JsonLd {
+  return {
+    '@type': p.type ?? 'WebPage',
+    name: p.name,
+    url: absolute(siteUrl, p.path),
+    inLanguage: 'fr-CA',
+    ...(p.description && { description: p.description }),
+    ...(p.about && { about: p.about }),
+    ...(p.dateModified && { dateModified: p.dateModified }),
+    isPartOf: { '@type': 'WebSite', url: absolute(siteUrl, '/') },
+  };
+}

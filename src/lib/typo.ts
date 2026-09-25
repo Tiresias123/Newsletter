@@ -20,3 +20,11 @@ export function frenchTypography(text: string): string {
       .replace(/\$ +(?=CA\b|US\b)/g, `$${NBSP}`)
   );
 }
+
+// Paragraphes d'un texte saisi dans un champ (réponse de FAQ, incidences fiscales…) : séparés par une ligne vide.
+export function paragraphs(text: string): string[] {
+  return text
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}

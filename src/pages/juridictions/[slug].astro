@@ -1,0 +1,130 @@
+---
+// Page d'une juridiction (brief 6.4), composée automatiquement : présentation (corps), actualités,
+// réglementation (dossiers), fiscalité (traitements), organismes, agenda et questions fréquentes.
+import Button from '../../components/ui/Button.astro';
+import CardGrid from '../../components/cards/CardGrid.astro';
+import EmptyState from '../../components/editorial/EmptyState.astro';
+import FaqList from '../../components/editorial/FaqList.astro';
+import LinkList from '../../components/editorial/LinkList.astro';
+import PageSection from '../../components/editorial/PageSection.astro';
+import ShareButtons from '../../components/editorial/ShareButtons.astro';
+import Timeline from '../../components/editorial/Timeline.astro';
+import FicheHeader from '../../components/fiche/FicheHeader.astro';
+import { mdxComponents } from '../../components/mdx/index.ts';
+import NewsletterBox from '../../components/sidebar/NewsletterBox.astro';
+import VeilleFeed from '../../components/sidebar/VeilleFeed.astro';
+import Badge from '../../components/ui/Badge.astro';
+import PreviewBadge from '../../components/ui/PreviewBadge.astro';
+import FicheLayout from '../../layouts/FicheLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph, renderEntry } from '../../lib/content/astro.ts';
+import { breadcrumbs } from '../../lib/content/breadcrumbs.ts';
+import { juridictionView } from '../../lib/content/fiches.ts';
+import { enumLabel, t } from '../../lib/i18n.ts';
+import { faqJsonLd, webPageJsonLd } from '../../lib/seo/json-ld.ts';
+import { ogImagePath } from '../../lib/seo/meta.ts';
+import { pageToc } from '../../lib/toc.ts';
+
+export async function getStaticPaths() {
+  const graph = await getGraph();
+  return graph
+    .all('juridictions')
+    .filter((e) => e.visibility.visible)
+    .map((e) => ({ params: { slug: e.id } }));
+}
+
+const graph = await getGraph();
+const entry = graph.get('juridictions', Astro.params.slug);
+if (!entry) throw new Error(`Juridiction introuvable : ${Astro.params.slug}.`);
+const { site } = getConfig();
+const d = entry.data;
+const view = juridictionView(graph, entry);
+const { Content, headings } = await renderEntry('juridictions', entry.id);
+const path = entry.url ?? '/';
+
+const { toc, id } = pageToc(
+  headings,
+  [],
+  [
+    { id: 'actualites', title: t('juridiction.news') },
+    { id: 'reglementation', title: t('juridiction.regulation'), show: view.dossiers.length > 0 },
+    { id: 'fiscalite', title: t('juridiction.tax'), show: view.traitements.length > 0 },
+    { id: 'organismes', title: t('juridiction.organismes'), show: view.organismes.length > 0 },
+    { id: 'agenda', title: t('juridiction.agenda'), show: view.agenda.length > 0 },
+    { id: 'questions', title: t('juridiction.faq'), show: d.faq.length > 0 },
+  ],
+);
+
+const seo = {
+  title: d.seo?.title || d.name,
+  description: d.seo?.description || d.description,
+  canonical: d.seo?.canonical,
+  noindex: d.seo?.noindex,
+  image: ogImagePath(path),
+  imageAlt: d.name,
+  jsonLd: [
+    webPageJsonLd(site.url, { path, name: d.name, description: d.description, about: { '@type': 'AdministrativeArea', name: d.name } }),
+    ...(d.faq.length > 0 ? [faqJsonLd(d.faq)] : []),
+  ],
+};
+---
+
+<FicheLayout crumbs={breadcrumbs.juridiction(graph, entry)} seo={seo} identity={view.identity} toc={toc} searchType={t('search.types.juridictions')}>
+  <div slot="header" class="space-y-5">
+    <FicheHeader title={d.name} lead={d.description} icon={d.icon}>
+      <Fragment slot="badges">
+        <Badge label={enumLabel('jurisdictionLevel', d.level)} styleClass="badge--ardoise" />
+        {entry.visibility.previewOnly && <PreviewBadge state={entry.visibility.state === 'programme' ? 'programme' : 'brouillon'} />}
+      </Fragment>
+    </FicheHeader>
+    <ShareButtons title={d.name} />
+  </div>
+
+  <div class="prose">
+    <Content components={mdxComponents} />
+  </div>
+  <PageSection id={id('actualites')} title={t('juridiction.news')}>
+    {view.news.length > 0 ? <CardGrid cards={view.news} columns={2} /> : <EmptyState message={t('juridiction.noNews')} />}
+    {view.hasMoreNews && <Button href={`/recherche/?juridiction=${entry.id}`} variant="pill" iconAfter="arrow-right" class="mt-6">{t('juridiction.newsAll')}</Button>}
+  </PageSection>
+  {
+    view.dossiers.length > 0 && (
+      <PageSection id={id('reglementation')} title={t('juridiction.regulation')}>
+        <LinkList items={view.dossiers} />
+      </PageSection>
+    )
+  }
+  {
+    view.traitements.length > 0 && (
+      <PageSection id={id('fiscalite')} title={t('juridiction.tax')}>
+        <LinkList items={view.traitements} />
+      </PageSection>
+    )
+  }
+  {
+    view.organismes.length > 0 && (
+      <PageSection id={id('organismes')} title={t('juridiction.organismes')}>
+        <LinkList items={view.organismes} />
+      </PageSection>
+    )
+  }
+  {
+    view.agenda.length > 0 && (
+      <PageSection id={id('agenda')} title={t('juridiction.agenda')}>
+        <Timeline items={view.agenda.slice(0, 6).map((e) => ({ date: e.data.date, title: e.data.title, url: e.data.url, description: e.data.description }))} />
+      </PageSection>
+    )
+  }
+  {
+    d.faq.length > 0 && (
+      <PageSection id={id('questions')} title={t('juridiction.faq')}>
+        <FaqList items={d.faq} />
+      </PageSection>
+    )
+  }
+
+  <Fragment slot="aside-bottom">
+    <VeilleFeed items={view.veille} count={5} />
+    <NewsletterBox />
+  </Fragment>
+</FicheLayout>

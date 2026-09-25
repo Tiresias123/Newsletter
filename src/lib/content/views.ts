@@ -9,6 +9,19 @@ import { resolveSources, type SourceItem } from './sources.ts';
 
 export type LinkItem = { id: string; label: string; url?: string; meta?: string };
 
+// Élément d'une liste de fiches liées (textes clés, dossiers, décisions) : statut et précision facultatifs.
+export type FicheLink = { label: string; url?: string; external?: boolean; meta?: string; status?: LegalStatus; datetime?: string };
+
+// Ligne d'une fiche d'identité : un libellé et une ou plusieurs valeurs (lien interne ou externe, date).
+export type IdentityValue = { text: string; url?: string; external?: boolean; datetime?: string };
+export type IdentityItem = { label: string; values: IdentityValue[] };
+
+// Ligne omise quand elle n'a aucune valeur : les fiches n'affichent jamais de libellé vide.
+export function identityRow(label: string, values: Array<IdentityValue | undefined | false>): IdentityItem[] {
+  const kept = values.filter((v): v is IdentityValue => Boolean(v && v.text));
+  return kept.length > 0 ? [{ label, values: kept }] : [];
+}
+
 export const DOSSIER_DATES = ['proposalDate', 'publicationDate', 'adoptedDate', 'effectiveDate', 'implementationDate', 'repealDate'] as const;
 export type DossierDate = (typeof DOSSIER_DATES)[number];
 

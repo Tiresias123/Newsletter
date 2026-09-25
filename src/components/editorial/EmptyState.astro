@@ -1,0 +1,10 @@
+---
+// Liste vide : un message plutôt qu'un espace blanc (DA, section 8.2).
+import { t } from '../../lib/i18n.ts';
+
+interface Props {
+  message?: string;
+}
+---
+
+<p class="rounded-card border border-dashed border-border p-6 text-center text-meta">{Astro.props.message ?? t('emptyState.default')}</p>
