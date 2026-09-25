@@ -24,7 +24,7 @@ import type { LegalStatus } from '../../lib/content/enums.ts';
 import { texteView } from '../../lib/content/fiches.ts';
 import { enumLabel, t } from '../../lib/i18n.ts';
 import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
-import { ogImagePath } from '../../lib/seo/meta.ts';
+import { socialImagePath } from '../../lib/seo/social-image.ts';
 import { searchDataOf } from '../../lib/search/index-data.ts';
 import { pageToc } from '../../lib/toc.ts';
 
@@ -44,6 +44,7 @@ const d = entry.data;
 const view = texteView(graph, entry);
 const { Content, headings } = await renderEntry('textes', entry.id);
 const path = entry.url ?? '/';
+const image = await socialImagePath(d.seo, path);
 
 const { toc, id } = pageToc(
   headings,
@@ -59,7 +60,7 @@ const seo = {
   description: d.seo?.description || d.summary,
   canonical: d.seo?.canonical,
   noindex: d.seo?.noindex,
-  image: ogImagePath(path),
+  image,
   imageAlt: d.title,
   jsonLd: [
     webPageJsonLd(site.url, {

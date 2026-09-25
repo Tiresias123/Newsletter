@@ -22,7 +22,7 @@ import { breadcrumbs } from '../../../lib/content/breadcrumbs.ts';
 import { traitementView } from '../../../lib/content/fiches.ts';
 import { enumLabel, t } from '../../../lib/i18n.ts';
 import { webPageJsonLd } from '../../../lib/seo/json-ld.ts';
-import { ogImagePath } from '../../../lib/seo/meta.ts';
+import { socialImagePath } from '../../../lib/seo/social-image.ts';
 import { searchDataOf } from '../../../lib/search/index-data.ts';
 import { pageToc } from '../../../lib/toc.ts';
 import { frenchTypography, paragraphs } from '../../../lib/typo.ts';
@@ -43,6 +43,7 @@ const d = entry.data;
 const view = traitementView(graph, entry);
 const { Content, headings } = await renderEntry('traitements', entry.id);
 const path = entry.url ?? '/';
+const image = await socialImagePath(d.seo, path);
 
 const { toc, id } = pageToc(
   headings,
@@ -62,7 +63,7 @@ const seo = {
   description: d.seo?.description || paragraphs(d.treatment)[0]?.slice(0, 160),
   canonical: d.seo?.canonical,
   noindex: d.seo?.noindex,
-  image: ogImagePath(path),
+  image,
   imageAlt: d.title,
   jsonLd: [webPageJsonLd(site.url, { path, name: d.title, dateModified: d.updatedAt })],
 };

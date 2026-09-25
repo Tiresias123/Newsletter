@@ -940,5 +940,13 @@
     "articles": "Au sommaire",
     "empty": "Les numéros envoyés seront archivés ici.",
     "allIssues": "Tous les numéros"
+  },
+  "ogImage": {
+    "dossier": "Dossier",
+    "juridiction": "Juridiction",
+    "organisme": "Organisme",
+    "traitement": "Traitement fiscal",
+    "lexique": "Lexique",
+    "newsletter": "Infolettre, numéro {n}"
   }
 }

@@ -22,7 +22,7 @@ import { breadcrumbs } from '../../lib/content/breadcrumbs.ts';
 import { organismeView } from '../../lib/content/fiches.ts';
 import { enumLabel, t } from '../../lib/i18n.ts';
 import { organismeJsonLd } from '../../lib/seo/json-ld.ts';
-import { ogImagePath } from '../../lib/seo/meta.ts';
+import { socialImagePath } from '../../lib/seo/social-image.ts';
 import { searchDataOf } from '../../lib/search/index-data.ts';
 import { pageToc } from '../../lib/toc.ts';
 
@@ -42,6 +42,7 @@ const d = entry.data;
 const view = organismeView(graph, entry);
 const { Content, headings } = await renderEntry('organismes', entry.id);
 const path = entry.url ?? '/';
+const image = await socialImagePath(d.seo, path);
 const title = d.acronym ? `${d.name} (${d.acronym})` : d.name;
 // Vignette : le sigle, sinon les initiales des mots significatifs du nom.
 const mark = d.acronym || d.name.split(/\s+/).filter((w) => w.length > 3).map((w) => w[0]).join('').slice(0, 4).toUpperCase();
@@ -64,7 +65,7 @@ const seo = {
   description: d.seo?.description || d.role,
   canonical: d.seo?.canonical,
   noindex: d.seo?.noindex,
-  image: ogImagePath(path),
+  image,
   imageAlt: title,
   jsonLd: [
     organismeJsonLd(site.url, {

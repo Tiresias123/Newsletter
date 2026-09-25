@@ -8,7 +8,7 @@ import type { Entry } from '../../lib/content/graph.ts';
 import { formatDate } from '../../lib/format.ts';
 import { t } from '../../lib/i18n.ts';
 import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
-import { ogImagePath } from '../../lib/seo/meta.ts';
+import { socialImagePath } from '../../lib/seo/social-image.ts';
 import { frenchTypography } from '../../lib/typo.ts';
 import ContentLayout from '../../layouts/ContentLayout.astro';
 import TableOfContents from '../editorial/TableOfContents.astro';
@@ -25,6 +25,7 @@ const { site } = getConfig();
 const d = entry.data;
 const { Content, headings } = await renderEntry('pages', entry.id);
 const path = entry.url ?? '/';
+const image = await socialImagePath(d.seo, path);
 // Type schema.org des pages « à propos » et « contact » ; WebPage pour les autres.
 const PAGE_TYPES: Record<string, 'AboutPage' | 'ContactPage'> = { 'a-propos': 'AboutPage', contact: 'ContactPage' };
 const seo = {
@@ -32,7 +33,7 @@ const seo = {
   description: d.seo?.description || undefined,
   canonical: d.seo?.canonical,
   noindex: d.noindex || d.seo?.noindex,
-  image: ogImagePath(path),
+  image,
   imageAlt: d.title,
   jsonLd: [webPageJsonLd(site.url, { type: PAGE_TYPES[entry.id] ?? 'WebPage', path, name: d.title, dateModified: d.updatedAt })],
 };

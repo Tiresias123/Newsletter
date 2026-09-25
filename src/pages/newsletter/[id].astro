@@ -19,7 +19,7 @@ import { formatDate } from '../../lib/format.ts';
 import { t } from '../../lib/i18n.ts';
 import { searchDataOf } from '../../lib/search/index-data.ts';
 import { absolute, articleJsonLd } from '../../lib/seo/json-ld.ts';
-import { ogImagePath } from '../../lib/seo/meta.ts';
+import { socialImagePath } from '../../lib/seo/social-image.ts';
 import { frenchTypography } from '../../lib/typo.ts';
 
 export async function getStaticPaths() {
@@ -37,6 +37,7 @@ const { site } = getConfig();
 const d = entry.data;
 const { Content } = await renderEntry('newsletters', entry.id);
 const path = entry.url ?? '/';
+const image = await socialImagePath(undefined, path);
 const cards = d.articles.flatMap((id) => {
   const article = graph.get('articles', id);
   return article?.visibility.visible ? [articleCard(graph, article)] : [];
@@ -47,10 +48,10 @@ const seo = {
   title: d.subject,
   description: d.preheader || t('hubs.newsletter.description'),
   type: 'article' as const,
-  image: ogImagePath(path),
+  image,
   imageAlt: d.subject,
   article: { publishedTime: published, section: t('hubs.newsletter.title') },
-  jsonLd: [articleJsonLd(site.url, { type: 'Article', path, headline: d.subject, description: d.preheader || d.subject, image: absolute(site.url, ogImagePath(path)), datePublished: published, section: t('hubs.newsletter.title') })],
+  jsonLd: [articleJsonLd(site.url, { type: 'Article', path, headline: d.subject, description: d.preheader || d.subject, image: absolute(site.url, image), datePublished: published, section: t('hubs.newsletter.title') })],
 };
 ---
 

@@ -5,6 +5,7 @@ import { satteri } from '@astrojs/markdown-satteri';
 import tailwindcss from '@tailwindcss/vite';
 import { contentCacheGuard } from './src/lib/content-cache.ts';
 import { devPages } from './src/lib/dev-pages.ts';
+import { sitemap } from './src/lib/seo/sitemap-integration.ts';
 import { notesPlugin } from './src/lib/mdx/notes.ts';
 import { typographyPlugin } from './src/lib/mdx/typography.ts';
 import { themePlugin } from './src/lib/theme/vite-plugin.ts';
@@ -56,7 +57,7 @@ export default defineConfig({
   // Ponctuation « intelligente » désactivée : elle produirait des guillemets à l'anglaise.
   // Notes numérotées d'abord, pour que leur texte, reparsé, reçoive ensuite la typographie.
   markdown: { processor: satteri({ features: { smartPunctuation: false }, mdastPlugins: [notesPlugin, typographyPlugin] }) },
-  integrations: [contentCacheGuard(), mdx(), devPages()],
+  integrations: [contentCacheGuard(), mdx(), devPages(), sitemap()],
   fonts,
   vite: {
     plugins: [tailwindcss(), themePlugin()],

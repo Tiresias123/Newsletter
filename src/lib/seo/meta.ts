@@ -18,6 +18,8 @@ export type SeoProps = {
   labels?: Array<{ label: string; value: string }>;
   jsonLd?: JsonLd[];
   crumbs?: Crumb[];
+  // Flux propre à la page (hub de catégorie), annoncé en plus du flux général.
+  rss?: { title: string; url: string };
 };
 
 // Image Open Graph d'une page : /og/<chemin de la page>.png, /og/accueil.png pour l'accueil.

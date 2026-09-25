@@ -22,7 +22,7 @@ import { breadcrumbs } from '../../lib/content/breadcrumbs.ts';
 import { juridictionView } from '../../lib/content/fiches.ts';
 import { enumLabel, t } from '../../lib/i18n.ts';
 import { faqJsonLd, webPageJsonLd } from '../../lib/seo/json-ld.ts';
-import { ogImagePath } from '../../lib/seo/meta.ts';
+import { socialImagePath } from '../../lib/seo/social-image.ts';
 import { searchDataOf } from '../../lib/search/index-data.ts';
 import { pageToc } from '../../lib/toc.ts';
 
@@ -42,6 +42,7 @@ const d = entry.data;
 const view = juridictionView(graph, entry);
 const { Content, headings } = await renderEntry('juridictions', entry.id);
 const path = entry.url ?? '/';
+const image = await socialImagePath(d.seo, path);
 
 const { toc, id } = pageToc(
   headings,
@@ -61,7 +62,7 @@ const seo = {
   description: d.seo?.description || d.description,
   canonical: d.seo?.canonical,
   noindex: d.seo?.noindex,
-  image: ogImagePath(path),
+  image,
   imageAlt: d.name,
   jsonLd: [
     webPageJsonLd(site.url, { path, name: d.name, description: d.description, about: { '@type': 'AdministrativeArea', name: d.name } }),

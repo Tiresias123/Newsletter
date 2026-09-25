@@ -9,7 +9,7 @@ import { articleView } from '../../lib/content/views.ts';
 import { t } from '../../lib/i18n.ts';
 import { searchDataOf } from '../../lib/search/index-data.ts';
 import { absolute, articleJsonLd } from '../../lib/seo/json-ld.ts';
-import { ogImagePath } from '../../lib/seo/meta.ts';
+import { socialImagePath } from '../../lib/seo/social-image.ts';
 import ContentLayout from '../../layouts/ContentLayout.astro';
 import RelatedCards from '../editorial/RelatedCards.astro';
 import TableOfContents from '../editorial/TableOfContents.astro';
@@ -36,6 +36,7 @@ const { Content, headings } = await renderEntry(entry.collection, entry.id);
 const d = entry.data;
 const isGuide = entry.collection === 'guides';
 const path = entry.url ?? '/';
+const image = await socialImagePath(d.seo, path);
 const published = entry.visibility.instant?.toISOString();
 // Type schema.org : celui du format pour un article (NewsArticle, AnalysisNewsArticle…), Article pour un guide.
 const jsonLd = [
@@ -44,7 +45,7 @@ const jsonLd = [
     path,
     headline: d.title,
     description: d.dek,
-    image: absolute(site.url, ogImagePath(path)),
+    image: absolute(site.url, image),
     datePublished: published,
     dateModified: d.updatedAt ?? published,
     author: view.author && { name: view.author.data.name, path: view.author.visibility.visible ? view.author.url : undefined },
@@ -58,7 +59,7 @@ const seo = {
   canonical: d.seo?.canonical,
   noindex: d.seo?.noindex,
   type: 'article' as const,
-  image: ogImagePath(path),
+  image,
   imageAlt: d.title,
   article: {
     publishedTime: entry.visibility.instant?.toISOString(),

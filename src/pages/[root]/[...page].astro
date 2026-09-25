@@ -7,6 +7,8 @@ import { getGraph } from '../../lib/content/astro.ts';
 import { breadcrumbs } from '../../lib/content/breadcrumbs.ts';
 import { articleCard } from '../../lib/content/cards.ts';
 import { editorialInCategory } from '../../lib/content/relations.ts';
+import { getConfig } from '../../lib/config/index.ts';
+import { t } from '../../lib/i18n.ts';
 import { HUB_FEATURED, hubLinks, pagedPaths } from '../../lib/lists.ts';
 
 export async function getStaticPaths() {
@@ -48,6 +50,7 @@ if (!category && !page) throw new Error(`Adresse inconnue : /${Astro.params.root
       links={hubLinks(category.url ?? '')}
       featured={HUB_FEATURED}
       filters={{ categorie: category.id }}
+      seo={{ rss: { title: t('site.pageTitle', { title: category.data.label, site: getConfig().site.name }), url: `${category.url}rss.xml` } }}
     />
   )
 }

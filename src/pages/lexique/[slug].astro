@@ -19,7 +19,7 @@ import { resolveSources } from '../../lib/content/sources.ts';
 import type { FicheLink } from '../../lib/content/views.ts';
 import { t } from '../../lib/i18n.ts';
 import { definedTermJsonLd } from '../../lib/seo/json-ld.ts';
-import { ogImagePath } from '../../lib/seo/meta.ts';
+import { socialImagePath } from '../../lib/seo/social-image.ts';
 import { frenchTypography } from '../../lib/typo.ts';
 
 export async function getStaticPaths() {
@@ -37,6 +37,7 @@ const { site } = getConfig();
 const d = entry.data;
 const { Content } = await renderEntry('lexique', entry.id);
 const path = entry.url ?? '/';
+const image = await socialImagePath(d.seo, path);
 const seeAlso = d.seeAlso.flatMap((id) => {
   const term = graph.get('lexique', id);
   return term?.visibility.visible ? [{ label: term.data.term, url: term.url ?? '#' }] : [];
@@ -51,7 +52,7 @@ const seo = {
   canonical: d.seo?.canonical,
   // Une fiche sans corps n'apporte rien de plus que l'infobulle : elle reste hors des moteurs.
   noindex: d.seo?.noindex || entry.wordCount === 0,
-  image: ogImagePath(path),
+  image,
   imageAlt: d.term,
   jsonLd: [definedTermJsonLd(site.url, { name: d.term, description: d.shortDefinition, path }, t('hubs.lexique.title'))],
 };

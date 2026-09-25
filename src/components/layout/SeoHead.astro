@@ -12,7 +12,7 @@ type Props = SeoProps & { crumbs?: Crumb[] };
 
 const config = getConfig();
 const { site, theme } = config;
-const { title, description = site.description, noindex = false, type = 'website', canonical: canonicalOverride, image, imageAlt, article, labels = [], jsonLd = [], crumbs } = Astro.props;
+const { title, description = site.description, noindex = false, type = 'website', canonical: canonicalOverride, image, imageAlt, article, labels = [], jsonLd = [], crumbs, rss } = Astro.props;
 const fullTitle = title ? t('site.pageTitle', { title, site: site.name }) : t('site.homeTitle', { site: site.name, baseline: site.baseline });
 const canonical = canonicalOverride ?? absolute(site.url, Astro.url.pathname);
 const robots = isPreview() ? 'noindex, nofollow' : noindex ? 'noindex, follow' : 'index, follow, max-image-preview:large';
@@ -27,6 +27,8 @@ const graph: JsonLd[] = [organizationJsonLd(config), websiteJsonLd(config), ...(
 <link rel="alternate" hreflang="fr-CA" href={canonical} />
 <link rel="alternate" hreflang="x-default" href={canonical} />
 <link rel="alternate" type="application/rss+xml" title={site.name} href="/rss.xml" />
+{rss && <link rel="alternate" type="application/rss+xml" title={rss.title} href={rss.url} />}
+<link rel="alternate" type="application/feed+json" title={site.name} href="/feed.json" />
 <meta property="og:locale" content="fr_CA" />
 <meta property="og:site_name" content={site.name} />
 <meta property="og:type" content={type} />
