@@ -1,0 +1,22 @@
+{
+  "provider": "brevo",
+  "doubleOptIn": true,
+  "lists": [
+    { "id": "generale", "label": "Infolettre hebdomadaire", "enabled": true },
+    { "id": "reglementation", "label": "Réglementation", "enabled": false },
+    { "id": "fiscalite", "label": "Fiscalité", "enabled": false }
+  ],
+  "texts": {
+    "title": "L'essentiel de la réglementation des cryptoactifs, chaque semaine",
+    "subtitle": "Les textes, les décisions et les échéances qui comptent au Canada et au Québec, dans un seul courriel.",
+    "emailLabel": "Adresse courriel",
+    "emailPlaceholder": "vous@exemple.ca",
+    "button": "S'abonner",
+    "consent": "J'accepte de recevoir l'infolettre hebdomadaire de {site}. Je peux me désabonner en tout temps grâce au lien présent dans chaque envoi. [À VALIDER PAR L'AUTEUR]",
+    "privacyLinkLabel": "Politique de confidentialité",
+    "privacyUrl": "/confidentialite/",
+    "success": "Merci! Un courriel de confirmation vient de vous être envoyé : cliquez sur le lien qu'il contient pour valider votre inscription.",
+    "error": "L'inscription n'a pas pu aboutir. Vérifiez votre adresse, puis réessayez dans quelques minutes.",
+    "frequency": "Un numéro par semaine"
+  }
+}

@@ -1,0 +1,123 @@
+{
+  "header": [
+    {
+      "label": "Actualités",
+      "url": "/actualites/",
+      "icon": "newspaper",
+      "description": "L'actualité des cryptoactifs, sous l'angle canadien et québécois",
+      "enabled": true,
+      "openInNewTab": false,
+      "highlight": false,
+      "badge": "",
+      "children": [
+        { "label": "Canada", "url": "/juridictions/canada/#actualites", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
+        { "label": "Québec", "url": "/juridictions/quebec/#actualites", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
+        { "label": "États-Unis", "url": "/juridictions/etats-unis/#actualites", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
+        { "label": "International", "url": "/juridictions/international/#actualites", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" }
+      ]
+    },
+    {
+      "label": "Réglementation",
+      "url": "/reglementation/",
+      "icon": "scale",
+      "description": "Valeurs mobilières, lutte contre le blanchiment, stablecoins, plateformes",
+      "enabled": true,
+      "openInNewTab": false,
+      "highlight": false,
+      "badge": "",
+      "children": [
+        { "label": "Canada", "url": "/juridictions/canada/#reglementation", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
+        { "label": "Québec", "url": "/juridictions/quebec/#reglementation", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
+        { "label": "Provinces", "url": "/juridictions/#provinces", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
+        { "label": "International", "url": "/juridictions/international/#reglementation", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" }
+      ]
+    },
+    {
+      "label": "Fiscalité",
+      "url": "/fiscalite/",
+      "icon": "receipt",
+      "description": "Impôt, TPS et TVQ, déclarations, positions de l'ARC et de Revenu Québec",
+      "enabled": true,
+      "openInNewTab": false,
+      "highlight": false,
+      "badge": "",
+      "children": [
+        { "label": "Particuliers", "url": "/fiscalite/traitements/#particulier", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
+        { "label": "Entreprises", "url": "/fiscalite/traitements/#societe", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
+        { "label": "DeFi et staking", "url": "/fiscalite/traitements/#staking", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
+        { "label": "Traitements fiscaux", "url": "/fiscalite/traitements/", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" }
+      ]
+    },
+    {
+      "label": "Dossiers",
+      "url": "/dossiers/",
+      "icon": "folder-open",
+      "description": "Les grands chantiers réglementaires, suivis et datés",
+      "enabled": true,
+      "openInNewTab": false,
+      "highlight": false,
+      "badge": "",
+      "children": []
+    },
+    {
+      "label": "Guides",
+      "url": "/guides/",
+      "icon": "book-open",
+      "description": "Comprendre et appliquer les règles, pas à pas",
+      "enabled": true,
+      "openInNewTab": false,
+      "highlight": false,
+      "badge": "",
+      "children": []
+    },
+    {
+      "label": "Organismes",
+      "url": "/organismes/",
+      "icon": "landmark",
+      "description": "Les autorités, leur rôle et leurs décisions",
+      "enabled": true,
+      "openInNewTab": false,
+      "highlight": false,
+      "badge": "",
+      "children": []
+    }
+  ],
+  "subscribeButton": {
+    "enabled": true,
+    "label": "S'abonner",
+    "url": "/newsletter/"
+  },
+  "footer": [
+    {
+      "title": "À propos",
+      "links": [
+        { "label": "À propos", "url": "/a-propos/", "enabled": true },
+        { "label": "Méthodologie", "url": "/methodologie/", "enabled": true },
+        { "label": "Politique éditoriale", "url": "/politique-editoriale/", "enabled": true },
+        { "label": "Politique de correction", "url": "/politique-de-correction/", "enabled": true },
+        { "label": "Transparence", "url": "/transparence/", "enabled": true },
+        { "label": "Contact", "url": "/contact/", "enabled": true }
+      ]
+    },
+    {
+      "title": "Ressources",
+      "links": [
+        { "label": "Lexique", "url": "/lexique/", "enabled": true },
+        { "label": "Agenda", "url": "/agenda/", "enabled": true },
+        { "label": "Veille officielle", "url": "/veille/", "enabled": true },
+        { "label": "Juridictions", "url": "/juridictions/", "enabled": true },
+        { "label": "Textes officiels", "url": "/textes/", "enabled": true },
+        { "label": "Traitements fiscaux", "url": "/fiscalite/traitements/", "enabled": true }
+      ]
+    },
+    {
+      "title": "Mentions légales",
+      "links": [
+        { "label": "Mentions légales", "url": "/mentions-legales/", "enabled": true },
+        { "label": "Confidentialité", "url": "/confidentialite/", "enabled": true },
+        { "label": "Avertissement", "url": "/avertissement/", "enabled": true },
+        { "label": "Déclaration d'intérêts", "url": "/declaration-d-interets/", "enabled": true }
+      ]
+    }
+  ]
+}

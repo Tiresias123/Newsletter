@@ -1,0 +1,26 @@
+{
+  "name": "[NOM-DU-SITE]",
+  "baseline": "La réglementation et la fiscalité des cryptoactifs au Canada et au Québec",
+  "description": "Média de référence sur la réglementation et la fiscalité des cryptoactifs au Canada et au Québec : actualités, dossiers réglementaires, guides pratiques et fiches sur les organismes et les textes officiels.",
+  "url": "https://example.com",
+  "locale": "fr-CA",
+  "timezone": "America/Toronto",
+  "contactEmail": "",
+  "logo": {
+    "light": "",
+    "dark": ""
+  },
+  "socials": [
+    { "network": "linkedin", "url": "", "enabled": false },
+    { "network": "x", "url": "", "enabled": false },
+    { "network": "rss", "url": "/rss.xml", "enabled": true }
+  ],
+  "announcement": {
+    "enabled": true,
+    "message": "Les dernières évolutions réglementaires du Canada et du Québec",
+    "linkLabel": "Voir les dossiers",
+    "linkUrl": "/dossiers/"
+  },
+  "dataHosting": "[À COMPLÉTER PAR L'AUTEUR]",
+  "copyrightHolder": ""
+}

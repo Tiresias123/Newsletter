@@ -1,0 +1,174 @@
+{
+  "accentGold": true,
+  "colors": {
+    "brand": {
+      "50": "#EEF2FF",
+      "100": "#DDE4FF",
+      "200": "#BBC9FF",
+      "300": "#8FA6FF",
+      "400": "#5F7CF6",
+      "500": "#3B5BEA",
+      "600": "#2743D3",
+      "700": "#1E35AD",
+      "800": "#182B88",
+      "900": "#132264",
+      "950": "#0B1440"
+    },
+    "gold": {
+      "100": "#FFF4CC",
+      "500": "#E0A800",
+      "600": "#B98700",
+      "700": "#8A6500",
+      "dark": "#E6B93A"
+    },
+    "neutral": {
+      "ink": "#0E1230",
+      "slate700": "#3C4262",
+      "slate500": "#62688A",
+      "slate400": "#878DAA",
+      "slate300": "#C3C7D9",
+      "slate200": "#E1E4EF",
+      "slate100": "#F1F3F9",
+      "canvas": "#F7F8FC",
+      "surface": "#FFFFFF"
+    },
+    "semantic": {
+      "success": "#1B9E5B",
+      "successStrong": "#157A48",
+      "success50": "#E3F4EA",
+      "danger": "#D6323C",
+      "dangerStrong": "#B4232C",
+      "danger50": "#FBE7E8",
+      "warning": "#D97706",
+      "warningStrong": "#A15C07",
+      "warning50": "#FDF1DC"
+    },
+    "dark": {
+      "bg": "#0A0E27",
+      "surface1": "#111634",
+      "surface2": "#181E44",
+      "border": "#262D5C",
+      "borderStrong": "#6770A6",
+      "text": "#E7EAF6",
+      "textSecondary": "#A6ADCC",
+      "link": "#9DB0FF",
+      "infoBg": "#15204F",
+      "success": "#3DBE7E",
+      "successBg": "#0F2A1C",
+      "warning": "#F59E0B",
+      "warningBg": "#2A1D06",
+      "danger": "#F2777E",
+      "dangerBg": "#2E1216"
+    }
+  },
+  "badgeStyles": {
+    "plein-500": {
+      "light": { "bg": "brand.500", "fg": "white" },
+      "dark": { "bg": "brand.500", "fg": "white" },
+      "rule": "brand.500"
+    },
+    "plein-700": {
+      "light": { "bg": "brand.700", "fg": "white" },
+      "dark": { "bg": "brand.700", "fg": "brand.100" },
+      "rule": "brand.700"
+    },
+    "plein-900": {
+      "light": { "bg": "brand.900", "fg": "white" },
+      "dark": { "bg": "brand.900", "fg": "brand.200" },
+      "rule": "brand.900"
+    },
+    "doux-800": {
+      "light": { "bg": "brand.100", "fg": "brand.800" },
+      "dark": { "bg": "brand.800", "fg": "brand.100" },
+      "rule": "brand.800"
+    },
+    "doux-900": {
+      "light": { "bg": "brand.100", "fg": "brand.900" },
+      "dark": { "bg": "brand.900", "fg": "brand.200" },
+      "rule": "brand.900"
+    },
+    "clair-300": {
+      "light": { "bg": "brand.300", "fg": "brand.950" },
+      "dark": { "bg": "brand.300", "fg": "brand.950" },
+      "rule": "brand.400"
+    },
+    "ardoise": {
+      "light": { "bg": "neutral.slate100", "fg": "neutral.slate700" },
+      "dark": { "bg": "dark.border", "fg": "dark.textSecondary" },
+      "rule": "neutral.slate700"
+    },
+    "plein": {
+      "light": { "bg": "brand.600", "fg": "white" },
+      "dark": { "bg": "brand.600", "fg": "white" }
+    },
+    "contour-point": {
+      "light": { "border": "brand.600", "fg": "brand.600", "dot": "brand.900" },
+      "dark": { "border": "dark.link", "fg": "dark.link", "dot": "brand.200" }
+    },
+    "contour": {
+      "light": { "border": "neutral.slate500", "fg": "neutral.slate500" },
+      "dark": { "border": "dark.textSecondary", "fg": "dark.textSecondary" }
+    }
+  },
+  "statusStyles": {
+    "projet": {
+      "light": { "border": "neutral.slate500", "fg": "neutral.slate500" },
+      "dark": { "border": "dark.textSecondary", "fg": "dark.textSecondary" }
+    },
+    "consultation": {
+      "light": { "bg": "brand.100", "fg": "brand.800" },
+      "dark": { "bg": "brand.800", "fg": "brand.100" }
+    },
+    "adopte": {
+      "light": { "bg": "brand.600", "fg": "white" },
+      "dark": { "bg": "brand.600", "fg": "white" }
+    },
+    "en-vigueur": {
+      "light": { "bg": "semantic.successStrong", "fg": "white" },
+      "dark": { "bg": "semantic.successStrong", "fg": "white" }
+    },
+    "partiellement-en-vigueur": {
+      "light": { "bg": "semantic.success50", "fg": "semantic.successStrong" },
+      "dark": { "bg": "dark.successBg", "fg": "dark.success" }
+    },
+    "modifie": {
+      "light": { "bg": "brand.50", "fg": "brand.700" },
+      "dark": { "bg": "dark.infoBg", "fg": "brand.200" }
+    },
+    "abroge": {
+      "light": { "bg": "neutral.slate200", "fg": "neutral.slate700" },
+      "dark": { "bg": "dark.border", "fg": "dark.textSecondary" }
+    },
+    "retire": {
+      "light": { "border": "neutral.slate400", "fg": "neutral.slate700" },
+      "dark": { "border": "dark.borderStrong", "fg": "dark.textSecondary" }
+    }
+  },
+  "fonts": {
+    "heading": "Manrope",
+    "body": "Inter",
+    "legalSerif": true
+  },
+  "type": {
+    "scale": [12, 14, 16, 18, 20, 24, 30, 36, 48],
+    "articleBodyMobile": 17,
+    "leading": {
+      "heading": 1.15,
+      "body": 1.6,
+      "label": 1.2
+    }
+  },
+  "radius": {
+    "card": 12,
+    "button": 10,
+    "badge": 6,
+    "image": 8
+  },
+  "layout": {
+    "container": 1240,
+    "sidebar": 340,
+    "readingWidth": 720,
+    "header": 64,
+    "headerMobile": 56
+  }
+}

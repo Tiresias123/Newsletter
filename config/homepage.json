@@ -1,0 +1,196 @@
+{
+  "sections": [
+    {
+      "discriminant": "hero-selection",
+      "value": {
+        "enabled": true,
+        "title": "Sélection de la rédaction",
+        "subtitle": "",
+        "background": "default",
+        "source": "auto",
+        "manualSelection": []
+      }
+    },
+    {
+      "discriminant": "content-block",
+      "value": {
+        "enabled": true,
+        "title": "Dernières actualités",
+        "subtitle": "",
+        "background": "default",
+        "source": "auto",
+        "manualSelection": [],
+        "filters": { "category": "", "format": "", "themes": [], "jurisdictions": [], "tags": [] },
+        "count": 20,
+        "layout": "list",
+        "cta": { "label": "Toutes les actualités", "url": "/articles/" }
+      }
+    },
+    {
+      "discriminant": "content-block",
+      "value": {
+        "enabled": true,
+        "title": "Réglementation",
+        "subtitle": "",
+        "background": "brand",
+        "source": "auto",
+        "manualSelection": [],
+        "filters": { "category": "reglementation", "format": "", "themes": [], "jurisdictions": [], "tags": [] },
+        "count": 6,
+        "layout": "grid",
+        "cta": { "label": "Toute la réglementation", "url": "/reglementation/" }
+      }
+    },
+    {
+      "discriminant": "content-block",
+      "value": {
+        "enabled": true,
+        "title": "Fiscalité",
+        "subtitle": "",
+        "background": "default",
+        "source": "auto",
+        "manualSelection": [],
+        "filters": { "category": "fiscalite", "format": "", "themes": [], "jurisdictions": [], "tags": [] },
+        "count": 6,
+        "layout": "grid",
+        "cta": { "label": "Toute la fiscalité", "url": "/fiscalite/" }
+      }
+    },
+    {
+      "discriminant": "content-block",
+      "value": {
+        "enabled": true,
+        "title": "Québec",
+        "subtitle": "",
+        "background": "muted",
+        "source": "auto",
+        "manualSelection": [],
+        "filters": { "category": "", "format": "", "themes": [], "jurisdictions": ["quebec"], "tags": [] },
+        "count": 6,
+        "layout": "compact",
+        "cta": { "label": "Tout sur le Québec", "url": "/juridictions/quebec/" }
+      }
+    },
+    {
+      "discriminant": "watchlist",
+      "value": {
+        "enabled": true,
+        "title": "À surveiller",
+        "subtitle": "Échéances et consultations à venir",
+        "background": "default",
+        "count": 6,
+        "cta": { "label": "L'agenda complet", "url": "/agenda/" }
+      }
+    },
+    {
+      "discriminant": "dossiers-strip",
+      "value": {
+        "enabled": true,
+        "title": "Dossiers",
+        "subtitle": "",
+        "background": "default",
+        "source": "auto",
+        "manualSelection": [],
+        "count": 4,
+        "cta": { "label": "Tous les dossiers", "url": "/dossiers/" }
+      }
+    },
+    {
+      "discriminant": "essentials",
+      "value": {
+        "enabled": true,
+        "title": "Les essentiels",
+        "subtitle": "",
+        "background": "default",
+        "source": "auto",
+        "manualSelection": [],
+        "count": 4,
+        "cta": { "label": "Tous les guides", "url": "/guides/" }
+      }
+    },
+    {
+      "discriminant": "veille-latest",
+      "value": {
+        "enabled": true,
+        "title": "Veille officielle",
+        "subtitle": "Les dernières publications des autorités",
+        "background": "default",
+        "count": 8,
+        "cta": { "label": "Toute la veille", "url": "/veille/" }
+      }
+    },
+    {
+      "discriminant": "newsletter-cta",
+      "value": {
+        "enabled": true,
+        "title": "",
+        "subtitle": "",
+        "background": "brand",
+        "list": "generale"
+      }
+    },
+    {
+      "discriminant": "lexique-spotlight",
+      "value": {
+        "enabled": false,
+        "title": "Le lexique",
+        "subtitle": "",
+        "background": "default",
+        "source": "auto",
+        "manualSelection": [],
+        "count": 3,
+        "cta": { "label": "Tout le lexique", "url": "/lexique/" }
+      }
+    },
+    {
+      "discriminant": "most-read",
+      "value": {
+        "enabled": false,
+        "title": "Les plus lus",
+        "subtitle": "",
+        "background": "default",
+        "manualSelection": [],
+        "count": 5
+      }
+    },
+    {
+      "discriminant": "market-brief",
+      "value": {
+        "enabled": false,
+        "title": "Les cryptoactifs en bref",
+        "subtitle": "",
+        "background": "default"
+      }
+    },
+    {
+      "discriminant": "trending-assets",
+      "value": {
+        "enabled": false,
+        "title": "Cryptoactifs à suivre",
+        "subtitle": "",
+        "background": "default",
+        "count": 6
+      }
+    },
+    {
+      "discriminant": "partner-block",
+      "value": {
+        "enabled": false,
+        "title": "",
+        "subtitle": "",
+        "background": "default",
+        "partnerId": ""
+      }
+    },
+    {
+      "discriminant": "custom-html",
+      "value": {
+        "enabled": false,
+        "title": "",
+        "subtitle": "",
+        "background": "default",
+        "content": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "enabled": false,
+  "partners": [
+    {
+      "id": "partenaire-exemple",
+      "name": "[EXEMPLE] Partenaire",
+      "logo": "",
+      "url": "https://example.com",
+      "campaign": "",
+      "startDate": "",
+      "endDate": "",
+      "placement": ["article", "home"],
+      "disclosure": "Publicité",
+      "enabled": false
+    }
+  ]
+}

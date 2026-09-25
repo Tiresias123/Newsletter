@@ -1,0 +1,54 @@
+{
+  "privacyOfficer": {
+    "name": "[À COMPLÉTER PAR L'AUTEUR]",
+    "title": "[À COMPLÉTER PAR L'AUTEUR]",
+    "email": "[À COMPLÉTER PAR L'AUTEUR]"
+  },
+  "disclaimers": [
+    {
+      "id": "general",
+      "title": "Avertissement",
+      "text": "Ce contenu est publié à titre d'information générale. Il ne constitue ni un avis juridique, ni un avis fiscal, ni un conseil financier, et ne remplace pas la consultation d'un professionnel. [À VALIDER PAR L'AUTEUR]"
+    },
+    {
+      "id": "fiscal",
+      "title": "Avertissement fiscal",
+      "text": "Les informations fiscales présentées sont générales et à jour à la date indiquée sous « Vérifié le ». Leur application dépend de la situation de chaque contribuable. Elles ne constituent pas un conseil fiscal. [À VALIDER PAR L'AUTEUR]"
+    },
+    {
+      "id": "reglementaire",
+      "title": "Avertissement",
+      "text": "Ce contenu résume des règles et des décisions telles qu'elles se présentaient à la date de vérification indiquée. Consultez toujours les textes officiels cités. Il ne constitue pas un avis juridique. [À VALIDER PAR L'AUTEUR]"
+    },
+    {
+      "id": "opinion",
+      "title": "Opinion",
+      "text": "Ce texte exprime l'opinion de son auteur. Il se distingue des contenus d'information du site. [À VALIDER PAR L'AUTEUR]"
+    },
+    {
+      "id": "exemple-chiffre",
+      "title": "Exemple",
+      "text": "Exemple simplifié qui ne constitue pas un conseil fiscal. [À VALIDER PAR L'AUTEUR]"
+    },
+    {
+      "id": "mise-en-garde",
+      "title": "Mise en garde",
+      "text": "Les cryptoactifs sont des placements risqués : leur valeur peut varier fortement et vous pourriez perdre la totalité des sommes investies. Aucun contenu de ce site ne constitue une recommandation d'achat ou de vente. [À VALIDER PAR L'AUTEUR]"
+    }
+  ],
+  "officialSourceTypes": [
+    "legislation",
+    "reglement",
+    "gouvernement",
+    "regulateur",
+    "decision-justice",
+    "doctrine-administrative",
+    "consultation"
+  ],
+  "officialSourceTypesValidated": false,
+  "communiqueFromOrganismeIsOfficial": true,
+  "newsletterSender": {
+    "identification": "[À COMPLÉTER PAR L'AUTEUR]",
+    "postalAddress": "[À COMPLÉTER PAR L'AUTEUR]"
+  }
+}
