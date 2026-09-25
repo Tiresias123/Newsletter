@@ -1,0 +1,54 @@
+---
+// Espace de noms racine partagé (ARCHITECTURE, section 8.3) : hubs de catégorie (/[categorie]/ et leurs pages
+// /[categorie]/page/[n]/) et pages statiques (/[page]/). Le script check refuse les collisions entre les deux.
+import CardListPage from '../../components/lists/CardListPage.astro';
+import StaticPage from '../../components/page/StaticPage.astro';
+import { getGraph } from '../../lib/content/astro.ts';
+import { breadcrumbs } from '../../lib/content/breadcrumbs.ts';
+import { articleCard } from '../../lib/content/cards.ts';
+import { editorialInCategory } from '../../lib/content/relations.ts';
+import { HUB_FEATURED, hubLinks, pagedPaths } from '../../lib/lists.ts';
+
+export async function getStaticPaths() {
+  const graph = await getGraph();
+  const hubs = graph.all('categories').flatMap((category) =>
+    pagedPaths({ root: category.id }, Math.max(0, editorialInCategory(graph, category.id).length - HUB_FEATURED)).map((path) => ({
+      ...path,
+      props: { ...path.props, kind: 'categorie' as const },
+    })),
+  );
+  const pages = graph
+    .all('pages')
+    .filter((e) => e.visibility.visible)
+    .map((e) => ({ params: { root: e.id, page: undefined }, props: { kind: 'page' as const, current: 1 } }));
+  return [...hubs, ...pages];
+}
+
+interface Props {
+  kind: 'categorie' | 'page';
+  current: number;
+}
+
+const { kind, current } = Astro.props;
+const graph = await getGraph();
+const category = kind === 'categorie' ? graph.get('categories', Astro.params.root) : undefined;
+const page = kind === 'page' ? graph.get('pages', Astro.params.root) : undefined;
+if (!category && !page) throw new Error(`Adresse inconnue : /${Astro.params.root}/.`);
+---
+
+{
+  category && (
+    <CardListPage
+      title={category.data.label}
+      description={category.data.description}
+      crumbs={breadcrumbs.category(category)}
+      base={category.url ?? '/'}
+      current={current}
+      cards={editorialInCategory(graph, category.id).map((e) => articleCard(graph, e))}
+      links={hubLinks(category.url ?? '')}
+      featured={HUB_FEATURED}
+      filters={{ categorie: category.id }}
+    />
+  )
+}
+{page && <StaticPage entry={page} />}

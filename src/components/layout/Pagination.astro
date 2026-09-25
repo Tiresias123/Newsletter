@@ -1,0 +1,41 @@
+---
+// Pagination numérotée avec précédente et suivante (DA, section 8.1) : lisible sans JavaScript.
+import { t } from '../../lib/i18n.ts';
+import type { Page } from '../../lib/pagination.ts';
+import Icon from '../ui/Icon.astro';
+
+interface Props {
+  page: Page<unknown>;
+}
+
+const { page } = Astro.props;
+const numbers = Array.from({ length: page.total }, (_, i) => i + 1).filter((n) => n === 1 || n === page.total || Math.abs(n - page.current) <= 1);
+---
+
+{
+  page.total > 1 && (
+    <nav aria-label={t('pagination.label')} class="mt-10 flex flex-wrap items-center justify-between gap-4 text-sm" data-pagefind-ignore>
+      {page.urls.previous ? (
+        <a href={page.urls.previous} class="btn btn-ghost" rel="prev"><Icon name="chevron-left" size={16} />{t('pagination.previous')}</a>
+      ) : <span />}
+      <ol class="flex flex-wrap items-center gap-1">
+        {numbers.map((n, i) => (
+          <>
+            {i > 0 && n - (numbers[i - 1] ?? n) > 1 && <li aria-hidden="true" class="px-1 text-meta">…</li>}
+            <li>
+              <a
+                href={page.pageUrl(n)}
+                class:list={['inline-flex size-10 items-center justify-center rounded-button', n === page.current ? 'bg-primary font-semibold text-on-primary' : 'hover:bg-muted']}
+                aria-current={n === page.current ? 'page' : undefined}
+                aria-label={t('pagination.page', { n })}
+              >{n}</a>
+            </li>
+          </>
+        ))}
+      </ol>
+      {page.urls.next ? (
+        <a href={page.urls.next} class="btn btn-ghost" rel="next">{t('pagination.next')}<Icon name="chevron-right" size={16} /></a>
+      ) : <span />}
+    </nav>
+  )
+}

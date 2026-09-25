@@ -17,8 +17,20 @@ export const url = {
   category: (id: string) => `/${id}/`,
   theme: (id: string) => `/themes/${id}/`,
   format: (id: string) => `/formats/${id}/`,
-  tag: (tag: string) => `/tags/${encodeURIComponent(tag)}/`,
+  tag: (tag: string) => `/tags/${tagSlug(tag)}/`,
 };
+
+// Segment d'adresse d'une étiquette libre : minuscules, sans accents, mots reliés par des traits d'union.
+export function tagSlug(tag: string): string {
+  return tag
+    .toLowerCase()
+    .replace(/œ/g, 'oe')
+    .replace(/æ/g, 'ae')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 // Adresse de la page d'une entrée, pour les collections qui en ont une.
 export function entryUrl(collection: CollectionName, id: string): string | undefined {

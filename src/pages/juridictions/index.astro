@@ -1,0 +1,47 @@
+---
+// Index des juridictions, regroupées par niveau (fédéral, provinces, autres pays…) : chaque groupe est ancré
+// par son niveau (#provincial, par exemple), pour les liens du menu.
+import FicheCard from '../../components/cards/FicheCard.astro';
+import PageSection from '../../components/editorial/PageSection.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import ListLayout from '../../layouts/ListLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph } from '../../lib/content/astro.ts';
+import { forHub, hubUrl } from '../../lib/content/breadcrumbs.ts';
+import { JURISDICTION_LEVEL } from '../../lib/content/enums.ts';
+import { enumLabel, t } from '../../lib/i18n.ts';
+import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
+
+const graph = await getGraph();
+const { site } = getConfig();
+const juridictions = graph.listed('juridictions').sort((a, b) => a.data.order - b.data.order || a.data.name.localeCompare(b.data.name, 'fr-CA'));
+const groups = JURISDICTION_LEVEL.map((level) => ({ level, entries: juridictions.filter((e) => e.data.level === level) })).filter((g) => g.entries.length > 0);
+const title = t('hubs.juridictions.title');
+const description = t('hubs.juridictions.description');
+---
+
+<ListLayout crumbs={forHub('juridictions')} seo={{ title, description, jsonLd: [webPageJsonLd(site.url, { type: 'CollectionPage', path: hubUrl('juridictions'), name: title, description })] }}>
+  <PageHeader slot="header" title={title} description={description} links={groups.map((g) => ({ label: t(`lists.levels.${g.level}`), url: `#${g.level}` }))} />
+  <div class="space-y-12">
+    {
+      groups.map((group) => (
+        <PageSection id={group.level} title={t(`lists.levels.${group.level}`)}>
+          <ul class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {group.entries.map((e) => (
+              <li>
+                <FicheCard
+                  title={e.data.name}
+                  url={e.url}
+                  description={e.data.description}
+                  icon={e.data.icon}
+                  meta={enumLabel('jurisdictionLevel', e.data.level)}
+                  preview={e.visibility.previewOnly ? (e.visibility.state === 'programme' ? 'programme' : 'brouillon') : undefined}
+                />
+              </li>
+            ))}
+          </ul>
+        </PageSection>
+      ))
+    }
+  </div>
+</ListLayout>

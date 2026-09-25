@@ -1,0 +1,91 @@
+---
+// Page de liste de cartes (hub de catégorie, tous les articles, thème, étiquette, format ; DA, maquettes 12.5
+// et 12.6) : en-tête et pastilles, « à la une » en première page, filtres menant à la recherche, grille de
+// douze cartes, pagination ; veille, échéances et infolettre en barre latérale.
+import { getGraph } from '../../lib/content/astro.ts';
+import type { CardModel } from '../../lib/content/cards.ts';
+import type { Crumb } from '../../lib/content/breadcrumbs.ts';
+import { upcomingAgenda } from '../../lib/content/relations.ts';
+import { veilleItems } from '../../lib/content/veille.ts';
+import { t } from '../../lib/i18n.ts';
+import { pagedTitle } from '../../lib/lists.ts';
+import { paginate } from '../../lib/pagination.ts';
+import type { SeoProps } from '../../lib/seo/meta.ts';
+import ListLayout from '../../layouts/ListLayout.astro';
+import ArticleCard from '../cards/ArticleCard.astro';
+import CardGrid from '../cards/CardGrid.astro';
+import EmptyState from '../editorial/EmptyState.astro';
+import PageHeader from '../layout/PageHeader.astro';
+import Pagination from '../layout/Pagination.astro';
+import NewsletterBox from '../sidebar/NewsletterBox.astro';
+import UpcomingList from '../sidebar/UpcomingList.astro';
+import VeilleFeed from '../sidebar/VeilleFeed.astro';
+import FilterForm from './FilterForm.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  crumbs: Crumb[];
+  // Adresse de la première page (base de la pagination).
+  base: string;
+  current: number;
+  cards: CardModel[];
+  links?: Array<{ label: string; url: string }>;
+  // Nombre de cartes « à la une » en première page (0 : aucune).
+  featured?: number;
+  filters?: Record<string, string> | false;
+  seo?: SeoProps;
+}
+
+const { title, description, crumbs, base, current, cards, links = [], featured = 0, filters = false, seo = {} } = Astro.props;
+const graph = await getGraph();
+const [lead, ...side] = cards.slice(0, featured);
+const page = paginate(cards.slice(featured), base, current);
+const showFeatured = current === 1 && lead !== undefined;
+const fullTitle = pagedTitle(title, current);
+// À partir de la page 2, le fil d'Ariane mène à la première page de la liste.
+const trail = current > 1 ? [...crumbs.slice(0, -1), { label: title, url: base }, { label: t('hubs.page', { n: current }) }] : crumbs;
+---
+
+<ListLayout crumbs={trail} seo={{ title: fullTitle, description, ...seo }}>
+  <PageHeader slot="header" title={fullTitle} description={current === 1 ? description : undefined} links={links} />
+  <Fragment slot="top">
+    {
+      showFeatured && (
+        <section aria-label={t('lists.featured')} class="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div class="lg:col-span-8">
+            <ArticleCard card={lead} variant="large" level={2} />
+          </div>
+          {side.length > 0 && (
+            <>
+              <ul class="hidden gap-6 sm:grid sm:grid-cols-2 lg:col-span-4 lg:grid-cols-1">
+                {side.map((card) => (
+                  <li>
+                    <ArticleCard card={card} variant="small" level={2} />
+                  </li>
+                ))}
+              </ul>
+              <ul class="divide-y divide-subtle sm:hidden">
+                {side.map((card) => (
+                  <li>
+                    <ArticleCard card={card} variant="horizontal" level={2} surface="plain" />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+      )
+    }
+    {filters && <FilterForm fixed={filters} />}
+  </Fragment>
+
+  {page.items.length > 0 ? <CardGrid cards={page.items} mobile="horizontal" level={2} /> : !showFeatured && <EmptyState message={t('emptyState.articles')} />}
+  <Pagination page={page} />
+
+  <Fragment slot="aside">
+    <VeilleFeed items={veilleItems()} count={6} showEmpty />
+    <UpcomingList entries={upcomingAgenda(graph)} />
+    <NewsletterBox />
+  </Fragment>
+</ListLayout>

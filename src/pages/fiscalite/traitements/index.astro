@@ -1,0 +1,80 @@
+---
+// Matrice fiscale (brief 6.7 ; ARCHITECTURE 7.7) : un tableau HTML statique par type de contribuable (ancré par
+// son identifiant, pour les liens du menu), trié par juridiction puis par activité. Lisible sans JavaScript et
+// imprimable ; l'avertissement fiscal s'affiche toujours.
+import DisclaimerBox from '../../../components/editorial/DisclaimerBox.astro';
+import EmptyState from '../../../components/editorial/EmptyState.astro';
+import PageSection from '../../../components/editorial/PageSection.astro';
+import PageHeader from '../../../components/layout/PageHeader.astro';
+import ListLayout from '../../../layouts/ListLayout.astro';
+import { getConfig } from '../../../lib/config/index.ts';
+import { getGraph } from '../../../lib/content/astro.ts';
+import { home, hubUrl } from '../../../lib/content/breadcrumbs.ts';
+import { formatDate } from '../../../lib/format.ts';
+import { enumLabel, t } from '../../../lib/i18n.ts';
+import { disclaimer } from '../../../lib/legal.ts';
+import { webPageJsonLd } from '../../../lib/seo/json-ld.ts';
+import { frenchTypography } from '../../../lib/typo.ts';
+
+const graph = await getGraph();
+const { site } = getConfig();
+const order = (collection: 'juridictions' | 'activites', id: string) => graph.get(collection, id)?.data.order ?? 999;
+const label = (collection: 'activites' | 'contribuables', id: string) => graph.get(collection, id)?.data.label ?? id;
+const traitements = graph
+  .listed('traitements')
+  .sort((a, b) => order('juridictions', a.data.jurisdiction) - order('juridictions', b.data.jurisdiction) || order('activites', a.data.activity) - order('activites', b.data.activity));
+const groups = graph
+  .all('contribuables')
+  .sort((a, b) => a.data.order - b.data.order)
+  .map((type) => ({ type, entries: traitements.filter((e) => e.data.taxpayerType === type.id) }))
+  .filter((g) => g.entries.length > 0);
+const title = t('hubs.traitements.title');
+const description = t('hubs.traitements.description');
+const fiscal = disclaimer('fiscal');
+const fiscalite = graph.get('categories', 'fiscalite');
+const crumbs = [home(), ...(fiscalite ? [{ label: fiscalite.data.label, url: fiscalite.url }] : []), { label: title }];
+---
+
+<ListLayout crumbs={crumbs} seo={{ title, description, jsonLd: [webPageJsonLd(site.url, { type: 'CollectionPage', path: hubUrl('traitements'), name: title, description })] }}>
+  <PageHeader slot="header" title={title} description={description} links={groups.map((g) => ({ label: g.type.data.label, url: `#${g.type.id}` }))} />
+  <div class="space-y-12">
+    {fiscal && <DisclaimerBox disclaimer={fiscal} />}
+    {groups.length === 0 && <EmptyState />}
+    {
+      groups.map((group) => {
+        const caption = t('lists.matrix.caption', { taxpayer: group.type.data.label });
+        return (
+          <PageSection id={group.type.id} title={group.type.data.label}>
+            <div class="table-scroll my-0" role="region" aria-label={caption} tabindex="0">
+              <table class="data-table data-table--row-headers">
+                <caption class="sr-only">{caption}</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">{t('lists.matrix.treatment')}</th>
+                    <th scope="col">{t('lists.matrix.activity')}</th>
+                    <th scope="col">{t('lists.matrix.jurisdiction')}</th>
+                    <th scope="col">{t('lists.matrix.taxType')}</th>
+                    <th scope="col">{t('lists.matrix.verifiedOn')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {group.entries.map((e) => (
+                    <tr>
+                      <th scope="row">
+                        <a href={e.url} class="text-link">{frenchTypography(e.data.title)}</a>
+                      </th>
+                      <td>{label('activites', e.data.activity)}</td>
+                      <td>{graph.get('juridictions', e.data.jurisdiction)?.data.name ?? e.data.jurisdiction}</td>
+                      <td>{enumLabel('taxType', e.data.taxType)}</td>
+                      <td class="whitespace-nowrap">{e.data.asOf && <time datetime={e.data.asOf}>{formatDate(e.data.asOf)}</time>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </PageSection>
+        );
+      })
+    }
+  </div>
+</ListLayout>

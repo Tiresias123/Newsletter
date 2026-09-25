@@ -1,0 +1,33 @@
+---
+// Contenus d'un thème : /themes/[theme]/ et ses pages. Hors des moteurs sous trois contenus (ARCHITECTURE 8.2).
+import CardListPage from '../../../components/lists/CardListPage.astro';
+import { getGraph } from '../../../lib/content/astro.ts';
+import { home } from '../../../lib/content/breadcrumbs.ts';
+import { articleCard } from '../../../lib/content/cards.ts';
+import { editorialAbout } from '../../../lib/content/relations.ts';
+import { t } from '../../../lib/i18n.ts';
+import { pagedPaths, THIN_LIST } from '../../../lib/lists.ts';
+
+export async function getStaticPaths() {
+  const graph = await getGraph();
+  return graph.all('themes').flatMap((theme) => pagedPaths({ theme: theme.id }, editorialAbout(graph, 'themes', theme.id).length));
+}
+
+const graph = await getGraph();
+const { current } = Astro.props as { current: number };
+const theme = graph.get('themes', Astro.params.theme);
+if (!theme) throw new Error(`Thème introuvable : ${Astro.params.theme}.`);
+const entries = editorialAbout(graph, 'themes', theme.id);
+const title = t('hubs.theme.title', { label: theme.data.label });
+---
+
+<CardListPage
+  title={title}
+  description={theme.data.description || t('hubs.theme.description', { label: theme.data.label })}
+  crumbs={[home(), { label: title }]}
+  base={theme.url ?? '/'}
+  current={current}
+  cards={entries.map((e) => articleCard(graph, e))}
+  filters={{ theme: theme.id }}
+  seo={{ noindex: entries.length < THIN_LIST }}
+/>

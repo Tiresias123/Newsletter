@@ -1,0 +1,27 @@
+---
+// En-tête d'une page de rubrique ou de liste : titre, description, pastilles de lien facultatives.
+import { frenchTypography } from '../../lib/typo.ts';
+
+interface Props {
+  title: string;
+  description?: string;
+  links?: Array<{ label: string; url: string }>;
+}
+
+const { title, description, links = [] } = Astro.props;
+---
+
+<header class="space-y-4 pb-8 pt-2">
+  <h1 class="text-3xl lg:text-5xl">{frenchTypography(title)}</h1>
+  {description && <p class="max-w-reading text-lg text-secondary">{frenchTypography(description)}</p>}
+  {
+    links.length > 0 && (
+      <ul class="flex flex-wrap gap-2">
+        {links.map((link) => (
+          <li><a href={link.url} class="btn btn-pill">{frenchTypography(link.label)}</a></li>
+        ))}
+      </ul>
+    )
+  }
+  <slot />
+</header>

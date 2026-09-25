@@ -28,7 +28,7 @@
       "children": [
         { "label": "Canada", "url": "/juridictions/canada/#reglementation", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
         { "label": "Québec", "url": "/juridictions/quebec/#reglementation", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
-        { "label": "Provinces", "url": "/juridictions/#provinces", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
+        { "label": "Provinces", "url": "/juridictions/#provincial", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
         { "label": "International", "url": "/juridictions/international/#reglementation", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" }
       ]
     },
@@ -44,7 +44,7 @@
       "children": [
         { "label": "Particuliers", "url": "/fiscalite/traitements/#particulier", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
         { "label": "Entreprises", "url": "/fiscalite/traitements/#societe", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
-        { "label": "DeFi et staking", "url": "/fiscalite/traitements/#staking", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
+        { "label": "DeFi et staking", "url": "/fiscalite/traitements/#staker", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
         { "label": "Traitements fiscaux", "url": "/fiscalite/traitements/", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" }
       ]
     },

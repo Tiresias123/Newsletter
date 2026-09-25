@@ -2,6 +2,7 @@
 // d'une juridiction ; organismes d'une juridiction ; textes d'un émetteur ; agenda d'un dossier ; articles liés.
 // Seuls les contenus listés (publiés, ou visibles en aperçu) sont retenus, du plus récent au plus ancien.
 import { calendarDateInZone } from '../dates.ts';
+import { tagSlug } from '../urls.ts';
 import { findBlocks } from './blocks.ts';
 import { byNewest, type Entry, type Graph } from './graph.ts';
 import { veilleItems, type VeilleItem } from './veille.ts';
@@ -28,6 +29,22 @@ export function editorialInCategory(graph: Graph, category: string): Editorial[]
 
 export function editorialTagged(graph: Graph, tag: string): Editorial[] {
   return editorial(graph).filter((e) => e.data.tags.includes(tag));
+}
+
+// Étiquettes des contenus listés, regroupées par segment d'adresse : le libellé tel que saisi la première fois
+// et les contenus qui la portent (« Staking » et « staking » mènent à la même page).
+export function tagIndex(graph: Graph): Map<string, { label: string; entries: Editorial[] }> {
+  const index = new Map<string, { label: string; entries: Editorial[] }>();
+  for (const entry of editorial(graph)) {
+    for (const tag of entry.data.tags) {
+      const slug = tagSlug(tag);
+      if (!slug) continue;
+      const item = index.get(slug) ?? { label: tag, entries: [] };
+      if (!item.entries.includes(entry)) item.entries.push(entry);
+      index.set(slug, item);
+    }
+  }
+  return index;
 }
 
 export function editorialWithFormat(graph: Graph, format: string): Editorial[] {

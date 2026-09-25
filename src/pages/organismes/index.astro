@@ -1,0 +1,47 @@
+---
+// Index des organismes, regroupés par juridiction (dans l'ordre des juridictions), avec leur vignette au sigle.
+import FicheCard from '../../components/cards/FicheCard.astro';
+import PageSection from '../../components/editorial/PageSection.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import ListLayout from '../../layouts/ListLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph } from '../../lib/content/astro.ts';
+import { forHub, hubUrl } from '../../lib/content/breadcrumbs.ts';
+import { organismesOf } from '../../lib/content/relations.ts';
+import { enumLabel, t } from '../../lib/i18n.ts';
+import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
+
+const graph = await getGraph();
+const { site } = getConfig();
+const juridictions = graph.all('juridictions').sort((a, b) => a.data.order - b.data.order);
+const groups = juridictions.map((j) => ({ juridiction: j, entries: organismesOf(graph, j.id) })).filter((g) => g.entries.length > 0);
+const title = t('hubs.organismes.title');
+const description = t('hubs.organismes.description');
+---
+
+<ListLayout crumbs={forHub('organismes')} seo={{ title, description, jsonLd: [webPageJsonLd(site.url, { type: 'CollectionPage', path: hubUrl('organismes'), name: title, description })] }}>
+  <PageHeader slot="header" title={title} description={description} links={groups.map((g) => ({ label: g.juridiction.data.name, url: `#${g.juridiction.id}` }))} />
+  <div class="space-y-12">
+    {
+      groups.map((group) => (
+        <PageSection id={group.juridiction.id} title={group.juridiction.data.name}>
+          <ul class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {group.entries.map((e) => (
+              <li>
+                <FicheCard
+                  title={e.data.acronym ? `${e.data.name} (${e.data.acronym})` : e.data.name}
+                  url={e.url}
+                  description={e.data.role}
+                  mark={e.data.acronym || undefined}
+                  icon="landmark"
+                  meta={enumLabel('authorityType', e.data.authorityType)}
+                  preview={e.visibility.previewOnly ? (e.visibility.state === 'programme' ? 'programme' : 'brouillon') : undefined}
+                />
+              </li>
+            ))}
+          </ul>
+        </PageSection>
+      ))
+    }
+  </div>
+</ListLayout>

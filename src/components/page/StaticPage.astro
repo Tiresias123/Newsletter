@@ -1,0 +1,53 @@
+---
+// Page statique (à propos, méthodologie, mentions légales… ; brief 6.14) : titre, date de mise à jour et corps
+// MDX avec les blocs d'article et les blocs de page. Colonne de lecture, sommaire repliable sur mobile.
+import { getConfig } from '../../lib/config/index.ts';
+import { renderEntry } from '../../lib/content/astro.ts';
+import { breadcrumbs } from '../../lib/content/breadcrumbs.ts';
+import type { Entry } from '../../lib/content/graph.ts';
+import { formatDate } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
+import { ogImagePath } from '../../lib/seo/meta.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import ContentLayout from '../../layouts/ContentLayout.astro';
+import TableOfContents from '../editorial/TableOfContents.astro';
+import { mdxComponents } from '../mdx/index.ts';
+import PreviewBadge from '../ui/PreviewBadge.astro';
+
+interface Props {
+  entry: Entry<'pages'>;
+}
+
+const { entry } = Astro.props;
+const { site } = getConfig();
+const d = entry.data;
+const { Content, headings } = await renderEntry('pages', entry.id);
+const path = entry.url ?? '/';
+// Type schema.org des pages « à propos » et « contact » ; WebPage pour les autres.
+const PAGE_TYPES: Record<string, 'AboutPage' | 'ContactPage'> = { 'a-propos': 'AboutPage', contact: 'ContactPage' };
+const seo = {
+  title: d.seo?.title || d.title,
+  description: d.seo?.description || undefined,
+  canonical: d.seo?.canonical,
+  noindex: d.noindex || d.seo?.noindex,
+  image: ogImagePath(path),
+  imageAlt: d.title,
+  jsonLd: [webPageJsonLd(site.url, { type: PAGE_TYPES[entry.id] ?? 'WebPage', path, name: d.title, dateModified: d.updatedAt })],
+};
+---
+
+<ContentLayout crumbs={breadcrumbs.page(entry)} seo={seo}>
+  <article data-pagefind-body data-pagefind-filter={`type:${t('search.types.pages')}`}>
+    <header class="space-y-3">
+      {entry.visibility.previewOnly && <PreviewBadge state={entry.visibility.state === 'programme' ? 'programme' : 'brouillon'} />}
+      <h1 class="text-3xl lg:text-4xl">{frenchTypography(d.title)}</h1>
+      {d.updatedAt && <p class="text-sm text-meta"><time datetime={d.updatedAt}>{t('editorial.meta.updated', { date: formatDate(d.updatedAt) })}</time></p>}
+    </header>
+    <TableOfContents headings={headings} variant="inline" />
+    <div class="prose mt-8">
+      <Content components={mdxComponents} />
+    </div>
+  </article>
+  <TableOfContents slot="aside-top" headings={headings} variant="sidebar" />
+</ContentLayout>

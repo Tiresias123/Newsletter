@@ -1,0 +1,38 @@
+---
+// Gabarit des pages de liste (hubs, index de rubrique, thèmes, lexique, agenda ; DA, maquettes 12.5 et 12.6) :
+// fil d'Ariane, en-tête et bandeau pleine largeur, puis colonne principale et barre latérale de 340 px.
+// Sur mobile, la barre latérale passe sous la liste.
+import Breadcrumb from '../components/layout/Breadcrumb.astro';
+import type { Crumb } from '../lib/content/breadcrumbs.ts';
+import { t } from '../lib/i18n.ts';
+import type { SeoProps } from '../lib/seo/meta.ts';
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  crumbs: Crumb[];
+  seo: SeoProps;
+}
+
+const { crumbs, seo } = Astro.props;
+const hasAside = Astro.slots.has('aside');
+---
+
+<BaseLayout {...seo} crumbs={crumbs}>
+  <div class="page-container pb-16">
+    <Breadcrumb items={crumbs} />
+    <slot name="header" />
+    {Astro.slots.has('top') && <div class="mb-12 space-y-10"><slot name="top" /></div>}
+    <div class:list={['grid grid-cols-1 gap-12', hasAside && 'lg:grid-cols-[minmax(0,1fr)_var(--sidebar-w)]']}>
+      <div class="min-w-0">
+        <slot />
+      </div>
+      {
+        hasAside && (
+          <aside aria-label={t('sidebar.label')} class="space-y-8">
+            <slot name="aside" />
+          </aside>
+        )
+      }
+    </div>
+  </div>
+</BaseLayout>

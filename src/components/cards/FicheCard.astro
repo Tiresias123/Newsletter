@@ -1,0 +1,54 @@
+---
+// Carte d'une fiche (dossier, juridiction, organisme) dans les pages d'index : vignette générée au sigle ou à
+// l'icône, puces (statut, juridictions), titre, description et précision. Carte entière cliquable.
+import type { BadgeModel } from '../../lib/content/cards.ts';
+import type { LegalStatus } from '../../lib/content/enums.ts';
+import type { IconName } from '../../lib/icons.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import Icon from '../ui/Icon.astro';
+import JurisdictionBadge from '../ui/JurisdictionBadge.astro';
+import PreviewBadge from '../ui/PreviewBadge.astro';
+import StatusBadge from '../ui/StatusBadge.astro';
+
+interface Props {
+  title: string;
+  url?: string;
+  description?: string;
+  mark?: string;
+  icon?: IconName;
+  status?: LegalStatus;
+  jurisdictions?: BadgeModel[];
+  meta?: string;
+  preview?: 'brouillon' | 'programme';
+  level?: 2 | 3;
+}
+
+const { title, url, description, mark, icon, status, jurisdictions = [], meta, preview, level = 3 } = Astro.props;
+const Heading = `h${level}` as const;
+---
+
+<article class="card group relative flex h-full flex-row items-start gap-4 p-4">
+  {
+    (mark || icon) && (
+      <div class:list={['generated-cover grid size-12 shrink-0 place-items-center rounded-button text-center font-heading font-extrabold leading-tight text-inverse', (mark?.length ?? 0) > 4 ? 'text-[0.625rem]' : 'text-xs']} aria-hidden="true">
+        {mark ?? (icon && <Icon name={icon} size={22} />)}
+      </div>
+    )
+  }
+  <div class="flex min-w-0 flex-1 flex-col gap-2">
+    {
+      (status || jurisdictions.length > 0 || preview) && (
+        <div class="flex flex-wrap items-center gap-1.5">
+          {status && <StatusBadge status={status} />}
+          {jurisdictions.map((j) => <JurisdictionBadge jurisdiction={j} />)}
+          {preview && <PreviewBadge state={preview} />}
+        </div>
+      )
+    }
+    <Heading class="rule-left text-lg">
+      {url ? <a href={url} class="stretched-link decoration-2 underline-offset-4 group-hover:underline">{frenchTypography(title)}</a> : frenchTypography(title)}
+    </Heading>
+    {description && <p class="line-clamp-3 text-sm text-secondary">{frenchTypography(description)}</p>}
+    {meta && <p class="text-sm text-meta">{meta}</p>}
+  </div>
+</article>

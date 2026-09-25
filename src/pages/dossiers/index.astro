@@ -1,0 +1,55 @@
+---
+// Index des dossiers : les dossiers en vedette d'abord, puis du plus récent au plus ancien, avec leur statut.
+import FicheCard from '../../components/cards/FicheCard.astro';
+import EmptyState from '../../components/editorial/EmptyState.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import NewsletterBox from '../../components/sidebar/NewsletterBox.astro';
+import UpcomingList from '../../components/sidebar/UpcomingList.astro';
+import ListLayout from '../../layouts/ListLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph } from '../../lib/content/astro.ts';
+import { forHub, hubUrl } from '../../lib/content/breadcrumbs.ts';
+import { jurisdictionBadges } from '../../lib/content/cards.ts';
+import type { LegalStatus } from '../../lib/content/enums.ts';
+import { upcomingAgenda } from '../../lib/content/relations.ts';
+import { formatDate } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
+
+const graph = await getGraph();
+const { site } = getConfig();
+const listed = graph.listed('dossiers');
+const dossiers = [...listed.filter((e) => e.data.featured), ...listed.filter((e) => !e.data.featured)];
+const title = t('hubs.dossiers.title');
+const description = t('hubs.dossiers.description');
+---
+
+<ListLayout crumbs={forHub('dossiers')} seo={{ title, description, jsonLd: [webPageJsonLd(site.url, { type: 'CollectionPage', path: hubUrl('dossiers'), name: title, description })] }}>
+  <PageHeader slot="header" title={title} description={description} />
+  {
+    dossiers.length > 0 ? (
+      <ul class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        {dossiers.map((e) => (
+          <li>
+            <FicheCard
+              title={e.data.shortTitle || e.data.title}
+              url={e.url}
+              description={e.data.summary}
+              status={e.data.legalStatus as LegalStatus}
+              jurisdictions={jurisdictionBadges(graph, e.data.jurisdictions)}
+              meta={e.data.asOf ? t('lists.verifiedOn', { date: formatDate(e.data.asOf) }) : undefined}
+              preview={e.visibility.previewOnly ? (e.visibility.state === 'programme' ? 'programme' : 'brouillon') : undefined}
+              level={2}
+            />
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <EmptyState />
+    )
+  }
+  <Fragment slot="aside">
+    <UpcomingList entries={upcomingAgenda(graph)} />
+    <NewsletterBox />
+  </Fragment>
+</ListLayout>

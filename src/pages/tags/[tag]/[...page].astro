@@ -1,0 +1,32 @@
+---
+// Contenus d'une étiquette : /tags/[tag]/ et ses pages. Hors des moteurs sous trois contenus (ARCHITECTURE 8.2).
+import CardListPage from '../../../components/lists/CardListPage.astro';
+import { getGraph } from '../../../lib/content/astro.ts';
+import { home } from '../../../lib/content/breadcrumbs.ts';
+import { articleCard } from '../../../lib/content/cards.ts';
+import { tagIndex } from '../../../lib/content/relations.ts';
+import { t } from '../../../lib/i18n.ts';
+import { pagedPaths, THIN_LIST } from '../../../lib/lists.ts';
+import { url } from '../../../lib/urls.ts';
+
+export async function getStaticPaths() {
+  const graph = await getGraph();
+  return [...tagIndex(graph)].flatMap(([slug, { entries }]) => pagedPaths({ tag: slug }, entries.length));
+}
+
+const graph = await getGraph();
+const { current } = Astro.props as { current: number };
+const tag = tagIndex(graph).get(Astro.params.tag ?? '');
+if (!tag) throw new Error(`Étiquette introuvable : ${Astro.params.tag}.`);
+const title = t('hubs.tag.title', { label: tag.label });
+---
+
+<CardListPage
+  title={title}
+  description={t('hubs.tag.description', { label: tag.label })}
+  crumbs={[home(), { label: title }]}
+  base={url.tag(tag.label)}
+  current={current}
+  cards={tag.entries.map((e) => articleCard(graph, e))}
+  seo={{ noindex: tag.entries.length < THIN_LIST }}
+/>

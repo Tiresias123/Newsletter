@@ -1,0 +1,65 @@
+---
+// Index des textes officiels : tableau lisible sans JavaScript (titre, type, émetteur, date, statut), du plus
+// récent au plus ancien. Défilement horizontal sur mobile, titre figé en première colonne.
+import EmptyState from '../../components/editorial/EmptyState.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import StatusBadge from '../../components/ui/StatusBadge.astro';
+import ListLayout from '../../layouts/ListLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph } from '../../lib/content/astro.ts';
+import { forHub, hubUrl } from '../../lib/content/breadcrumbs.ts';
+import type { LegalStatus } from '../../lib/content/enums.ts';
+import { formatDate } from '../../lib/format.ts';
+import { enumLabel, t } from '../../lib/i18n.ts';
+import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+const graph = await getGraph();
+const { site } = getConfig();
+const textes = graph
+  .listed('textes')
+  .sort((a, b) => (b.data.adoptedAt ?? '').localeCompare(a.data.adoptedAt ?? '') || a.data.title.localeCompare(b.data.title, 'fr-CA'));
+const title = t('hubs.textes.title');
+const description = t('hubs.textes.description');
+const caption = t('lists.textesTable.caption');
+---
+
+<ListLayout crumbs={forHub('textes')} seo={{ title, description, jsonLd: [webPageJsonLd(site.url, { type: 'CollectionPage', path: hubUrl('textes'), name: title, description })] }}>
+  <PageHeader slot="header" title={title} description={description} />
+  {
+    textes.length > 0 ? (
+      <div class="table-scroll mt-0" role="region" aria-label={caption} tabindex="0">
+        <table class="data-table data-table--row-headers">
+          <caption>{caption}</caption>
+          <thead>
+            <tr>
+              <th scope="col">{t('lists.textesTable.title')}</th>
+              <th scope="col">{t('lists.textesTable.type')}</th>
+              <th scope="col">{t('lists.textesTable.issuer')}</th>
+              <th scope="col">{t('lists.textesTable.date')}</th>
+              <th scope="col">{t('lists.textesTable.status')}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {textes.map((e) => {
+              const issuer = graph.get('organismes', e.data.issuer);
+              return (
+                <tr>
+                  <th scope="row">
+                    <a href={e.url} class="text-link">{frenchTypography(e.data.shortTitle && e.data.shortTitle !== e.data.title ? `${e.data.title} (${e.data.shortTitle})` : e.data.title)}</a>
+                  </th>
+                  <td>{enumLabel('textType', e.data.type)}</td>
+                  <td>{issuer ? issuer.data.acronym || issuer.data.name : ''}</td>
+                  <td class="whitespace-nowrap">{e.data.adoptedAt && <time datetime={e.data.adoptedAt}>{formatDate(e.data.adoptedAt)}</time>}</td>
+                  <td>{e.data.legalStatus && <StatusBadge status={e.data.legalStatus as LegalStatus} />}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <EmptyState />
+    )
+  }
+</ListLayout>
