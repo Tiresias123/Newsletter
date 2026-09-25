@@ -231,7 +231,7 @@ Versions relevées le 25 septembre 2026 sur le registre npm (étiquette `latest`
 | npm | 12.1.0 | juill. 2026 | paquets | bloque par défaut les scripts d'installation : autorisation explicite (`allowScripts`) pour `esbuild` et `workerd` |
 | **Astro** | 7.3.5 | 24 sept. 2026 | générateur du site | 6.0 le 10 mars 2026, 7.0 le 22 juin 2026; Cloudflare a racheté l'entreprise Astro le 16 janvier 2026 (licence MIT et prise en charge des autres hébergeurs maintenues, selon l'annonce officielle) |
 | @astrojs/mdx | 8.0.2 | 22 sept. 2026 | MDX | le traitement Markdown passe par Sätteri, processeur en Rust encore en 0.x |
-| @astrojs/sitemap | 3.7.4 | 31 août 2026 | plan du site | `lastmod` par `serialize()` |
+| @astrojs/sitemap | 3.7.4 | 31 août 2026 | plan du site | **non retenu en phase 2** : plan du site tiré des pages construites (section 25.4) |
 | @astrojs/rss | 4.0.19 | 30 juin 2026 | flux | version minimale : elle corrige une injection XML |
 | @astrojs/check | 0.9.10 | 27 juill. 2026 | vérification des types | exige TypeScript 5 ou 6 |
 | TypeScript | 6.0.3 | 16 avril 2026 | typage strict | **pas la 7.0.2** (`latest`), incompatible avec `@astrojs/check` |
@@ -684,7 +684,7 @@ Si l'auteur préfère rester dans les deux options du brief, **A** est la bonne�
 - **Sécurité.** Une CSP stricte devra autoriser `wasm-unsafe-eval` et `worker-src 'self' blob:`.
 - **Couleurs.** Celles de l'interface de recherche sont reliées aux jetons de la DA, en clair comme en sombre.
 - **Contrôle.** Pagefind est lancé explicitement après le build, et un test vérifie la présence de l'index : un déploiement ne part jamais sans recherche.
-- **Références juridiques.** Les références ponctuées (« art. 248(1) LIR ») perdent leur ponctuation à l'indexation. Le réglage `include_characters` sera testé en phase 2.
+- **Références juridiques.** Les références ponctuées (« art. 248(1) LIR ») perdent leur ponctuation à l'indexation. Testé en phase 2 : Pagefind les retrouve sans faux positif avec le réglage par défaut, `include_characters` n'est pas utilisé (section 25.4).
 
 ---
 
@@ -861,7 +861,7 @@ Contrat `Analytics` : `pageview`, `newsletterSignup`, `search`, `outboundClick`
   - `/rss.xml` : 20 derniers contenus, en résumé avec lien, car le texte intégral ne rend pas les composants MDX;
   - `/[categorie]/rss.xml` : un flux par catégorie;
   - `/feed.json` : JSON Feed 1.1.
-- **Plan du site** : `@astrojs/sitemap` avec `lastmod` tiré de `updatedAt`. Exclusions : brouillons, pages `noindex`, pages de confirmation, éditeur.
+- **Plan du site** : intégration maison qui lit les pages construites (section 25.4), avec `lastmod` tiré des dates de mise à jour. Exclusions : brouillons, pages `noindex`, pages de confirmation, éditeur.
 - **`hreflang`** : `fr-CA` autoréférent et `x-default` dès la v1; `en-CA` ajouté avec la version anglaise.
 - **Pages au contenu trop pauvre** (que Google juge peu utiles) : étiquettes et thèmes de moins de trois contenus en `noindex, follow`; lexique sans corps rédigé en `noindex`; fiches d'amorçage non publiées (section 7.0).
 - **Critères de qualité de Google** (E-E-A-T : expérience, expertise, autorité, fiabilité), appliqués plus sévèrement aux sujets qui touchent l'argent des lecteurs. Le gabarit y répond par :
@@ -1365,6 +1365,52 @@ Prises en appliquant les recommandations par défaut de `QUESTIONS.md`, retenues
 - **Menus** : `openInNewTab`, `highlight` et `badge` sont pris en charge sur ordinateur et dans le tiroir mobile; l'ouverture dans un nouvel onglet est annoncée aux lecteurs d'écran.
 - **Icône** : Lucide a renommé `building-2` en `building-complex` (DA mise à jour).
 - **Images des brouillons** : Astro copie dans `dist/` toutes les images citées par un champ `image()`, brouillons compris, sous un nom haché. Aucune page publique n'y renvoie, mais elles comptent dans le plafond de fichiers (section 19.1).
+
+### 25.4 Décisions de la phase 2
+
+Prises pendant la construction des gabarits, dans le cadre fixé par l'auteur (« fais les choix que tu estimes les plus judicieux »).
+
+- **Gabarits** :
+  - trois gabarits de page : `ContentLayout` (article, guide, page statique, terme, numéro d'infolettre), `FicheLayout` (dossier, juridiction, organisme, texte, traitement fiscal) et `ListLayout` (rubriques et listes);
+  - dans la zone haute de la barre latérale, seul le sommaire est collant : la présentation ou la fiche d'identité défile au-dessus de lui (DA, section 12.3);
+  - fiches : sections tirées des champs, placées avant ou après le corps, avec des ancres rendues uniques face aux titres du corps. Sur mobile, fiche d'identité repliable et sommaire en ligne d'ancres (DA, section 12.8).
+- **Modèle de contenu** :
+  - les juridictions reçoivent un champ `faq`, de même forme que celui des dossiers : le brief (6.4) prévoit une FAQ sur leur page;
+  - le lien « Flux RSS officiel » d'un organisme n'apparaît que si sa source est activée dans `config/sources-veille.json` : les adresses de flux ne sont pas vérifiées avant la phase 4;
+  - la liste automatique des textes d'un organisme s'intitule « Textes publiés », pour la distinguer des « Textes de référence » que l'auteur rédige dans le corps;
+  - contenu d'amorçage : les squelettes de corps des textes et des traitements fiscaux ne répètent plus les rubriques désormais tirées des champs (« Dispositions clés », « Traitement », « Déclaration »).
+- **Rubriques et listes** :
+  - trois contenus « à la une », puis douze par page;
+  - les pastilles d'une rubrique sont les sous-entrées du menu qui y mène;
+  - les filtres forment un simple formulaire vers `/recherche/`, ouvert sur ordinateur par un script et replié sans lui;
+  - ancres du menu alignées sur les pages : `#provincial` (juridictions), `#staker` (matrice fiscale);
+  - adresses d'étiquettes sans accents ni ligatures (`/tags/declaration/`); deux étiquettes de même adresse forment une seule liste.
+- **Matrice fiscale** : tableaux statiques, un par type de contribuable (ancre = identifiant du type), triés par juridiction puis par activité, sans filtres interactifs (question 17).
+- **Veille** : une seule liste, filtrable dans le navigateur (source, juridiction, période), plutôt qu'une liste paginée. La rétention de 12 mois en borne la taille; à revoir si elle dépasse quelques centaines d'entrées.
+- **Agenda** : exports iCalendar (RFC 5545). Une échéance à heure fixe et sans date de fin devient un événement ponctuel, en heure UTC; les autres occupent des journées entières. Les événements sont marqués « transparents » : ils ne bloquent pas l'agenda du lecteur.
+- **Recherche** :
+  - filtres indexés par identifiants, stables même si un libellé change; libellés fournis par la page;
+  - une recherche globale donne le nombre de résultats par type, puis chaque groupe est recherché à part : seuls ses premiers résultats sont chargés;
+  - puces, bloc de confiance et métadonnées exclus des extraits;
+  - seules les pages de contenu sont indexées, et la présentation seule d'une page d'auteur;
+  - `include_characters` a été testé sur « 248(1) », « 12.1 » et « 21-332 » : le réglage par défaut trouve ces références sans faux positif, il n'est donc pas utilisé.
+- **Images Open Graph** :
+  - générées par satori et sharp, en PNG à palette de 256 couleurs : environ 55 Ko au lieu de 120 Ko, sans différence visible;
+  - mises en cache entre deux builds (`node_modules/.cache/og-images`), avec pour clé l'empreinte de la carte et la version du gabarit;
+  - une image choisie par l'auteur (`seo.socialImage`) est recadrée en 1200 × 630 par `astro:assets`, et aucune image n'est générée pour cette page;
+  - les pages de liste reprennent l'image de l'accueil.
+- **Plan du site** : intégration maison plutôt que `@astrojs/sitemap`. Elle lit les pages construites (balise robots, canonique, dates `article:*`) : les exclusions (brouillons, `noindex`, listes trop pauvres) sont ainsi exactes, sans liste à tenir.
+- **Flux** : RSS 2.0 par `@astrojs/rss`; JSON Feed 1.1 écrit directement.
+- **Redirections** :
+  - intégration maison qui écrit `dist/_redirects` à la fin du build, à partir des anciennes adresses des contenus publiés et de `config/redirects.json`; chaînes aplaties;
+  - contrôles dans `check` : doublons, boucles, page masquée, destination absente, limite de 2 000 règles;
+  - le filet des adresses disparues (section 8.3), prévu en phase 5, est livré dans `scripts/postbuild.ts`. Simplification : faute d'historique, un renommage ne se distingue pas d'une suppression voulue; une adresse disparue sans redirection est donc un avertissement, pas une erreur. Un contenu repassé en brouillon est une simple information. Le contrôle est sauté tant que `site.url` vaut l'adresse d'exemple.
+- **Contrôles après le build** (`scripts/postbuild.ts`) : index de recherche présent et non vide, plan du site et `robots.txt` présents, images de partage produites, plafond de fichiers (20 000, alerte à 15 000), limite des redirections.
+- **Cache des collections** : Astro n'invalide son cache de contenu que si le texte de `src/content.config.ts` change. Une intégration (`src/lib/content-cache.ts`) le vide dès qu'un fichier de `src/lib/content/` change, pour qu'un schéma modifié soit toujours appliqué.
+- **Impression** : feuille `src/styles/print.css`, et script qui impose le thème clair et ouvre les blocs repliables au moment d'imprimer.
+- **Page `/exemple/`** : tous les blocs et toutes les variantes, injectée par `astro dev` seulement, comme `/a-verifier/`.
+- **Dépendances** : `npm audit` signale `fflate` 0.7.3, épinglé par satori, pour une faille de `unzipSync` sur des archives ZIP64 malformées. satori ne s'en sert que pour décompresser nos propres polices WOFF : non exploitable ici. À suivre à la prochaine version de satori.
+- **Accessibilité vérifiée** : axe (WCAG 2.2 AA et bonnes pratiques) sur 31 adresses, en clair, en sombre et sur mobile : aucun défaut. Clavier vérifié : sommaire, FAQ, infobulles des définitions, filtres des rubriques, fenêtre de recherche.
 
 ---
 

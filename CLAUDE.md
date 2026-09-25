@@ -13,7 +13,7 @@ Site média sur la réglementation et la fiscalité des cryptoactifs au Canada e
 
 - `npm run dev` : site local, brouillons visibles.
 - `npm run check` : validations et rapport `docs/A-VERIFIER.md` (non versionné).
-- `npm run build` : `check` puis build de production. `SITE_MODE=preview` pour un build d'aperçu.
+- `npm run build` : `check`, build de production, index Pagefind, puis contrôles de `dist/` (`scripts/postbuild.ts`). `SITE_MODE=preview` pour un build d'aperçu.
 - `npm test` (Vitest), `npm run typecheck` (`astro check`).
 
 Avant tout commit : `npm test`, `npm run typecheck` et `npm run build` passent sans avertissement.

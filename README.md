@@ -19,12 +19,14 @@ npm run dev      # site local sur http://localhost:4321, brouillons visibles
 |---|---|
 | `npm run dev` | serveur de développement |
 | `npm run check` | vérifications et rapport `docs/A-VERIFIER.md` |
-| `npm run build` | vérifications, puis site de production dans `dist/` |
+| `npm run build` | vérifications, site de production dans `dist/`, index de recherche (Pagefind), puis contrôles du résultat |
 | `npm run preview` | sert `dist/` en local |
 | `npm test` | tests unitaires |
 | `npm run typecheck` | vérification des types |
 
 `SITE_MODE=preview npm run build` construit une version d'aperçu : brouillons visibles, pages exclues des moteurs de recherche.
+
+En développement seulement, `/a-verifier/` affiche le rapport de vérification et `/exemple/` tous les blocs d'écriture. La recherche n'existe qu'après un build (`npm run build`, puis `npm run preview`).
 
 ## Documentation
 
@@ -41,7 +43,7 @@ content/     contenus (articles, dossiers, guides, fiches, taxonomies, images)
 config/      réglages du site, menus, accueil, thème, textes de l'interface
 data/        données produites par des scripts (cache de la veille)
 src/         code du site (composants, gabarits, bibliothèques)
-scripts/     commandes (check)
+scripts/     commandes (check, contrôles après le build)
 tests/       tests automatiques
 docs/        documentation
 ```

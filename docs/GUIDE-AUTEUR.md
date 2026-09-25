@@ -20,6 +20,14 @@ Ce guide explique comment faire vivre le site sans toucher au code. Il grandit �
 14. Si la construction du site échoue
 15. Le contenu d'amorçage
 16. Typographie : ce que le site fait pour vous
+17. Écrire le corps d'un contenu : les blocs
+18. Les pages du site et leurs adresses
+19. Les fiches : ce que le site compose pour vous
+20. Rubriques, listes et filtres
+21. La recherche
+22. Référencement et partage
+23. Changer une adresse : les redirections
+24. Flux, agenda et impression
 
 ---
 
@@ -42,6 +50,11 @@ Ce guide explique comment faire vivre le site sans toucher au code. Il grandit �
 | créer une catégorie, un thème ou un format | `content/taxonomies/…` (section 11) |
 | ajouter une juridiction ou un organisme | `content/juridictions/`, `content/organismes/` |
 | savoir ce qui reste à vérifier | `npm run check`, puis `docs/A-VERIFIER.md` |
+| voir tous les blocs d'écriture et leur rendu | `npm run dev`, puis http://localhost:4321/exemple/ (section 17) |
+| renommer un contenu sans casser son ancienne adresse | champ `previousSlugs` du contenu (section 23) |
+| rediriger une ancienne adresse quelconque | `config/redirects.json` (section 23) |
+| ajouter une FAQ à une juridiction ou à un dossier | champ `faq` de la fiche (section 19) |
+| choisir l'image de partage d'une page | champ `seo.socialImage` (section 22) |
 
 ## 2. Travailler sur le site : commandes et modes
 
@@ -51,7 +64,7 @@ Ce guide explique comment faire vivre le site sans toucher au code. Il grandit �
 |---|---|
 | `npm run dev` | ouvre le site en local sur http://localhost:4321, brouillons compris; la page se recharge à chaque enregistrement d'un fichier |
 | `npm run check` | vérifie tout le contenu et écrit le rapport `docs/A-VERIFIER.md` (section 13) |
-| `npm run build` | lance `check`, puis construit le site public dans `dist/`, sans les brouillons |
+| `npm run build` | lance `check`, construit le site public dans `dist/` (sans les brouillons), crée l'index de la recherche, puis contrôle le résultat (section 21) |
 | `npm run preview` | sert le dossier `dist/` en local, pour voir le site tel qu'il sera publié |
 | `npm test` | lance les tests automatiques |
 | `npm run typecheck` | vérifie le code (utile après une modification technique) |
@@ -61,7 +74,9 @@ Ce guide explique comment faire vivre le site sans toucher au code. Il grandit �
 - **Production** (`npm run build`) : seuls les contenus publiés existent. Les brouillons n'apparaissent nulle part : ni page, ni liste, ni flux.
 - **Aperçu** (`npm run dev`, ou `SITE_MODE=preview npm run build` pour une version d'aperçu) : les brouillons et les contenus programmés sont visibles, avec une pastille « Brouillon, non publié ». Un bandeau jaune le rappelle en haut de chaque page, et les pages portent la consigne `noindex`, qui les écarte des moteurs de recherche.
 
-En mode aperçu seulement, la page http://localhost:4321/a-verifier/ affiche le rapport « À vérifier » à jour (section 13).
+En mode `npm run dev` seulement, deux pages de travail existent : http://localhost:4321/a-verifier/ affiche le rapport « À vérifier » à jour (section 13), et http://localhost:4321/exemple/ montre chaque bloc d'écriture et chacune de ses variantes (section 17).
+
+La recherche n'existe qu'une fois le site construit : pour l'essayer en local, lancez `npm run build` (ou `SITE_MODE=preview npm run build`), puis `npm run preview`.
 
 ## 3. Statuts de publication et dates
 
@@ -162,7 +177,7 @@ Tout le style du site vient de ce fichier. En mode `npm run dev`, l'enregistrer 
 - **`accentGold`** : `false` retire l'accent doré (le site reste bleu et neutre; les puces d'échéance fiscale deviennent bleues).
 - **`badgeStyles`** : les styles de puces proposés aux catégories (`plein-500`, `plein-700`, `plein-900`, `doux-800`, `doux-900`, `clair-300`, `ardoise`) et aux juridictions (`plein`, `contour-point`, `contour`). Chaque style porte ses couleurs claires (`light`) et sombres (`dark`) : `bg` (fond), `fg` (texte), `border`, `dot`, et `rule` pour le filet de couleur des cartes. Une couleur s'écrit en hexadécimal, `white`, `black` ou par un jeton comme `brand.600`.
 - **`statusStyles`** : les couleurs des huit statuts réglementaires (projet, consultation, adopté, en vigueur…).
-- **`fonts`** : police des titres (`Manrope`, `Inter` ou `Source Serif 4`), police du texte (`Inter` ou `Manrope`), `legalSerif` (serif des citations juridiques, phase 2).
+- **`fonts`** : police des titres (`Manrope`, `Inter` ou `Source Serif 4`), police du texte (`Inter` ou `Manrope`), `legalSerif` (`true` : les citations juridiques et les citations sont en Source Serif 4, sinon en italique de la police du texte). Les images de partage (section 22) gardent toujours Manrope.
 - **`type`** : échelle des tailles de texte (neuf valeurs en pixels), taille du texte des articles sur mobile, interlignes.
 - **`radius`** : arrondis des cartes, boutons, puces et images, en pixels.
 - **`layout`** : largeurs (page, colonne latérale, colonne de lecture) et hauteurs de l'en-tête.
@@ -277,3 +292,113 @@ Tapez des espaces ordinaires : le site applique la typographie québécoise à 
 - dates en toutes lettres (« 1er octobre 2026 »), heures à la française (« 9 h 30 »), montants en dollars canadiens (« 84 146 $ CA »).
 
 Écrivez les guillemets français « » vous-même : le site ne transforme pas les guillemets droits.
+
+## 17. Écrire le corps d'un contenu : les blocs
+
+Le corps d'un contenu (après l'entête entre `---`) s'écrit en Markdown : `## Titre de section`, `**gras**`, `*italique*`, listes à tirets, liens `[texte](adresse)`. Les titres de niveau 2 et 3 forment le sommaire de la page. Des **blocs** s'insèrent entre deux paragraphes, chacun sur ses propres lignes. Le rapport « À vérifier » signale un bloc inconnu, une propriété mal écrite ou manquante, avec la ligne du texte.
+
+**Voir le rendu de tous les blocs** : `npm run dev`, puis http://localhost:4321/exemple/ (en clair comme en sombre, sur ordinateur comme sur mobile).
+
+| Bloc | Écriture | Remarques |
+|---|---|---|
+| Encadré | `<Callout variant="a-retenir">Texte</Callout>` | variantes : `important`, `a-retenir`, `attention`, `en-pratique`, `exemple`, `date-a-retenir`, `ce-qui-change`, `pour-les-particuliers`, `pour-les-entreprises`, `source-officielle`, `mise-a-jour`, `pour-approfondir`, `bon-a-savoir`; `title="…"` remplace le titre par défaut; `pour-approfondir` exige `href="/adresse/"` et devient une carte de lien |
+| Texte de loi | `<TexteDeLoi reference="Loi X, art. Y" version="en vigueur au …" url="https://…">Texte littéral</TexteDeLoi>` | citation exacte, avec la version citée et le lien vers le texte officiel |
+| Exemple chiffré | `<ExempleChiffre title="…" rows={[{ label: "…", amount: 10000 }]} total={{ label: "…", amount: 4000 }} />` | montants en dollars, sans espace ni symbole; un montant négatif s'écrit `-2500`; l'avertissement « exemple chiffré » de `config/legal.json` s'ajoute seul |
+| Chronologie | `<Chronologie items={[{ date: "2026-01-15", title: "…", description: "…", url: "https://…" }]} />` | `description` et `url` facultatives |
+| Comparatif | `<Comparatif caption="…" columns={["", "A", "B"]} rows={[["Critère", "…", "…"]]} />` | la première colonne reste visible quand on fait défiler le tableau sur mobile |
+| Citation | `<Citation author="…" role="…" source="…" date="2026-09-25">Propos</Citation>` | `role`, `source` et `date` facultatifs |
+| Vidéo | `<Video id="abcdefghijk" title="…" />` | `id` : les 11 caractères après `v=` dans l'adresse YouTube; rien n'est chargé depuis YouTube avant le clic du lecteur |
+| Définition | `le <Definition term="jalonnement">jalonnement</Definition>` | `term` : l'identifiant d'un terme du lexique; infobulle avec sa définition courte et lien vers sa fiche; terme non publié : texte simple |
+| Mise en garde | `<MiseEnGarde />` | texte fixe de `config/legal.json` |
+| Statut réglementaire | `<StatutReglementaire dossier="stablecoins-canada" />` | puce de statut et lien vers le dossier, dans une phrase ou seul sur sa ligne |
+| Bloc partenaire | `<BlocPartenaire id="partenaire" />` | affiché seulement si le partenaire est actif dans `config/ads.json`, toujours signalé « Publicité » |
+| Note | `…une phrase.<Note>Texte de la note.</Note>` | collée au mot qu'elle commente; numérotée seule, regroupée en fin de page avec un lien de retour |
+| Image | `<Image src="articles/mon-article/schema.webp" alt="…" credit="…" caption="…" />` | `src` : chemin dans `content/images/`; texte alternatif et crédit obligatoires; `creditUrl="https://…"`, facultatif, fait du crédit un lien |
+
+**Blocs de page**, réservés aux pages de `content/pages/` :
+
+- `<Hero title="…" ctaLabel="…" ctaUrl="/…">Accroche</Hero>` : bandeau de tête;
+- `<ListeArticles category="…" theme="…" jurisdiction="…" format="…" tag="…" count="6" layout="grid" />` : liste d'articles (filtres facultatifs; `layout` : `grid` ou `list`);
+- `<CarteAuteur id="auteur" />` et `<Newsletter />` (`list="…"` pour une autre liste de `config/newsletter.json` que la liste générale);
+- `<ListeSources jurisdiction="…" type="…" />`, ou `ids={["source-1", "source-2"]}` : sources réutilisables;
+- `<FAQ items={[{ question: "…", answer: "…" }]} />` : questions reprises en données FAQPage pour les moteurs;
+- `<Tableau caption="…" columns={[…]} rows={[…]} />`.
+
+Un bloc écrit dans du code (entre accents graves) n'est ni interprété ni vérifié : c'est ainsi que ce guide peut les montrer.
+
+## 18. Les pages du site et leurs adresses
+
+L'adresse d'un contenu vient du nom de son fichier (sans `.mdx`) : `content/articles/mon-article.mdx` devient `/articles/mon-article/`. Changer le nom du fichier change l'adresse : voir la section 23 avant de le faire.
+
+| Adresse | Page |
+|---|---|
+| `/articles/…/`, `/guides/…/`, `/dossiers/…/` | un article, un guide, un dossier |
+| `/juridictions/…/`, `/organismes/…/`, `/textes/…/` | une fiche |
+| `/fiscalite/traitements/` et `/fiscalite/traitements/…/` | la matrice fiscale et chaque traitement |
+| `/lexique/` et `/lexique/…/` | l'index alphabétique et chaque terme |
+| `/articles/`, `/guides/`, `/dossiers/`, `/juridictions/`, `/organismes/`, `/textes/`, `/auteurs/` | les listes de chaque rubrique |
+| `/actualites/`, `/reglementation/`… | la rubrique d'une catégorie (une par fichier de `content/taxonomies/categories/`), paginée : `/reglementation/page/2/` |
+| `/themes/…/`, `/formats/…/`, `/tags/…/` | les contenus d'un thème, d'un format, d'une étiquette |
+| `/agenda/`, `/veille/`, `/newsletter/`, `/recherche/` | agenda, veille officielle, infolettre et son archive, recherche |
+| `/a-propos/`, `/contact/`… | les pages de `content/pages/` |
+
+## 19. Les fiches : ce que le site compose pour vous
+
+Chaque fiche assemble ses champs et les contenus qui la citent : vous n'avez rien à recopier. Une section vide ne s'affiche pas, et le sommaire « Sur cette page » suit. Sur ordinateur, la fiche d'identité et le sommaire occupent la colonne de droite; sur mobile, la fiche devient repliable sous l'en-tête.
+
+- **Dossier** : fiche (statut, autorités, qui est visé, dates clés), « Ce qui change » (`keyChanges`), corps, obligations, sanctions, incidences fiscales (`taxImplications`, paragraphes séparés par une ligne vide), chronologie (`timeline`, triée par date), textes clés, questions fréquentes (`faq`), sources, articles qui citent le dossier (champ `relatedDossiers` des articles) et échéances liées (champ `relatedDossier` de l'agenda). Avertissement « réglementaire » par défaut, modifiable par `disclaimerVariant`.
+- **Juridiction** : présentation (corps), actualités (les quatre derniers contenus qui la citent), réglementation (dossiers, ceux de `keyDossiers` en tête), fiscalité (traitements, ceux de `keyTraitements` en tête), organismes rattachés, échéances, et **questions fréquentes** (nouveau champ `faq` : une liste de `question` et `answer`). Les sections portent les ancres `#actualites`, `#reglementation`, `#fiscalite`, `#organismes`, `#agenda` et `#questions`, utilisables dans les menus.
+- **Organisme** : vignette à son sigle (jamais son logo officiel), rôle, lien vers le site officiel, dossiers dont il est l'autorité, dernières décisions et textes publiés (textes dont il est l'émetteur), articles et guides qui le citent, sources dont il est l'émetteur, échéances de ses dossiers et sa veille. Le lien « Flux RSS officiel » n'apparaît que si sa source est activée dans `config/sources-veille.json`.
+- **Texte** : type, statut, liens vers le texte officiel et sa copie archivée, « Dispositions clés » (`keyProvisions`), corps, dossiers qui le retiennent comme texte clé, articles qui le citent.
+- **Traitement fiscal** : « Traitement fiscal » (`treatment`), déclaration (`reportingRequirement`), formulaires (`forms`, lien officiel facultatif), explications (corps), sources, articles liés. **L'avertissement fiscal s'affiche toujours**, sans réglage possible.
+- **Terme du lexique** : définition courte (celle des infobulles), synonymes, corps, termes voisins (`seeAlso`), sources officielles et contenus qui l'emploient par le bloc `Definition`. Tant que son corps est vide, la fiche reste hors des moteurs de recherche.
+- **Auteur** : présentation (rôle, mention professionnelle, biographie, réseaux), puis ses articles et guides, paginés.
+- **Infolettre** : chaque numéro envoyé a sa page d'archive (introduction, articles du numéro, partenaire éventuel signalé « Publicité »).
+
+## 20. Rubriques, listes et filtres
+
+- **Rubrique d'une catégorie** : trois contenus « à la une », puis douze par page. Les pastilles sous le titre sont les sous-entrées du menu qui mène à cette rubrique (`config/navigation.json`) : pour les changer, modifiez le menu.
+- **Filtres** (thème, format, juridiction) : ils ouvrent la page de recherche avec la catégorie et les filtres choisis, sans créer de nouvelles pages.
+- **Thèmes, formats et étiquettes** : chacun a sa liste. Sous trois contenus, elle reste hors des moteurs de recherche. L'adresse d'une étiquette s'écrit sans accents : `Déclaration` mène à `/tags/declaration/`.
+- **Matrice fiscale** (`/fiscalite/traitements/`) : un tableau par type de contribuable, trié par juridiction puis par activité. Chaque tableau porte l'identifiant du type comme ancre (`#particulier`, `#societe`, `#staker`…), utilisable dans les menus.
+- **Juridictions** : regroupées par niveau (ancres `#federal`, `#provincial`, `#national`…). **Organismes** : regroupés par juridiction.
+
+## 21. La recherche
+
+La recherche porte sur les articles, guides, dossiers, fiches, termes du lexique, pages, auteurs et numéros de l'infolettre publiés. Elle ignore les accents (« reglementation » trouve « réglementation »), trouve les références comme « 21-332 » ou « 248(1) », et regroupe les résultats par type.
+
+- **Ouvrir** : le champ « Rechercher » de l'en-tête, ou `Ctrl K` (`⌘ K` sur Mac). La page `/recherche/` offre tous les filtres : type, catégorie, thème, format, juridiction, année.
+- **Mise à jour** : l'index est recréé à chaque construction du site; un contenu publié est trouvable dès la mise en ligne suivante.
+- **Contrôle** : `npm run build` s'arrête si l'index de recherche manque ou est vide.
+
+## 22. Référencement et partage
+
+Le site produit seul les balises des moteurs de recherche et des réseaux : titre, description, adresse canonique, données structurées (article, dossier et sa FAQ, organisme, terme, auteur), plan du site (`/sitemap-index.xml`, avec les seules pages indexables) et `robots.txt`.
+
+Chaque contenu accepte un bloc `seo`, entièrement facultatif :
+
+| Champ | Rôle |
+|---|---|
+| `title` | titre pour les moteurs, 70 caractères au plus (sinon le titre du contenu) |
+| `description` | description pour les moteurs, 160 caractères au plus (sinon le chapô ou le résumé) |
+| `canonical` | adresse canonique, si le texte est d'abord paru ailleurs |
+| `socialImage` | image de partage choisie par vous, recadrée en 1200 × 630 |
+| `noindex` | `true` garde la page hors des moteurs, sans la cacher |
+
+**Images de partage.** Sans `socialImage`, chaque page reçoit une image 1200 × 630 générée au build sur le gabarit du site : fond bleu roi, catégorie ou type de fiche, titre, sigle pour un organisme, nom du site.
+
+## 23. Changer une adresse : les redirections
+
+Une adresse publiée ne doit jamais mourir : d'autres sites, des courriels ou des mémoires la citent.
+
+- **Renommer un contenu** (article, guide, dossier) : renommez le fichier, puis ajoutez l'ancien identifiant dans son champ `previousSlugs` (ex. `previousSlugs: [ancien-nom]`). Le site redirige alors l'ancienne adresse vers la nouvelle (redirection permanente 301).
+- **Toute autre adresse** (ancien site, page supprimée) : ajoutez une entrée dans `config/redirects.json`, par exemple `{ "from": "/ancienne-adresse/", "to": "/nouvelle-adresse/", "status": 301 }`.
+- **Contrôles** : `npm run check` refuse une ancienne adresse déjà redirigée, une redirection qui masquerait une page existante, une boucle, et plus de 2 000 redirections; il signale une destination qui n'existe pas. Une chaîne (A vers B, puis B vers C) est raccourcie seule (A vers C).
+- **Filet de sécurité**, une fois le site en ligne : chaque construction compare les adresses du plan du site en ligne à celles du nouveau site, et signale toute adresse disparue sans redirection. Un contenu repassé en brouillon est une dépublication voulue : simple information.
+
+## 24. Flux, agenda et impression
+
+- **Flux** : `/rss.xml` (les 20 derniers contenus), un flux par catégorie (`/reglementation/rss.xml`…) et `/feed.json` (format JSON Feed), avec titre, résumé et lien.
+- **Agenda** : `/agenda/` montre les échéances à venir, par mois. Chaque échéance se télécharge au format calendrier (« Ajouter à mon agenda »), et `/agenda.ics` contient tout l'agenda, à importer ou à suivre dans un logiciel de calendrier. Une échéance avec une heure (`time`) et sans date de fin est ponctuelle; les autres occupent des journées entières, de `date` à `endDate`.
+- **Veille officielle** : `/veille/` liste les publications des autorités relevées automatiquement (phase 4), avec des filtres par source, juridiction et période.
+- **Impression** : dossiers, fiches et articles s'impriment sur une seule colonne, sans menus ni barre latérale, avec l'adresse des liens externes et les blocs repliables ouverts (bouton « Imprimer » des dossiers, textes et traitements fiscaux).
