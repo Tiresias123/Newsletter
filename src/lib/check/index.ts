@@ -15,6 +15,7 @@ import { checkFreshness, lastCommitDates } from './freshness.ts';
 import { loadContent } from './load.ts';
 import { findMarkers, markersIn } from './markers.ts';
 import { checkArchives, checkBodiesAndLinks, checkImages } from './references.ts';
+import { collectRedirects, resolveRedirects, siteUrls } from '../redirects.ts';
 
 export type { CheckMode } from './context.ts';
 export type CheckOptions = {
@@ -71,6 +72,7 @@ export async function runCheck({ root, mode = 'production', now = new Date(), ex
   checkArchives(ctx);
   checkFreshness(graph, entries, lastCommitDates(root), add);
   checkLaunch(ctx);
+  checkRedirects(ctx);
   if (externalLinks) {
     for (const r of await checkExternalLinks(external.keys())) {
       if (!r.ok) for (const place of external.get(r.url) ?? []) add(place.file, place.where, `Lien externe ${r.url} : ${r.detail}.`, 'lien-externe', 'avertissement');
@@ -115,6 +117,16 @@ function checkMarkers({ config, entries, shown, add, mode }: Context) {
 }
 
 // Rappels de configuration avant la mise en ligne.
+// Redirections (anciennes adresses et config/redirects.json) : doublons, boucles, pages masquées, limite.
+// Entre anciennes adresses de contenus, doublons et pages masquées sont déjà signalés par rules.ts.
+function checkRedirects({ graph, add }: Context) {
+  for (const issue of resolveRedirects(collectRedirects(graph), siteUrls(graph)).issues) {
+    const fromConfig = issue.source === CONFIG_FILES.redirects;
+    if (!fromConfig && (issue.kind === 'doublon' || issue.kind === 'masque')) continue;
+    add(issue.source, fromConfig ? 'redirects' : 'previousSlugs', issue.message, 'redirection', issue.severity);
+  }
+}
+
 function checkLaunch({ config, add }: Context) {
   if (config.site.url === PLACEHOLDER_URL) {
     add(CONFIG_FILES.site, ['url'], `Adresse du site à saisir : tant qu'elle vaut ${PLACEHOLDER_URL}, les marqueurs de la configuration ne bloquent pas la construction.`, 'lancement', 'avertissement');

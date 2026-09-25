@@ -4,6 +4,7 @@
 // le plafond de Cloudflare Workers (20 000, alerte à 15 000 ; section 19.1).
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { REDIRECT_LIMIT } from '../redirects.ts';
 
 export const FILE_LIMIT = 20_000;
 export const FILE_WARNING = 15_000;
@@ -48,6 +49,9 @@ export function checkBuildOutput(dist: string): BuildReport {
   for (const required of ['sitemap-index.xml', 'robots.txt']) {
     if (!existsSync(join(dist, required))) errors.push(`${required} absent du site construit.`);
   }
+  const redirects = join(dist, '_redirects');
+  const rules = existsSync(redirects) ? readFileSync(redirects, 'utf8').split('\n').filter((line) => line.trim() && !line.startsWith('#')).length : 0;
+  if (rules > REDIRECT_LIMIT) errors.push(`${rules} redirections dans _redirects : au-delà de la limite de ${REDIRECT_LIMIT} de Cloudflare.`);
   const images = missingSocialImages(dist, list);
   if (images.length > 0) errors.push(`Images de partage annoncées mais absentes : ${images.slice(0, 5).join(', ')}${images.length > 5 ? '…' : ''}`);
   if (files > FILE_LIMIT) errors.push(`${files} fichiers produits : au-delà du plafond de ${FILE_LIMIT} fichiers de Cloudflare Workers.`);

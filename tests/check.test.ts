@@ -100,3 +100,26 @@ describe('check sur des jeux d’essai', () => {
     expect(find('programme')?.message).toBe('Publication programmée le 1er\u00a0octobre 2026 à 9\u00a0h\u00a030.');
   });
 });
+
+describe('check des redirections', () => {
+  it('signale une redirection qui masquerait une page ou qui boucle, sans doubler les règles des contenus', async () => {
+    fixture = createFixture();
+    fixture.mdx('content/articles/nouveau.mdx', articleData({ ...PUBLISHED, previousSlugs: ['ancien'] }));
+    fixture.mdx('content/articles/autre.mdx', articleData({ ...PUBLISHED, previousSlugs: ['nouveau'] }));
+    const base = testConfig();
+    const redirects = [
+      { from: '/articles/nouveau/', to: '/', status: 301 as const },
+      { from: '/x/', to: '/y/', status: 301 as const },
+      { from: '/y/', to: '/x/', status: 301 as const },
+    ];
+    const result = await runCheck({ root: fixture.root, now: NOW, config: { ...base, redirects: { redirects } } });
+    const lines = result.problems.filter((p) => p.rule === 'redirection' || p.rule === 'adresse').map((p) => `${p.severity} ${p.rule} ${p.file} ${p.message}`);
+    expect(lines).toEqual([
+      'bloquant adresse content/articles/autre.mdx « nouveau » est l\'adresse actuelle d\'un autre contenu.',
+      'bloquant redirection config/redirects.json L\'ancienne adresse /articles/nouveau/ est déjà redirigée (content/articles/autre.mdx).',
+      'bloquant redirection config/redirects.json /articles/nouveau/ est l\'adresse d\'une page du site : la redirection la masquerait.',
+      'bloquant redirection config/redirects.json Boucle de redirections à partir de /x/.',
+      'bloquant redirection config/redirects.json Boucle de redirections à partir de /y/.',
+    ]);
+  });
+});
