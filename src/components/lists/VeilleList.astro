@@ -1,0 +1,101 @@
+---
+// Veille officielle (brief 8.4) : publications des autorités, les plus récentes d'abord, chacune avec un lien
+// vers sa source officielle. Filtres par source, juridiction et période, ajoutés par un petit script : sans
+// JavaScript, toute la liste reste lisible.
+import { getGraph } from '../../lib/content/astro.ts';
+import { jurisdictionBadges } from '../../lib/content/cards.ts';
+import type { VeilleItem } from '../../lib/content/veille.ts';
+import { formatDate } from '../../lib/format.ts';
+import { pluralForms, t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+import JurisdictionBadge from '../ui/JurisdictionBadge.astro';
+
+interface Props {
+  items: VeilleItem[];
+}
+
+const { items } = Astro.props;
+const graph = await getGraph();
+const organisme = (id: string) => graph.get('organismes', id);
+const option = (value: string, label: string) => ({ value, label });
+const sources = [...new Set(items.map((i) => i.organisme).filter(Boolean))].map((id) => option(id, organisme(id)?.data.acronym || organisme(id)?.data.name || id));
+const juridictions = [...new Set(items.map((i) => i.jurisdiction))].map((id) => option(id, graph.get('juridictions', id)?.data.name ?? id));
+const periods = (['all', '7', '30', '90'] as const).map((p) => option(p, t(`veille.periods.${p}`)));
+const count = pluralForms('veille.count');
+const selects = [
+  { name: 'source', label: t('veille.sourceFilter'), options: [option('', t('veille.all')), ...sources] },
+  { name: 'juridiction', label: t('veille.jurisdiction'), options: [option('', t('veille.all')), ...juridictions] },
+  { name: 'periode', label: t('veille.period'), options: periods },
+];
+---
+
+<form class="mb-8 grid gap-4 rounded-card border border-border bg-surface p-4 sm:grid-cols-3" aria-label={t('veille.filters')} data-veille-filters hidden>
+  {
+    selects.map((select) => (
+      <div class="space-y-1">
+        <label for={`veille-${select.name}`} class="text-sm font-semibold">
+          {select.label}
+        </label>
+        <select id={`veille-${select.name}`} name={select.name} class="input">
+          {select.options.map((o) => (
+            <option value={o.value}>{o.label}</option>
+          ))}
+        </select>
+      </div>
+    ))
+  }
+  <p class="text-sm text-meta sm:col-span-3" aria-live="polite" data-veille-count data-one={count.one} data-other={count.other} data-none={t('veille.none')}></p>
+</form>
+<ol class="divide-y divide-subtle rounded-card border border-border bg-surface" data-veille-list>
+  {
+    items.map((item) => {
+      const org = organisme(item.organisme);
+      return (
+        <li class="space-y-1.5 p-4" data-source={item.organisme} data-juridiction={item.jurisdiction} data-date={item.publishedAt}>
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-meta">
+            <time datetime={item.publishedAt}>{formatDate(item.publishedAt.slice(0, 10))}</time>
+            {org && (org.visibility.visible ? <a href={org.url} class="font-semibold text-secondary hover:underline">{org.data.acronym || org.data.name}</a> : <span class="font-semibold">{org.data.acronym || org.data.name}</span>)}
+            {jurisdictionBadges(graph, [item.jurisdiction]).map((j) => <JurisdictionBadge jurisdiction={j} />)}
+          </div>
+          <p class="font-semibold">
+            <a href={item.url} class="text-link" rel="noopener">
+              {frenchTypography(item.title)}
+              <span class="sr-only">{` ${t('veille.external')}`}</span>
+            </a>
+          </p>
+          {item.summary && <p class="text-sm text-secondary">{frenchTypography(item.summary)}</p>}
+        </li>
+      );
+    })
+  }
+</ol>
+
+<script>
+  // Filtrage dans le navigateur : les critères masquent les publications qui ne correspondent pas.
+  const form = document.querySelector<HTMLFormElement>('[data-veille-filters]');
+  const rows = [...document.querySelectorAll<HTMLElement>('[data-veille-list] > li')];
+  const status = document.querySelector<HTMLElement>('[data-veille-count]');
+  if (form && status) {
+    form.hidden = false;
+    const update = () => {
+      const data = new FormData(form);
+      const source = String(data.get('source') ?? '');
+      const juridiction = String(data.get('juridiction') ?? '');
+      const days = Number(data.get('periode')) || 0;
+      const since = days ? Date.now() - days * 86400000 : 0;
+      let shown = 0;
+      for (const row of rows) {
+        const match =
+          (!source || row.dataset.source === source) &&
+          (!juridiction || row.dataset.juridiction === juridiction) &&
+          (!since || new Date(row.dataset.date ?? '').getTime() >= since);
+        row.hidden = !match;
+        if (match) shown++;
+      }
+      const template = shown === 0 ? status.dataset.none : shown === 1 ? status.dataset.one : status.dataset.other;
+      status.textContent = (template ?? '').replace('{count}', String(shown));
+    };
+    form.addEventListener('change', update);
+    update();
+  }
+</script>

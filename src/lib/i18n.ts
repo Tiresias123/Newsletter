@@ -38,6 +38,14 @@ export function t(key: MessageKey, params: Params = {}): string {
   return frenchTypography(interpolate(template, params));
 }
 
+// Formes du singulier et du pluriel d'un texte, variables laissées en place : pour les scripts du navigateur,
+// qui choisissent la forme et remplacent {count} eux-mêmes.
+export function pluralForms(key: MessageKey): Plural {
+  const entry = lookup(key);
+  const [one, other] = typeof entry === 'string' ? [entry, entry] : [entry.one, entry.other];
+  return { one: frenchTypography(one), other: frenchTypography(other) };
+}
+
 // Libellé d'une valeur d'énumération (statut, type d'organisme…) ; la valeur brute sert de repli.
 export function enumLabel(group: keyof Messages['enums'], value: string): string {
   const labels = messages.enums[group] as Record<string, string>;
