@@ -1,0 +1,108 @@
+---
+// Fiche d'un terme du lexique (brief 6.8) : définition courte (celle des infobulles), synonymes, corps MDX,
+// termes voisins, sources officielles et contenus qui l'emploient. Hors des moteurs tant que le corps est vide.
+import LinkList from '../../components/editorial/LinkList.astro';
+import PageSection from '../../components/editorial/PageSection.astro';
+import ShareButtons from '../../components/editorial/ShareButtons.astro';
+import SourceList from '../../components/editorial/SourceList.astro';
+import { mdxComponents } from '../../components/mdx/index.ts';
+import NewsletterBox from '../../components/sidebar/NewsletterBox.astro';
+import Button from '../../components/ui/Button.astro';
+import PreviewBadge from '../../components/ui/PreviewBadge.astro';
+import ContentLayout from '../../layouts/ContentLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph, renderEntry } from '../../lib/content/astro.ts';
+import { breadcrumbs, hubUrl } from '../../lib/content/breadcrumbs.ts';
+import { entriesUsingTerm } from '../../lib/content/relations.ts';
+import { resolveSources } from '../../lib/content/sources.ts';
+import type { FicheLink } from '../../lib/content/views.ts';
+import { t } from '../../lib/i18n.ts';
+import { definedTermJsonLd } from '../../lib/seo/json-ld.ts';
+import { ogImagePath } from '../../lib/seo/meta.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+export async function getStaticPaths() {
+  const graph = await getGraph();
+  return graph
+    .all('lexique')
+    .filter((e) => e.visibility.visible)
+    .map((e) => ({ params: { slug: e.id } }));
+}
+
+const graph = await getGraph();
+const entry = graph.get('lexique', Astro.params.slug);
+if (!entry) throw new Error(`Terme introuvable : ${Astro.params.slug}.`);
+const { site } = getConfig();
+const d = entry.data;
+const { Content } = await renderEntry('lexique', entry.id);
+const path = entry.url ?? '/';
+const seeAlso = d.seeAlso.flatMap((id) => {
+  const term = graph.get('lexique', id);
+  return term?.visibility.visible ? [{ label: term.data.term, url: term.url ?? '#' }] : [];
+});
+const sources = resolveSources(graph, d.officialSources);
+const usedIn = entriesUsingTerm(graph, entry.id).map(
+  (e): FicheLink => ({ label: ('shortTitle' in e.data && e.data.shortTitle) || e.data.title, url: e.url, meta: t(`search.types.${e.collection}`) }),
+);
+const seo = {
+  title: d.seo?.title || d.term,
+  description: d.seo?.description || d.shortDefinition,
+  canonical: d.seo?.canonical,
+  // Une fiche sans corps n'apporte rien de plus que l'infobulle : elle reste hors des moteurs.
+  noindex: d.seo?.noindex || entry.wordCount === 0,
+  image: ogImagePath(path),
+  imageAlt: d.term,
+  jsonLd: [definedTermJsonLd(site.url, { name: d.term, description: d.shortDefinition, path }, t('hubs.lexique.title'))],
+};
+---
+
+<ContentLayout crumbs={breadcrumbs.lexique(entry)} seo={seo}>
+  <article data-pagefind-body data-pagefind-filter={`type:${t('search.types.lexique')}`} class="space-y-8">
+    <header class="space-y-4">
+      {entry.visibility.previewOnly && <PreviewBadge state={entry.visibility.state === 'programme' ? 'programme' : 'brouillon'} />}
+      <h1 class="text-3xl lg:text-4xl">{frenchTypography(d.term)}</h1>
+      <p class="callout callout--info text-lg">
+        <strong class="sr-only">{t('lexique.definition')}</strong>
+        {frenchTypography(d.shortDefinition)}
+      </p>
+      {d.synonyms.length > 0 && <p class="text-sm text-meta">{t('lexique.synonyms', { terms: d.synonyms.join(', ') })}</p>}
+    </header>
+    <div class="prose">
+      <Content components={mdxComponents} />
+    </div>
+    {
+      seeAlso.length > 0 && (
+        <PageSection id="voir-aussi" title={t('lexique.seeAlso')}>
+          <ul class="flex flex-wrap gap-2">
+            {seeAlso.map((link) => (
+              <li>
+                <a href={link.url} class="btn btn-pill">{frenchTypography(link.label)}</a>
+              </li>
+            ))}
+          </ul>
+        </PageSection>
+      )
+    }
+  </article>
+  <div slot="end" class="space-y-10">
+    {
+      sources.length > 0 && (
+        <PageSection id="sources" title={t('lexique.officialSources')}>
+          <SourceList items={sources} />
+        </PageSection>
+      )
+    }
+    {
+      usedIn.length > 0 && (
+        <PageSection id="emplois" title={t('lexique.usedIn')}>
+          <LinkList items={usedIn} />
+        </PageSection>
+      )
+    }
+    <ShareButtons title={d.term} />
+    <Button href={hubUrl('lexique')} variant="pill" icon="arrow-left">{t('lexique.allTerms')}</Button>
+  </div>
+  <Fragment slot="aside-bottom">
+    <NewsletterBox />
+  </Fragment>
+</ContentLayout>

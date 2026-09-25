@@ -1,0 +1,74 @@
+---
+// Lexique (brief 7.1) : index alphabétique, puis chaque terme avec sa définition courte et un lien vers sa fiche.
+import EmptyState from '../../components/editorial/EmptyState.astro';
+import PageHeader from '../../components/layout/PageHeader.astro';
+import NewsletterBox from '../../components/sidebar/NewsletterBox.astro';
+import ListLayout from '../../layouts/ListLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { getGraph } from '../../lib/content/astro.ts';
+import { forHub, hubUrl } from '../../lib/content/breadcrumbs.ts';
+import { ALPHABET, letterAnchor, lexiqueIndex } from '../../lib/content/lexique.ts';
+import { t } from '../../lib/i18n.ts';
+import { webPageJsonLd } from '../../lib/seo/json-ld.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+const graph = await getGraph();
+const { site } = getConfig();
+const groups = lexiqueIndex(graph.listed('lexique'));
+const present = new Set(groups.map((g) => g.letter));
+const title = t('hubs.lexique.title');
+const description = t('hubs.lexique.description');
+---
+
+<ListLayout
+  crumbs={forHub('lexique')}
+  seo={{ title, description, jsonLd: [webPageJsonLd(site.url, { type: 'CollectionPage', path: hubUrl('lexique'), name: title, description, about: { '@type': 'DefinedTermSet', name: title } })] }}
+>
+  <PageHeader slot="header" title={title} description={description}>
+    <nav aria-label={t('lists.letters')} data-pagefind-ignore>
+      <ul class="flex flex-wrap gap-1">
+        {
+          ALPHABET.map((letter) => (
+            <li>
+              {present.has(letter) ? (
+                <a href={`#${letterAnchor(letter)}`} class="inline-flex size-9 items-center justify-center rounded-button border border-border bg-surface font-heading font-bold hover:border-control" aria-label={t('lists.letter', { letter })}>
+                  {letter}
+                </a>
+              ) : (
+                <span class="inline-flex size-9 items-center justify-center font-heading text-meta" aria-hidden="true">
+                  {letter}
+                </span>
+              )}
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </PageHeader>
+  {groups.length === 0 && <EmptyState />}
+  <div class="space-y-10">
+    {
+      groups.map((group) => (
+        <section id={letterAnchor(group.letter)} aria-labelledby={`${letterAnchor(group.letter)}-titre`} class="scroll-mt-24">
+          <h2 id={`${letterAnchor(group.letter)}-titre`} class="mb-4 border-b border-border pb-2 text-3xl">
+            <span class="sr-only">{t('lists.letter', { letter: group.letter })}</span>
+            <span aria-hidden="true">{group.letter}</span>
+          </h2>
+          <dl class="space-y-5">
+            {group.entries.map((e) => (
+              <div>
+                <dt class="font-heading text-lg font-bold">
+                  <a href={e.url} class="text-link">{frenchTypography(e.data.term)}</a>
+                </dt>
+                <dd class="mt-1 text-secondary">{frenchTypography(e.data.shortDefinition)}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ))
+    }
+  </div>
+  <Fragment slot="aside">
+    <NewsletterBox />
+  </Fragment>
+</ListLayout>

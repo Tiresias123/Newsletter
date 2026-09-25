@@ -81,7 +81,13 @@
     "source": "Source : {organisme}"
   },
   "lexique": {
-    "readMore": "Lire la définition"
+    "readMore": "Lire la définition",
+    "synonyms": "Aussi appelé : {terms}",
+    "seeAlso": "Voir aussi",
+    "officialSources": "Sources officielles",
+    "usedIn": "Employé dans",
+    "allTerms": "Tout le lexique",
+    "definition": "Définition"
   },
   "partner": {
     "disclosure": "Publicité"

@@ -132,12 +132,13 @@ export function veilleOf(organisme: string): VeilleItem[] {
 }
 
 // Contenus qui emploient un terme du lexique par le bloc Definition (calcul mis en cache pour le graphe).
-const usage = new WeakMap<Graph, Map<string, Entry[]>>();
-export function entriesUsingTerm(graph: Graph, term: string): Entry[] {
+type TermUser = Editorial | Entry<'dossiers'>;
+const usage = new WeakMap<Graph, Map<string, TermUser[]>>();
+export function entriesUsingTerm(graph: Graph, term: string): TermUser[] {
   let byTerm = usage.get(graph);
   if (!byTerm) {
     byTerm = new Map();
-    for (const entry of [...editorial(graph), ...graph.listed('dossiers')] as Entry[]) {
+    for (const entry of [...editorial(graph), ...graph.listed('dossiers')]) {
       for (const block of findBlocks(entry.body)) {
         const id = block.name === 'Definition' ? block.props.term : undefined;
         if (typeof id !== 'string') continue;
