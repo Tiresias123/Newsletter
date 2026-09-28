@@ -15,6 +15,7 @@
     "new:article": "node scripts/new-article.ts",
     "newsletter:draft": "node scripts/newsletter-draft.ts",
     "content:format": "node scripts/content-format.ts",
+    "surveillance": "node scripts/surveillance.ts",
     "typecheck": "astro check",
     "test": "vitest run",
     "astro": "astro"

@@ -50,3 +50,18 @@ describe('publication programmée', () => {
     expect(parseSchedule({ version: 1, builtAt: '2026-09-25T16:00:00.000Z', publications: [] })).toEqual({ version: 1, builtAt: '2026-09-25T16:00:00.000Z', publications: [] });
   });
 });
+
+describe('surveillance du site en ligne', () => {
+  it('signale un site injoignable, une reconstruction nocturne manquée et un envoi resté hors ligne', async () => {
+    const { deploymentStatus } = await import('../src/lib/check/deployment.ts');
+    const now = new Date('2026-09-28T16:00:00Z');
+    const schedule = (builtAt: string) => ({ version: 1 as const, builtAt, publications: [] });
+    expect(deploymentStatus(undefined, undefined, now)).toMatchObject({ ok: false });
+    expect(deploymentStatus(schedule('2026-09-28T05:10:00Z'), new Date('2026-09-27T20:00:00Z'), now)).toMatchObject({ ok: true });
+    expect(deploymentStatus(schedule('2026-09-27T05:10:00Z'), undefined, now)).toMatchObject({ ok: false, problem: expect.stringContaining('34 heures') });
+    // Envoi de 14 h, toujours pas en ligne à 16 h : build en échec.
+    expect(deploymentStatus(schedule('2026-09-28T05:10:00Z'), new Date('2026-09-28T14:00:00Z'), now)).toMatchObject({ ok: false, problem: expect.stringContaining('pas en ligne') });
+    // Envoi de 15 h 30 : le build a encore le temps de finir.
+    expect(deploymentStatus(schedule('2026-09-28T05:10:00Z'), new Date('2026-09-28T15:30:00Z'), now)).toMatchObject({ ok: true });
+  });
+});

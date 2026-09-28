@@ -1,0 +1,48 @@
+# Rapport hebdomadaire (brief 8.8, ARCHITECTURE 15.4) : chaque lundi, « npm run check » complet, liens externes
+# compris, publié dans un ticket GitHub (étiquette « rapport ») : GitHub en avise l'auteur par courriel. Le
+# rapport de la semaine précédente est fermé. Sur main seulement, sauf lancement manuel.
+name: rapport
+
+on:
+  schedule:
+    - cron: '13 8 * * 1'
+      timezone: 'America/Toronto'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  rapport:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Historique : ancienneté des brouillons.
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      # Des erreurs bloquantes font échouer « check » : le rapport est publié quand même.
+      - name: Vérification complète
+        id: check
+        run: npm run check -- --liens-externes || echo "bloquant=oui" >> "$GITHUB_OUTPUT"
+      - name: Ticket du rapport
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BLOQUANT: ${{ steps.check.outputs.bloquant }}
+        run: |
+          gh label create rapport --color 0E1230 --description 'Rapport hebdomadaire « À vérifier »' --force
+          title="Rapport « À vérifier » du $(TZ=America/Toronto date +%Y-%m-%d)"
+          if [ "$BLOQUANT" = "oui" ]; then title="$title : erreurs bloquantes"; fi
+          # Un ticket est limité à 65 536 caractères.
+          head -c 60000 docs/A-VERIFIER.md > rapport.md
+          for number in $(gh issue list --label rapport --state open --json number --jq '.[].number'); do
+            gh issue close "$number" --comment 'Remplacé par le rapport de cette semaine.'
+          done
+          gh issue create --title "$title" --label rapport --body-file rapport.md
