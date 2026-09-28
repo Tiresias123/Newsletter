@@ -107,9 +107,10 @@ describe('surveillance du site en ligne', () => {
       git(['checkout', '-q', 'main']);
       git(['merge', '-q', '--no-ff', '-m', 'fusion', 'branche'], '2026-09-28T10:00:00Z');
       const log = (...extra: string[]) => git(['log', '-1', ...extra, '--format=%cI', '--', '.', ':(exclude)docs', ':(exclude).github']);
-      // Sans --first-parent, la fusion disparaît derrière le commit de la branche.
-      expect(log()).toBe('2026-09-25T22:00:00+00:00');
-      expect(log('--first-parent')).toBe('2026-09-28T10:00:00+00:00');
+      // Sans --first-parent, la fusion disparaît derrière le commit de la branche. Instants comparés : selon sa
+      // version, git écrit « Z » ou « +00:00 ».
+      expect(new Date(log()).toISOString()).toBe('2026-09-25T22:00:00.000Z');
+      expect(new Date(log('--first-parent')).toISOString()).toBe('2026-09-28T10:00:00.000Z');
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
