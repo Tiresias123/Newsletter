@@ -83,11 +83,21 @@ export const singletons = {
       provider: f.select('provider', 'provider', ['brevo', 'cyberimpact', 'test'], 'brevo'),
       doubleOptIn: fields.ignored(),
       unsubscribeUrl: f.text('unsubscribeUrl', undefined, { required: true }),
-      lists: fields.array(fields.object({ id: f.text('id', undefined, { required: true }), label: f.text('label', undefined, { required: true }), enabled: f.checkbox('enabled', false) }), {
+      doubleOptInTemplateId: f.integer('doubleOptInTemplateId', undefined, { min: 1 }),
+      confirmationUrl: f.link('confirmationUrl'),
+      lists: fields.array(
+        fields.object({
+          id: f.text('id', undefined, { required: true }),
+          label: f.text('label', undefined, { required: true }),
+          providerId: f.integer('providerId', 'lists', { min: 1 }),
+          enabled: f.checkbox('enabled', false),
+        }),
+        {
         ...labelled('lists'),
-        itemLabel: (props) => props.fields.label.value,
-        validation: { length: { min: 1 } },
-      }),
+          itemLabel: (props) => props.fields.label.value,
+          validation: { length: { min: 1 } },
+        },
+      ),
       texts: fields.object(
         {
           title: f.text('title', undefined, { required: true }),
@@ -101,6 +111,8 @@ export const singletons = {
           success: f.text('success', 'newsletter', { multiline: true, required: true }),
           error: f.text('error', undefined, { multiline: true, required: true }),
           frequency: f.text('frequency'),
+          confirmedTitle: f.text('confirmedTitle', undefined, { required: true }),
+          confirmedText: f.text('confirmedText', undefined, { multiline: true, required: true }),
         },
         labelled('texts'),
       ),
@@ -120,6 +132,16 @@ export const singletons = {
       officialSourceTypesValidated: f.checkbox('officialSourceTypesValidated', false),
       communiqueFromOrganismeIsOfficial: f.checkbox('communiqueFromOrganismeIsOfficial', true),
       newsletterSender: fields.object({ identification: f.text('identification', undefined, { multiline: true }), postalAddress: f.text('postalAddress', undefined, { multiline: true }) }, labelled('newsletterSender')),
+      dataInventory: fields.array(
+        fields.object({
+          processing: f.text('processing', undefined, { required: true }),
+          data: f.text('data', 'dataInventory', { multiline: true, required: true }),
+          where: f.text('where', undefined, { multiline: true, required: true }),
+          location: f.text('location', undefined, { multiline: true, required: true }),
+          retention: f.text('retention', undefined, { multiline: true, required: true }),
+        }),
+        { ...labelled('dataInventory'), itemLabel: (props) => props.fields.processing.value },
+      ),
     },
   }),
   veilleSources: singleton({
@@ -138,6 +160,7 @@ export const singletons = {
           format: f.select('format', 'veilleFormat', ['rss', 'atom', 'json'], 'rss'),
           language: f.select('language', 'veilleLanguage', ['fr', 'en'], 'fr'),
           keywords: f.textList('keywords'),
+          staleDays: f.integer('staleDays', 'veilleSources', { defaultValue: 30, min: 1, max: 365 }),
           enabled: f.checkbox('enabled', false),
           note: f.text('note', undefined, { multiline: true }),
         }),
@@ -192,6 +215,30 @@ export const singletons = {
         fields.object({ id: f.text('id', 'ticker', { required: true }), symbol: f.text('symbol', undefined, { required: true, length: { max: 10 } }), label: f.text('label', undefined, { required: true }), enabled: f.checkbox('enabled', true) }),
         { ...labelled('assets'), itemLabel: (props) => `${props.fields.symbol.value} ${props.fields.label.value}` },
       ),
+    },
+  }),
+  services: singleton({
+    label: configLabel('services'),
+    path: 'config/services',
+    format: json,
+    schema: {
+      turnstile: fields.object({ siteKey: f.text('siteKey', 'turnstile') }, labelled('turnstile')),
+      analytics: fields.object(
+        {
+          enabled: f.checkbox('enabled', false, 'analytics'),
+          provider: fields.ignored(),
+          scriptUrl: f.url('scriptUrl', 'analytics', true),
+          collectOrigins: f.textList('collectOrigins', 'analytics'),
+          websiteId: f.text('websiteId', 'analytics'),
+          domains: f.textList('domains', 'analytics'),
+        },
+        labelled('analytics'),
+      ),
+      contact: fields.object(
+        { enabled: f.checkbox('enabled', false, 'contact'), senderEmail: f.text('senderEmail', 'contact'), senderName: f.text('senderName', 'contact') },
+        labelled('contact'),
+      ),
+      consent: fields.object({ enabled: f.checkbox('enabled', false, 'consent') }, labelled('consent')),
     },
   }),
   messages: singleton({ label: configLabel('messages'), path: 'config/i18n/fr', format: json, schema: interfaceTextsSchema() }),

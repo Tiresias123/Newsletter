@@ -10,6 +10,7 @@ import {
   navigationSchema,
   newsletterConfigSchema,
   redirectsSchema,
+  servicesSchema,
   siteSchema,
   themeSchema,
   tickerSchema,
@@ -25,6 +26,7 @@ import legal from '../../../config/legal.json' with { type: 'json' };
 import veilleSources from '../../../config/sources-veille.json' with { type: 'json' };
 import ads from '../../../config/ads.json' with { type: 'json' };
 import redirects from '../../../config/redirects.json' with { type: 'json' };
+import services from '../../../config/services.json' with { type: 'json' };
 import messages from '../../../config/i18n/fr.json' with { type: 'json' };
 
 const FILES = {
@@ -38,6 +40,7 @@ const FILES = {
   veilleSources: { file: 'config/sources-veille.json', schema: veilleSourcesSchema, data: veilleSources },
   ads: { file: 'config/ads.json', schema: adsSchema, data: ads },
   redirects: { file: 'config/redirects.json', schema: redirectsSchema, data: redirects },
+  services: { file: 'config/services.json', schema: servicesSchema, data: services },
   messages: { file: 'config/i18n/fr.json', schema: messagesSchema, data: messages },
 } as const;
 

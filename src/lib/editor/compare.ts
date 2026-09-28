@@ -23,6 +23,7 @@ export const CONFIG_SCHEMAS: Record<string, z.ZodType> = {
   ads: configSchemas.adsSchema,
   redirects: configSchemas.redirectsSchema,
   ticker: configSchemas.tickerSchema,
+  services: configSchemas.servicesSchema,
   messages: configSchemas.messagesSchema,
 };
 

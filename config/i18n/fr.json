@@ -98,6 +98,17 @@
     "none": "Aucune publication ne correspond à ces filtres.",
     "sourceFilter": "Source"
   },
+  "market": {
+    "tickerLabel": "Cours des cryptoactifs",
+    "source": "Données : CoinGecko",
+    "asOf": "au {date} à {time}",
+    "time": "à {time}",
+    "up": "en hausse de {value} sur 24 heures",
+    "down": "en baisse de {value} sur 24 heures",
+    "flat": "stable sur 24 heures",
+    "change": "Variation sur 24 heures",
+    "sparkline": "Évolution sur sept jours"
+  },
   "lexique": {
     "readMore": "Lire la définition",
     "synonyms": "Aussi appelé : {terms}",
@@ -179,6 +190,7 @@
       "programme": "Publications programmées",
       "brouillon": "Brouillons anciens",
       "lancement": "Avant la mise en ligne",
+      "veille": "Veille officielle",
       "arret": "Vérifications suspendues"
     },
     "showMode": "Afficher le rapport en mode {mode}",
@@ -369,7 +381,7 @@
     "colors": "Couleurs",
     "columns": "Colonnes",
     "communiqueFromOrganismeIsOfficial": "Communiqué d'un organisme réputé officiel",
-    "consent": "Texte de consentement",
+    "consent": "Consentement aux témoins",
     "consultation": "Consultation",
     "contactEmail": "Courriel de contact",
     "container": "Largeur de page (px)",
@@ -620,11 +632,81 @@
     "warningStrong": "Alerte, appuyé",
     "website": "Site officiel",
     "whoIsAffected": "Personnes visées",
-    "redirectStatus": "Code de redirection"
+    "redirectStatus": "Code de redirection",
+    "staleDays": "Alerte après (jours sans publication)",
+    "services": "Services",
+    "turnstile": "Protection contre les robots (Turnstile)",
+    "siteKey": "Clé de site",
+    "analytics": "Mesure d'audience",
+    "scriptUrl": "Adresse du script",
+    "collectOrigins": "Adresses de collecte",
+    "websiteId": "Identifiant du site",
+    "domains": "Domaines mesurés",
+    "contact": "Formulaire de contact",
+    "senderEmail": "Adresse d'expédition",
+    "senderName": "Nom d'expéditeur",
+    "dataInventory": "Renseignements recueillis",
+    "processing": "Traitement",
+    "data": "Renseignements",
+    "where": "Où",
+    "location": "Lieu d'hébergement",
+    "retention": "Conservation",
+    "doubleOptInTemplateId": "Modèle du courriel de confirmation (numéro)",
+    "confirmationUrl": "Page de confirmation",
+    "confirmedTitle": "Titre de la page de confirmation",
+    "confirmedText": "Texte de la page de confirmation"
   },
   "forms": {
     "honeypot": "Laissez ce champ vide",
-    "required": "obligatoire"
+    "required": "obligatoire",
+    "sending": "Envoi en cours…",
+    "verification": "La vérification anti-robot n'a pas abouti. Rechargez la page, puis réessayez.",
+    "challenge": "Une vérification anti-robot est nécessaire : suivez les indications affichées ci-dessus.",
+    "rateLimited": "Trop d'envois en peu de temps. Réessayez dans une minute.",
+    "network": "L'envoi n'a pas pu se faire : vérifiez votre connexion, puis réessayez.",
+    "invalid": "Vérifiez les champs du formulaire, puis réessayez.",
+    "noscript": "Ce formulaire a besoin de JavaScript pour vérifier que vous n'êtes pas un robot."
+  },
+  "contactForm": {
+    "name": "Nom",
+    "email": "Adresse courriel",
+    "topic": "Sujet",
+    "topics": {
+      "question": "Question",
+      "erreur": "Signaler une erreur",
+      "suggestion": "Suggérer un sujet",
+      "autre": "Autre"
+    },
+    "message": "Message",
+    "messageHelp": "10 à 5 000 caractères.",
+    "page": "Page concernée",
+    "button": "Envoyer le message",
+    "success": "Merci : votre message a bien été envoyé. La réponse arrivera à l’adresse indiquée.",
+    "error": "Le message n'a pas pu être envoyé. Réessayez plus tard, ou écrivez-nous directement.",
+    "privacy": "Vos coordonnées servent seulement à vous répondre : le site ne conserve pas votre message. [À VALIDER PAR L'AUTEUR]",
+    "privacyLink": "Politique de confidentialité",
+    "unavailable": "Pour nous écrire :",
+    "mailSubject": "[{site}] {topic} : {name}"
+  },
+  "privacy": {
+    "inventoryCaption": "Renseignements personnels recueillis",
+    "columns": {
+      "processing": "Traitement",
+      "data": "Renseignements",
+      "where": "Où",
+      "location": "Lieu d'hébergement",
+      "retention": "Conservation"
+    },
+    "officer": "Responsable de la protection des renseignements personnels",
+    "officerWrite": "Écrire au responsable"
+  },
+  "consentBanner": {
+    "label": "Mesure d’audience",
+    "text": "Nous aimerions mesurer l'audience de ce site pour l'améliorer. Acceptez-vous? [À VALIDER PAR L'AUTEUR]",
+    "accept": "Accepter",
+    "refuse": "Refuser",
+    "privacyLink": "Politique de confidentialité",
+    "manage": "Mesure d'audience : changer mon choix"
   },
   "breadcrumb": {
     "label": "Fil d'Ariane",
@@ -1139,7 +1221,10 @@
       "CarteAuteur": "Carte d'auteur",
       "Newsletter": "Inscription à l'infolettre",
       "ListeSources": "Liste de sources",
-      "Tableau": "Tableau"
+      "Tableau": "Tableau",
+      "FormulaireContact": "Formulaire de contact",
+      "ResponsableProtection": "Responsable de la protection des renseignements",
+      "InventaireDonnees": "Renseignements recueillis (tableau)"
     },
     "valeurs": {
       "newsletterStatus": {
@@ -1421,13 +1506,29 @@
       "privacyOfficer.title": "Sa fonction.",
       "disclaimers.text": "Texte affiché en fin de contenu.",
       "officialSourceTypes": "Types de sources qui comptent comme officielles pour la règle « au moins une source officielle ».",
-      "veilleSources.sources": "Flux des autorités relevés automatiquement (phase 4).",
+      "veilleSources.sources": "Fils des autorités relevés deux fois par jour ouvrable par la tâche « veille » (GitHub).",
       "partners.name": "Nom du partenaire, affiché avec la mention « Publicité ».",
       "redirects.redirectStatus": "301 : déplacement définitif (le cas normal); 302 : temporaire.",
       "ticker.enabled": "Affiche le bandeau des cours au-dessus de l'en-tête.",
       "ticker.id": "Identifiant de l'actif chez CoinGecko, par exemple « bitcoin ».",
       "organismes.logo": "Le site n'affiche pas de logo d'organisme : la vignette reprend le sigle.",
-      "logo": "Chemin de l'image, par exemple /images/logo.svg."
+      "logo": "Chemin de l'image, par exemple /images/logo.svg.",
+      "veilleSources.staleDays": "Au-delà de ce nombre de jours sans nouvelle publication, le rapport « À vérifier » le signale : un fil mort ne doit pas passer pour une semaine calme.",
+      "turnstile.siteKey": "Clé publique du widget Turnstile (tableau de bord Cloudflare, Turnstile). La clé secrète, elle, n'est jamais ici : c'est un secret du Worker.",
+      "analytics.enabled": "Charge le script de mesure d'audience sur le site en ligne seulement. Aucun témoin n'est déposé.",
+      "analytics.scriptUrl": "Adresse du script Umami (https://cloud.umami.is/script.js pour Umami Cloud).",
+      "analytics.collectOrigins": "Serveurs qui reçoivent les mesures, un par ligne, que la politique de sécurité du site autorise (https://gateway.umami.is pour Umami Cloud). Si Umami en change, les mesures sont bloquées : vérifiez l'envoi dans l'onglet Réseau du navigateur après l'activation.",
+      "analytics.websiteId": "Identifiant du site dans Umami (Paramètres, Sites web).",
+      "analytics.domains": "Noms de domaine mesurés, un par ligne (ex. monsite.ca) : les aperçus et l'ordinateur de l'auteur ne sont pas comptés.",
+      "contact.enabled": "Affiche le formulaire sur la page Contact; sinon, le lien vers le courriel de contact de l'identité du site.",
+      "contact.senderEmail": "Adresse vérifiée chez le fournisseur d'envoi (Brevo) qui expédie les messages du formulaire; la réponse va directement au lecteur.",
+      "contact.senderName": "Nom affiché comme expéditeur des messages du formulaire.",
+      "dataInventory": "Tableau de la politique de confidentialité (bloc « Renseignements recueillis ») : un traitement par ligne. À faire valider.",
+      "dataInventory.data": "Renseignements personnels concernés, en langage courant.",
+      "doubleOptInTemplateId": "Numéro du modèle de double consentement créé chez le fournisseur (Brevo : Modèles, modèle de type « double opt-in »).",
+      "confirmationUrl": "Page où le lien du courriel de confirmation renvoie le lecteur.",
+      "lists.providerId": "Numéro de la liste chez le fournisseur (Brevo : Contacts, Listes).",
+      "consent.enabled": "Demande l'accord du lecteur avant de charger la mesure d'audience. Inutile tant qu'aucun service ne dépose de témoin (Umami n'en dépose pas) : à activer seulement si un service tiers en posait un jour."
     },
     "messages": {
       "url": "Adresse web invalide : elle commence par https://.",

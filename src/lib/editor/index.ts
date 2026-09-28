@@ -20,7 +20,7 @@ export default config({
       [group('fiches')]: ['juridictions', 'organismes', 'textes', 'traitements', 'lexique', 'agenda'],
       [group('references')]: ['sources', 'auteurs'],
       [group('classements')]: ['categories', 'themes', 'formats', 'activites', 'contribuables'],
-      [group('reglages')]: ['site', 'navigation', 'homepage', 'theme', 'newsletter', 'legal', 'veilleSources', 'ads', 'redirects', 'ticker', 'messages'],
+      [group('reglages')]: ['site', 'navigation', 'homepage', 'theme', 'newsletter', 'legal', 'veilleSources', 'ads', 'redirects', 'ticker', 'services', 'messages'],
     },
   },
   collections: { ...editorialCollections, ...referenceCollections },

@@ -1,0 +1,18 @@
+{
+  "turnstile": {},
+  "analytics": {
+    "enabled": false,
+    "provider": "umami",
+    "scriptUrl": "https://cloud.umami.is/script.js",
+    "collectOrigins": [
+      "https://gateway.umami.is"
+    ],
+    "domains": []
+  },
+  "contact": {
+    "enabled": false
+  },
+  "consent": {
+    "enabled": false
+  }
+}

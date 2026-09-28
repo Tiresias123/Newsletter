@@ -79,7 +79,7 @@ describe('fiche d’une juridiction', () => {
 
 describe('fiche d’un organisme', () => {
   it('sépare décisions et autres textes ; n’affiche le flux officiel que s’il est activé', () => {
-    const source = { id: 'amf', label: 'AMF', organisme: 'amf', jurisdiction: 'quebec', url: 'https://example.org/flux', format: 'rss', language: 'fr', keywords: [], note: '' };
+    const source = { id: 'amf', label: 'AMF', organisme: 'amf', jurisdiction: 'quebec', url: 'https://example.org/flux', format: 'rss', language: 'fr', keywords: [], staleDays: 30, note: '' };
     const setup = (f: Fixture) => {
       f.mdx('content/textes/decision.mdx', texte({ title: 'Décision de test', type: 'decision-administrative', adoptedAt: '2026-08-01' }));
       f.mdx('content/textes/reglement.mdx', texte({ title: 'Règlement de test', adoptedAt: '2026-07-01' }));

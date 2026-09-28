@@ -50,5 +50,42 @@
   "newsletterSender": {
     "identification": "[À COMPLÉTER PAR L'AUTEUR]",
     "postalAddress": "[À COMPLÉTER PAR L'AUTEUR]"
-  }
+  },
+  "dataInventory": [
+    {
+      "processing": "Infolettre",
+      "data": "adresse courriel, preuve de consentement (date, page d'origine, version du texte affiché, empreinte de l'adresse IP), liste et préférences, statistiques d'envoi",
+      "where": "fournisseur d'infolettre (Brevo)",
+      "location": "Union européenne [À VÉRIFIER]",
+      "retention": "[À COMPLÉTER PAR L'AUTEUR]"
+    },
+    {
+      "processing": "Formulaire de contact",
+      "data": "nom, adresse courriel, message",
+      "where": "transmis par courriel à l'auteur par le fournisseur d'envoi (Brevo); le site ne conserve rien",
+      "location": "Union européenne [À VÉRIFIER]",
+      "retention": "[À COMPLÉTER PAR L'AUTEUR]"
+    },
+    {
+      "processing": "Protection contre les robots",
+      "data": "signaux techniques du navigateur, adresse IP",
+      "where": "Cloudflare Turnstile",
+      "location": "centres de données de Cloudflare [À VÉRIFIER]",
+      "retention": "selon Cloudflare [À VÉRIFIER]"
+    },
+    {
+      "processing": "Mesure d'audience",
+      "data": "aucun renseignement personnel conservé, aucun témoin",
+      "where": "Umami Cloud",
+      "location": "Union européenne [À VÉRIFIER]",
+      "retention": "selon Umami [À VÉRIFIER]"
+    },
+    {
+      "processing": "Journaux techniques",
+      "data": "adresse IP, navigateur",
+      "where": "Cloudflare (hébergement)",
+      "location": "centres de données de Cloudflare dans le monde [À VÉRIFIER]",
+      "retention": "selon Cloudflare [À VÉRIFIER]"
+    }
+  ]
 }

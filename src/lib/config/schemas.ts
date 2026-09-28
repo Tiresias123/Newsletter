@@ -163,7 +163,11 @@ export const newsletterConfigSchema = z.strictObject({
   doubleOptIn: z.literal(true, { error: 'Le double consentement (double opt-in) est obligatoire.' }),
   // Lien de désabonnement du courriel : balise que le fournisseur remplace à l'envoi (« {{ unsubscribe }} » chez Brevo).
   unsubscribeUrl: z.string().min(1),
-  lists: z.array(z.strictObject({ id: slug(), label: z.string().min(1), enabled: z.boolean() })).min(1),
+  // Double consentement : modèle du courriel de confirmation chez le fournisseur, et page où il renvoie le lecteur.
+  doubleOptInTemplateId: z.number().int().positive().optional(),
+  confirmationUrl: link().default('/newsletter/confirmation/'),
+  // providerId : identifiant de la liste chez le fournisseur (numéro de liste Brevo).
+  lists: z.array(z.strictObject({ id: slug(), label: z.string().min(1), providerId: z.number().int().positive().optional(), enabled: z.boolean() })).min(1),
   texts: z.strictObject({
     title: z.string().min(1),
     subtitle: optionalText(),
@@ -176,7 +180,35 @@ export const newsletterConfigSchema = z.strictObject({
     success: z.string().min(1),
     error: z.string().min(1),
     frequency: optionalText(),
+    confirmedTitle: z.string().min(1),
+    confirmedText: z.string().min(1),
   }),
+});
+
+// ─── services.json ──────────────────────────────────────────────────────────
+// Réglages publics des services (les secrets sont chez Cloudflare) : clé de site Turnstile, mesure d'audience,
+// formulaire de contact.
+export const servicesSchema = z.strictObject({
+  turnstile: z.strictObject({ siteKey: optionalText() }),
+  analytics: z
+    .strictObject({
+      enabled: z.boolean(),
+      provider: z.literal('umami'),
+      scriptUrl: z.url(),
+      // Serveurs qui reçoivent les mesures, autorisés par la politique de sécurité du contenu (connect-src).
+      collectOrigins: z
+        .array(z.string().regex(/^https:\/\/[a-z0-9.-]+$/, { error: "Origine attendue : https:// suivi du nom d'hôte, sans chemin (ex. https://gateway.umami.is)." }))
+        .default(['https://gateway.umami.is']),
+      websiteId: optionalText(),
+      // Noms d'hôte mesurés (le site en ligne), pour ignorer les aperçus et l'ordinateur de l'auteur.
+      domains: z.array(z.string().regex(/^[a-z0-9.-]+$/, { error: 'Nom de domaine attendu, sans https:// ni barre oblique (ex. monsite.ca).' })).default([]),
+    })
+    .superRefine((a, check) => {
+      if (a.enabled && !a.websiteId) check.addIssue({ code: 'custom', path: ['websiteId'], message: "Mesure d'audience activée sans identifiant de site." });
+    }),
+  contact: z.strictObject({ enabled: z.boolean(), senderEmail: optionalText(), senderName: optionalText() }),
+  // Consentement préalable à la mesure d'audience (Loi 25) : inutile tant qu'aucun service ne dépose de témoin.
+  consent: z.strictObject({ enabled: z.boolean() }),
 });
 
 // ─── legal.json ─────────────────────────────────────────────────────────────
@@ -187,6 +219,10 @@ export const legalSchema = z.strictObject({
   officialSourceTypesValidated: z.boolean().default(false),
   communiqueFromOrganismeIsOfficial: z.boolean(),
   newsletterSender: z.strictObject({ identification: optionalText(), postalAddress: optionalText() }),
+  // Renseignements personnels recueillis (Loi 25), affichés par le bloc InventaireDonnees de la page de confidentialité.
+  dataInventory: z
+    .array(z.strictObject({ processing: z.string().min(1), data: z.string().min(1), where: z.string().min(1), location: z.string().min(1), retention: z.string().min(1) }))
+    .default([]),
 });
 
 // ─── sources-veille.json ────────────────────────────────────────────────────
@@ -202,6 +238,8 @@ export const veilleSourcesSchema = z.strictObject({
       format: z.enum(['rss', 'atom', 'json']).default('rss'),
       language: z.enum(['fr', 'en']).default('fr'),
       keywords: z.array(z.string()).default([]),
+      // Au-delà de ce nombre de jours sans nouvelle publication, le rapport « À vérifier » le signale.
+      staleDays: z.number().int().min(1).max(365).default(30),
       enabled: z.boolean(),
       note: optionalText(),
     }),
