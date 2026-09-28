@@ -1,5 +1,26 @@
 {
-  "updatedAt": null,
-  "sources": {},
+  "updatedAt": "2026-09-28T15:48:00-04:00",
+  "sources": {
+    "finances-canada": {
+      "status": "ok",
+      "since": "2026-09-28T15:48:00-04:00",
+      "detail": ""
+    },
+    "arc": {
+      "status": "ok",
+      "since": "2026-09-28T15:48:00-04:00",
+      "detail": ""
+    },
+    "banque-du-canada": {
+      "status": "ok",
+      "since": "2026-09-28T15:48:00-04:00",
+      "detail": ""
+    },
+    "legisinfo": {
+      "status": "ok",
+      "since": "2026-09-28T15:48:00-04:00",
+      "detail": ""
+    }
+  },
   "items": []
 }
