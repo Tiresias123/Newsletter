@@ -1,6 +1,7 @@
 # Intégration continue (brief, phase 5 ; ARCHITECTURE 15.7) : à chaque envoi qui touche le site, et à la
 # demande, les contrôles exigés avant un commit (CLAUDE.md), la taille du Worker et les parcours de fumée.
-# Dépôt privé : une dizaine de minutes par exécution, sur les 2 000 minutes gratuites par mois.
+# Environ trois minutes par exécution : gratuites pour un dépôt public, sur les 2 000 minutes par mois d'un
+# dépôt privé.
 name: ci
 
 on:
@@ -11,7 +12,8 @@ on:
       - 'docs/**'
       - '*.md'
       - 'data/veille/cache.json'
-  pull_request:
+  # Pas de déclencheur pull_request : une demande de fusion affiche le résultat de l'envoi de son dernier
+  # commit, sans second passage.
   workflow_dispatch:
 
 permissions:
