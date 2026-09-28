@@ -13,7 +13,7 @@ const { name, title, email } = getConfig().legal.privacyOfficer;
   {name && <p class="mt-1 text-lg font-semibold">{frenchTypography(name)}</p>}
   {title && <p class="text-secondary">{frenchTypography(title)}</p>}
   {email && /@/.test(email) ? (
-    <p class="mt-3"><a href={`mailto:${email}`} class="font-semibold underline underline-offset-2">{t('privacy.officerWrite')} : {email}</a></p>
+    <p class="mt-3"><a href={`mailto:${email}`} class="font-semibold underline underline-offset-2">{t('privacy.officerWrite', { email })}</a></p>
   ) : (
     email && <p class="mt-3">{frenchTypography(email)}</p>
   )}

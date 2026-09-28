@@ -136,10 +136,16 @@ function enhanceForm(form: HTMLFormElement): void {
           };
         });
 
-  // Premier contact avec le formulaire : champ qui prend le focus (clic ou tabulation), ou clic direct sur le
-  // bouton après un remplissage automatique (Safari ne donne pas le focus au bouton cliqué).
+  // Premier contact avec le formulaire : champ qui prend le focus (clic ou tabulation; un lien du formulaire ne
+  // compte pas), ou clic direct sur le bouton après un remplissage automatique (Safari ne donne pas le focus au
+  // bouton cliqué).
   const start = () => void prepare().catch(() => say(messages.verification, 'error'));
-  form.addEventListener('focusin', start, { once: true });
+  const onFocus = (event: FocusEvent) => {
+    if (!(event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement)) return;
+    form.removeEventListener('focusin', onFocus);
+    start();
+  };
+  form.addEventListener('focusin', onFocus);
   button?.addEventListener('pointerdown', start, { once: true });
   form.addEventListener('submit', async (event) => {
     event.preventDefault();

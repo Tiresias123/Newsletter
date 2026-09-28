@@ -209,7 +209,8 @@ export const servicesSchema = z.strictObject({
       if (a.enabled && !a.websiteId) check.addIssue({ code: 'custom', path: ['websiteId'], message: "Mesure d'audience activée sans identifiant de site." });
     }),
   contact: z.strictObject({ enabled: z.boolean(), senderEmail: optionalText(), senderName: optionalText() }),
-  // Consentement préalable à la mesure d'audience (Loi 25) : inutile tant qu'aucun service ne dépose de témoin.
+  // Consentement préalable à la mesure d'audience : désactivé tant qu'aucun service ne dépose de témoin (choix du
+  // brief, section 9, à valider par l'auteur : guide, section 36).
   cookieConsent: z.strictObject({ enabled: z.boolean() }),
 });
 

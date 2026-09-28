@@ -46,15 +46,19 @@ function beforeSend(_type: string, payload: Record<string, unknown>): Record<str
   return payload;
 }
 
+// Choix de la page en cours : il vaut seul quand le navigateur refuse le stockage.
+let pageChoice: string | null = null;
+
 function readChoice(): string | null {
   try {
     return localStorage.getItem(CHOICE);
   } catch {
-    return null;
+    return pageChoice;
   }
 }
 
 function saveChoice(value: 'oui' | 'non' | null): void {
+  pageChoice = value;
   try {
     if (value) localStorage.setItem(CHOICE, value);
     else localStorage.removeItem(CHOICE);

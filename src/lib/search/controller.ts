@@ -1,7 +1,7 @@
 // Interface de recherche dans le navigateur (fenêtre et page /recherche/) : saisie et filtres, résultats groupés
 // par type, « Voir plus » (fenêtre) ou « Afficher plus » (page), flèches pour parcourir les résultats.
 // Ne connaît que le contrat SearchProvider.
-import { looksPersonal, track } from '../analytics/events.ts';
+import { searchData, searchTerm, track } from '../analytics/events.ts';
 import { formatDate } from '../format.ts';
 import type { FilterKey, FilterLabels, SearchFilters, SearchGroup, SearchHit, SearchProvider } from './types.ts';
 
@@ -89,11 +89,11 @@ export function mountSearch(root: HTMLElement, provider: SearchProvider & { prel
   let reportTimer: ReturnType<typeof setTimeout> | undefined;
   const report = (query: string, total: number) => {
     clearTimeout(reportTimer);
-    const term = query.toLowerCase().slice(0, 50);
+    const term = searchTerm(query);
     if (term.length < 3 || term === reported) return;
     reportTimer = setTimeout(() => {
       reported = term;
-      track('search', looksPersonal(term) ? { results: total } : { query: term, results: total });
+      track('search', searchData(query, total));
     }, 1500);
   };
 

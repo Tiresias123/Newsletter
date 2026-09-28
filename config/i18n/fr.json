@@ -662,7 +662,7 @@
     "honeypot": "Laissez ce champ vide",
     "required": "obligatoire",
     "sending": "Envoi en cours…",
-    "verification": "La vérification anti-robot n'a pas abouti : réessayez dans un instant. Si le problème persiste, rechargez la page.",
+    "verification": "La vérification anti-robot n'a pas abouti : réessayez dans un instant.",
     "challenge": "Une vérification anti-robot est nécessaire : suivez les indications affichées ci-dessus.",
     "rateLimited": "Trop d'envois en peu de temps. Réessayez dans une minute.",
     "network": "L'envoi n'a pas pu se faire : vérifiez votre connexion, puis réessayez.",
@@ -701,7 +701,7 @@
       "retention": "Conservation"
     },
     "officer": "Responsable de la protection des renseignements personnels",
-    "officerWrite": "Écrire au responsable"
+    "officerWrite": "Écrire au responsable : {email}"
   },
   "consentBanner": {
     "label": "Mesure d’audience",
@@ -1531,7 +1531,7 @@
       "dataInventory.data": "Renseignements personnels concernés, en langage courant.",
       "doubleOptInTemplateId": "Numéro du modèle de double consentement créé chez le fournisseur (Brevo : Modèles, modèle de type « double opt-in »).",
       "lists.providerId": "Numéro de la liste chez le fournisseur (Brevo : Contacts, Listes).",
-      "cookieConsent.enabled": "Demande l'accord du lecteur avant de charger la mesure d'audience. Inutile tant qu'aucun service ne dépose de témoin (Umami n'en dépose pas) : à activer seulement si un service tiers en posait un jour."
+      "cookieConsent.enabled": "Demande l'accord du lecteur avant de charger la mesure d'audience. Désactivé par choix tant qu'aucun service ne dépose de témoin (Umami n'en dépose pas) : voir la section 36 du guide de l'auteur."
     },
     "messages": {
       "url": "Adresse web invalide : elle commence par https://.",
