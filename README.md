@@ -10,23 +10,26 @@ Prérequis : Node.js 24 (voir `.nvmrc`; Node 22.12 au minimum).
 
 ```sh
 npm install
-npm run dev      # site local sur http://localhost:4321, brouillons visibles
+npm run dev      # site local sur http://127.0.0.1:4321, brouillons visibles
 ```
 
 ## Commandes
 
 | Commande | Effet |
 |---|---|
-| `npm run dev` | serveur de développement |
+| `npm run dev` | serveur de développement, avec l'éditeur sur http://127.0.0.1:4321/keystatic |
 | `npm run check` | vérifications et rapport `docs/A-VERIFIER.md` |
 | `npm run build` | vérifications, site de production dans `dist/`, index de recherche (Pagefind), puis contrôles du résultat |
 | `npm run preview` | sert `dist/` en local |
+| `npm run new:article "Titre"` | crée un article en brouillon, prérempli (`--guide` pour un guide) |
+| `npm run newsletter:draft` | prépare le prochain numéro de l'infolettre; avec `-- --html`, produit le courriel dans `exports/infolettre/` |
+| `npm run content:format` | remet les fichiers de `content/` et `config/` au format de l'éditeur (`-- --verifier` : contrôle sans écrire) |
 | `npm test` | tests unitaires |
 | `npm run typecheck` | vérification des types |
 
 `SITE_MODE=preview npm run build` construit une version d'aperçu : brouillons visibles, pages exclues des moteurs de recherche.
 
-En développement seulement, `/a-verifier/` affiche le rapport de vérification et `/exemple/` tous les blocs d'écriture. La recherche n'existe qu'après un build (`npm run build`, puis `npm run preview`).
+En développement seulement, `/keystatic/` ouvre l'éditeur (formulaires en français au-dessus des fichiers, voir le guide de l'auteur), `/a-verifier/` affiche le rapport de vérification et `/exemple/` tous les blocs d'écriture. La recherche n'existe qu'après un build (`npm run build`, puis `npm run preview`).
 
 ## Documentation
 
@@ -43,7 +46,8 @@ content/     contenus (articles, dossiers, guides, fiches, taxonomies, images)
 config/      réglages du site, menus, accueil, thème, textes de l'interface
 data/        données produites par des scripts (cache de la veille)
 src/         code du site (composants, gabarits, bibliothèques)
-scripts/     commandes (check, contrôles après le build)
+scripts/     commandes (check, contrôles après le build, new:article, newsletter:draft, content:format)
+exports/     courriels de l'infolettre produits en local (non versionné)
 tests/       tests automatiques
 docs/        documentation
 ```

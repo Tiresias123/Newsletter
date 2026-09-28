@@ -107,7 +107,7 @@
 
 | Critère | A : Astro + Keystatic + Git | B : Next.js + Payload + PostgreSQL |
 |---|---|---|
-| Administration par un non-technicien | Formulaires Keystatic aux libellés français, mais habillage de l'outil (boutons, menus) à moitié anglais. Pas de tableau de bord. « Enregistrer » crée un commit. | Administration complète et traduite en français, tableau de bord, boutons « Publier » et « Programmer ». Nettement plus confortable. |
+| Administration par un non-technicien | Formulaires Keystatic aux libellés français, mais habillage de l'outil (boutons, menus) à moitié anglais. Pas de tableau de bord. En mode local, « Sauvegarder » écrit les fichiers; l'envoi sur GitHub (commit) se fait ensuite, avec GitHub Desktop. | Administration complète et traduite en français, tableau de bord, boutons « Publier » et « Programmer ». Nettement plus confortable. |
 | Contrôle du code | Total : tout est dans le dépôt. | Total avec Payload (code ouvert, dans le dépôt). |
 | Contenu structuré et relations | Bon : schémas Zod, relations validées au build, relations inverses calculées au build. Les relations reposent sur le slug : un renommage casse la référence, mais le build le détecte et le signale. | Excellent : relations par identifiant, intégrité en base, requêtes. |
 | Référencement | Excellent : HTML statique, très rapide, rien à régler côté serveur. | Excellent si le rendu statique ou incrémental est bien réglé; plus de risques de régression de performance. |
@@ -179,7 +179,7 @@ Deux points pèsent en faveur de A au-delà de la règle :
 | Compatible Astro 7 | oui (dépendance paire `astro 5 \|\| 6 \|\| 7`) | indépendant du cadriciel | indépendant | oui (`@tinacms/astro` 0.7) | indépendant |
 | Éditeur MDX à composants | **oui** : blocs, enveloppes, éléments en ligne, marques, chacun avec son formulaire | non : Markdown + composants par expressions régulières | non | oui (édition visuelle) | MDX édité comme du code |
 | Relations entre contenus | par slug (`relationship`, `multiRelationship`) | oui, avec rétroliens (s) | oui | oui | limitées |
-| Interface en français | libellés 100 % personnalisables, **habillage à moitié anglais** (27 chaînes traduites, dont des contresens) | environ 89 % traduite | locale `fr` disponible | non traduisible | non |
+| Interface en français | libellés, aides et options personnalisables; messages de validation anglais autour du libellé français, sauf ceux des motifs; **habillage à moitié anglais** (locale `fr-FR` seulement, 27 chaînes traduites, dont des contresens visibles en mode GitHub) | environ 89 % traduite | locale `fr` disponible | non traduisible | non |
 | Authentification en ligne | GitHub App (3 secrets) ou Keystatic Cloud | jeton personnel (seul auteur) ou relais OAuth | relais OAuth | TinaCloud ou serveur avec **base de données** | service hébergé tiers ou Next.js + PostgreSQL |
 | Coût | gratuit (Cloud facultatif, gratuit jusqu'à 3 utilisateurs) | gratuit | gratuit | TinaCloud payant au-delà de 2 utilisateurs (s) | version hébergée : conditions non vérifiées |
 | Limites relevées | pas de champ couleur; `datetime` enregistre l'heure locale comme de l'UTC; notes de bas de page détruites à l'enregistrement; bogue ouvert sur les images par URL externe; aucun aperçu en direct pour Astro; pas de publication programmée ni de rôles | 0.x, un seul mainteneur | pas de MDX | exige un serveur | pas d'éditeur à composants |
@@ -202,22 +202,24 @@ Deux points pèsent en faveur de A au-delà de la règle :
 
    Compter une demi-session de travail le jour où l'auteur veut éditer depuis un autre appareil (question A2). Revenir au mode local tient en une ligne de configuration.
 
-**À confirmer en phase 1** : que l'éditeur local fonctionne avec `astro dev` sans adaptateur (les routes de Keystatic sont rendues à la demande). Sinon, un adaptateur est ajouté pour le développement seulement, selon la recette officielle qui désactive l'éditeur en production.
+**Vérifié en phase 3** : l'éditeur local fonctionne avec `astro dev` sans adaptateur. Une intégration (`src/lib/editor-integration.ts`) ajoute React et Keystatic sous `astro dev` seulement : le build de production reste entièrement statique, sans React ni route rendue à la demande. Elle ajoute la barre oblique finale qu'exige le site (`trailingSlash: 'always'`) aux seules adresses de l'éditeur, et désactive l'éditeur si le serveur est ouvert au réseau (`--host`), puisque l'API locale écrit sans authentification.
 
 ### 4.3 Garde-fous retenus
 
-- **Les schémas Zod des collections Astro sont la source de vérité**; `keystatic.config.ts` en est le miroir côté formulaire. La cohérence entre les deux est vérifiée sans code dédié :
-  - le contenu d'amorçage (point 10 du brief) remplit tous les champs, utilise tous les blocs, et compte au moins une entrée par collection et par singleton;
-  - il est enregistré une fois par l'éditeur Keystatic, puis validé par les schémas Zod à chaque build;
-  - si le formulaire écrit un champ que Zod refuse, ou si Zod exige un champ que le formulaire n'offre pas, le build échoue;
-  - après toute modification de schéma, on rouvre et on réenregistre une entrée de la collection touchée (règle inscrite dans `CLAUDE.md`).
-- **Versions de Keystatic épinglées exactement**, sans plage `^`, et mises à jour dans une branche dédiée, testée par un build.
-- **Pas de note de bas de page `[^1]` dans le MDX.** Un test d'aller-retour sur Keystatic 0.6.9 (25 septembre 2026) montre que l'éditeur la transforme en texte littéral (`\[^1]`) dès le premier enregistrement. On utilise à la place un composant `Note` numéroté au rendu (section 7.15).
-- **Keystatic réécrit le Markdown à l'enregistrement** selon sa propre normalisation : puces `-` changées en `*`, titre des liens perdu, `<` échappé. Le reste passe sans perte : titres, gras, liens, citations, listes imbriquées, tableaux, composants. Claude Code écrit directement dans ce format (règle de `CLAUDE.md`). Aucun outil de mise en forme ni crochet Git n'est ajouté : une différence de pure forme au premier enregistrement d'un fichier est acceptée.
+Vérifiés en phase 3 dans le code de Keystatic 0.6.9 et par des essais (étude du 28 septembre 2026).
+
+- **Les schémas Zod restent la source de vérité**; la configuration de l'éditeur (`src/lib/editor/`) en est le miroir, clé pour clé. Keystatic refuse d'ouvrir un fichier qui porte une clé qu'il ne connaît pas : une clé Zod absente du formulaire se voit donc tout de suite. Les clés que l'auteur ne doit pas modifier (`lang`, `translationKey`, `locale`, `doubleOptIn`…) sont déclarées `fields.ignored()`, conservées telles quelles.
+- **Test d'aller-retour** (`tests/editor.test.ts`) : chaque fichier de `content/` et de `config/` est ouvert puis enregistré avec les fonctions mêmes de l'éditeur (`src/lib/editor/roundtrip.ts`), sans navigateur. Il doit s'ouvrir, passer la validation de l'éditeur, garder les mêmes données pour Zod et le même rendu (arbre produit par l'analyseur MDX du site), et ressortir identique à l'octet près. Un enregistrement réel dans l'éditeur a produit exactement le fichier attendu.
+- **Format canonique** : tout le contenu est déjà au format qu'écrit l'éditeur (entête YAML de `js-yaml` sans option, JSON indenté de deux espaces, clés dans l'ordre du formulaire, texte réécrit à la façon de l'éditeur : puces `*`, `\[` devant un crochet, blocs indentés). Un premier enregistrement ne change donc rien. `npm run content:format` rétablit ce format après une modification faite à la main.
+- **Valeurs vides** : une date, un nombre, une adresse ou une relation facultatifs vides sont omis du fichier (Keystatic refuse d'enregistrer une date `''`); un texte vide est omis; une liste fermée facultative a une option vide `''`, pour ne jamais inventer de valeur (un statut réglementaire, par exemple).
+- **Corps MDX** : Keystatic ne relit ni un nombre négatif, ni un calcul, ni une variable dans un attribut; ni HTML, ni commentaire, ni expression `{…}`; ni un bloc englobant écrit sur une seule ligne. Les montants des exemples chiffrés s'écrivent donc en texte (`"-6000"`), et le script `check` signale ces constructions (« Contenus que l'éditeur ne pourrait pas ouvrir »). Une note dans une définition serait déplacée et deux notes accolées fusionnées : signalé aussi.
+- **Pas de note de bas de page `[^1]`**, que l'éditeur transforme en texte ou en lien : composant `Note`, numéroté au rendu (section 7.15).
+- **Images** : l'éditeur ne retrouve une image que dans le dossier de l'entrée, `content/images/<collection>/<identifiant>/`, et nomme une image de champ d'après le champ (`cover/src.webp`). Une image rangée ailleurs serait effacée sans prévenir au premier enregistrement : `check` le signale. Les images Markdown (`![…](…)`) sont proscrites, remplacées par le bloc `Image`.
+- **Versions de Keystatic épinglées exactement**, sans plage `^`, et mises à jour dans une branche dédiée : le test d'aller-retour s'appuie sur des fonctions internes, cherchées par leur nom, et échoue clairement si elles changent.
 - **Keystatic reste remplaçable.** Son README se déclare toujours « expérimental » et le paquet reste en 0.x.
-- **Aucune image insérée par URL externe** dans le corps d'un article (bogue ouvert de corruption du contenu). Les images passent par le champ image ou par le bloc `Image`.
 - **Pas de champ `datetime` Keystatic**, qui enregistre l'heure saisie comme de l'UTC. On utilise un champ date et une heure choisie dans une liste, interprétées dans le fuseau America/Toronto (section 7.1).
 - **Couleurs** : Keystatic n'a pas de champ couleur. Les catégories choisissent un style de puce dans une liste fermée (section 7.13), et la palette elle-même se règle par des champs hexadécimaux validés. Le script `check` vérifie ensuite les contrastes.
+- **Modifications concurrentes** : l'éditeur garde dans le navigateur les modifications non enregistrées et les réapplique au fichier, même modifié entre-temps (un simple message anglais le signale). Règle dans `CLAUDE.md` et le guide : une seule source de modifications à la fois.
 
 ---
 
@@ -238,7 +240,7 @@ Versions relevées le 25 septembre 2026 sur le registre npm (étiquette `latest`
 | zod (via `astro/zod`) | 4.6.5 | 13 sept. 2026 | schémas | messages personnalisés `{ error: '…' }`, locale `fr-CA` disponible |
 | **@keystatic/core** | 0.6.9 | 26 août 2026 | interface d'édition | version exacte épinglée (dépendances `react-aria` 3.50.0 et `react-stately` 3.48.0 figées par Keystatic) |
 | **@keystatic/astro** | 6.0.0 | 18 août 2026 | intégration | minimum requis sur Cloudflare avec Astro 6 et 7 |
-| @astrojs/react | 7.0.0 | 22 sept. 2026 | nécessaire à l'éditeur seulement | majeure sortie trois jours avant cette vérification; compatibilité avec Keystatic non documentée : test en phase 1, repli sur la dernière 6.x |
+| @astrojs/react | 7.0.0 | 22 sept. 2026 | nécessaire à l'éditeur seulement | compatibilité avec Keystatic 0.6.9 et Astro 7.3.5 vérifiée en phase 3 |
 | react, react-dom | 19.3.0 | 9 sept. 2026 | éditeur seulement | aucun React sur le site public |
 | **Tailwind CSS** + @tailwindcss/vite | 4.3.3 | 16 juill. 2026 | styles | configuration en CSS; pas de `@astrojs/tailwind` (Tailwind 3 seulement); navigateurs visés : Safari 16.4+, Chrome 111+, Firefox 128+ |
 | **Pagefind** | 1.5.2 | 12 avril 2026 | recherche statique | projet devenu indépendant de CloudCannon; recherche insensible aux accents depuis 1.5; racinisation française |
@@ -299,8 +301,8 @@ L'arborescence du point 4.2 du brief est conservée, avec des ajustements signal
 │   │   └── types-contribuables/       ★ proposition
 │   ├── pages/
 │   └── images/                ★ images éditoriales (au lieu de public/images/)
-│       ├── articles/<slug>/
-│       ├── auteurs/
+│       ├── articles/<slug>/       une entrée, un dossier (cover/src.webp…, section 4.3)
+│       ├── auteurs/<slug>/
 │       └── …
 ├── config/
 │   ├── site.json  navigation.json  homepage.json  theme.json  ticker.json
@@ -313,16 +315,17 @@ L'arborescence du point 4.2 du brief est conservée, avec des ajustements signal
 │   ├── components/            composants .astro (aucune chaîne en dur, aucun contenu)
 │   ├── layouts/
 │   ├── pages/                 routes dynamiques
-│   ├── lib/                   formatage, graphe de contenu, script check (lib/check/), fournisseurs (newsletter, analytique, recherche)
+│   ├── lib/                   formatage, graphe de contenu, script check (lib/check/), éditeur (lib/editor/), fournisseurs (newsletter, analytique, recherche)
 │   ├── dev/                   ★ pages du mode développement seulement (/a-verifier/)
 │   ├── styles/                jetons → variables CSS, Tailwind
 │   └── content.config.ts      schémas Zod des collections (source de vérité)
 ├── worker/                    ★ le Worker : formulaires et tâche planifiée (section 15.1)
-├── scripts/                   new-article, check, newsletter-draft, veille-fetch, og-generate, social-export, redirects
+├── scripts/                   check, postbuild, new-article, newsletter-draft, content-format; puis veille-fetch, og-generate, social-export
+├── exports/                   ★ courriels de l'infolettre produits par newsletter-draft, non versionnés
 ├── tests/                     ★ tests unitaires et de fumée
 ├── docs/                      ARCHITECTURE, DA, QUESTIONS, GUIDE-AUTEUR, CHANGELOG; A-VERIFIER est produit par check et non versionné
 ├── .github/workflows/         veille, rapport hebdomadaire, vérifications
-├── keystatic.config.ts
+├── keystatic.config.ts        point d'entrée de l'éditeur; configuration dans src/lib/editor/
 ├── astro.config.mjs
 ├── wrangler.jsonc             ★ configuration Cloudflare (fichiers statiques, Worker, tâche planifiée)
 ├── CLAUDE.md
@@ -781,9 +784,11 @@ Le choix entre les deux relève de l'analyse de la Loi 25 et de la LCAP par l'au
 
 `npm run newsletter:draft` :
 
-1. rassemble les articles `newsletterEligible` publiés depuis le dernier numéro;
-2. écrit `content/newsletters/AAAA-NNN.mdx` en brouillon : sujet, pré-en-tête, introduction `[À COMPLÉTER PAR L'AUTEUR]`, liste d'articles;
-3. après relecture, produit un fichier HTML de courriel (tableaux, styles en ligne, jetons de la DA, version texte brut), prêt à coller dans l'éditeur « code HTML » du fournisseur. Il contient l'identification de l'expéditeur et le lien de désabonnement prévus au point 9 du brief, plus un emplacement configurable dans `legal.json` pour les autres mentions que l'auteur jugera requises (par exemple une adresse postale) [À VALIDER PAR L'AUTEUR].
+1. rassemble les articles `newsletterEligible` publiés depuis la date d'envoi du dernier numéro envoyé (ce jour compris; sept jours en arrière s'il n'y en a pas), moins ceux qu'un numéro envoyé contient déjà;
+2. écrit `content/newsletters/AAAA-NNN.mdx` en brouillon, au format de l'éditeur : sujet, pré-en-tête et introduction marqués `[À COMPLÉTER PAR L'AUTEUR]`, liste d'articles, liste de diffusion par défaut. Il refuse d'écraser un numéro existant et signale les numéros restés en brouillon;
+3. après relecture, `npm run newsletter:draft -- --html [numéro]` produit `exports/infolettre/<numéro>.html` et sa version texte `.txt` (dossier non versionné), prêts à coller dans l'éditeur « code HTML » du fournisseur. Mise en page en tableaux de 600 pixels, styles en ligne tirés des jetons de `config/theme.json`, polices système, aucune image ni script; l'introduction passe par un convertisseur Markdown restreint (paragraphes, intertitres, listes, gras, italique, liens; les blocs sont écartés avec un avertissement).
+
+Le pied de chaque courriel porte la raison de l'envoi (`newsletterEmail.reason` dans les textes de l'interface), l'identification et l'adresse postale de l'expéditeur (`legal.json`, `newsletterSender`), le lien de désabonnement et celui de la politique de confidentialité, conformément au point 9 du brief [À VALIDER PAR L'AUTEUR]. Le lien de désabonnement est la balise que le fournisseur remplace à l'envoi (`newsletter.json`, `unsubscribeUrl`, `{{ unsubscribe }}` pour Brevo, à vérifier à l'ouverture du compte). La commande avertit si le courriel contient encore un marqueur, un article non publié ou un partenaire désactivé.
 
 L'envoi reste une action humaine, faite dans l'interface du fournisseur. La création de campagne par API est reportée en v2, si ce geste hebdomadaire d'environ une minute devient pénible. Cela évite une clé d'API sur l'ordinateur de l'auteur et tout risque d'envoi involontaire.
 
@@ -983,7 +988,7 @@ flowchart LR
 
 Fonctionnement :
 
-1. À chaque build, le site publie un petit fichier `schedule.json` : la liste des contenus programmés et leur instant de publication (calculé dans le fuseau America/Toronto, puis converti en UTC).
+1. À chaque build, le site publie un petit fichier `/schedule.json` : l'heure du build et les instants des publications programmées à venir (calculés dans le fuseau America/Toronto, puis écrits en UTC). Il ne contient ni titre ni adresse, pour que rien ne transpire avant l'heure. Livré en phase 3, avec la logique de décision (`src/lib/schedule.ts`) : une échéance déclenche un build si elle est passée, postérieure au dernier build et vieille de moins de deux heures. Cette fenêtre couvre un build en échec ou un passage manqué, sans relancer de builds indéfiniment; au-delà, la reconstruction quotidienne prend le relais. La tâche Cloudflare elle-même est écrite en phase 4.
 2. La tâche planifiée Cloudflare s'exécute toutes les 15 minutes, à 7, 22, 37 et 52 minutes après l'heure, pour éviter les quarts d'heure ronds où les serveurs sont les plus chargés. Elle lit `schedule.json` et n'appelle le Deploy Hook **que si une échéance est passée**.
 3. Le build suivant rend le contenu visible, puisque sa date est désormais passée.
 
@@ -1411,6 +1416,24 @@ Prises pendant la construction des gabarits, dans le cadre fixé par l'auteur (�
 - **Page `/exemple/`** : tous les blocs et toutes les variantes, injectée par `astro dev` seulement, comme `/a-verifier/`.
 - **Dépendances** : `npm audit` signale `fflate` 0.7.3, épinglé par satori, pour une faille de `unzipSync` sur des archives ZIP64 malformées. satori ne s'en sert que pour décompresser nos propres polices WOFF : non exploitable ici. À suivre à la prochaine version de satori.
 - **Accessibilité vérifiée** : axe (WCAG 2.2 AA et bonnes pratiques) sur 31 adresses, en clair, en sombre et sur mobile : aucun défaut. Clavier vérifié : sommaire, FAQ, infobulles des définitions, filtres des rubriques, fenêtre de recherche.
+
+### 25.5 Décisions de la phase 3
+
+- **Éditeur en développement seulement** : Keystatic et React ne sont ajoutés que sous `astro dev` (`src/lib/editor-integration.ts`); le build de production n'en contient rien. Barre oblique finale ajoutée aux seules adresses de l'éditeur; éditeur désactivé si le serveur est ouvert au réseau (`--host`), l'API locale écrivant sans authentification.
+- **Langue** : Keystatic ne propose que `fr-FR` (pas `fr-CA`); ses 27 chaînes traduites laissent de l'anglais, recensé pour l'auteur dans le guide (section 30).
+- **Libellés et aides** : lus dans `config/i18n/fr.json` (sections `champs` et `editeur`), avec la typographie québécoise; un libellé manquant fait échouer le chargement de la configuration. Les messages de longueur et de format passent par des motifs, pour être en français.
+- **Groupes de champs** : Keystatic 0.6.9 ne sait pas grouper visuellement des champs de premier niveau sans changer la forme des fichiers. Les groupes du brief (Classement, Publication, Révision…) sont des intertitres (`fields.empty()`), qui n'écrivent rien.
+- **Formulaire, miroir des schémas** : la configuration suit les schémas Zod clé pour clé et dans le même ordre. Les listes fermées facultatives ont une option vide `''`, que Zod lit comme une absence; les heures se choisissent à la demi-heure (« 8 h 30 », enregistré `08:30`).
+- **Valeurs vides** : les dates vides `''` ont été retirées du contenu (31 fichiers), Keystatic refusant de les enregistrer.
+- **Montants des exemples chiffrés en texte** (`"-6000"`) : Keystatic ne relit pas un nombre négatif. Le schéma du bloc accepte le nombre ou le texte, et les cellules de tableau vides.
+- **Images** : chaque entrée range ses images dans `content/images/<collection>/<identifiant>/`, seul dossier où l'éditeur les retrouve. Les huit couvertures d'amorçage y ont été déplacées (`cover/src.webp`). Le logo d'un organisme reste un simple champ, jamais affiché.
+- **Format canonique** : tout le contenu a été réécrit au format de l'éditeur par `npm run content:format` (162 fichiers), sans changement de données ni de rendu, vérifié par le test d'aller-retour. La commande reste disponible, avec `--verifier` pour un contrôle sans écriture.
+- **Compatibilité avec l'éditeur contrôlée par `check`** : nouvelle règle « Contenus que l'éditeur ne pourrait pas ouvrir » (avertissement) : expressions non littérales, blocs englobants sur une ligne, HTML et commentaires, images Markdown, notes accolées ou dans une définition, images hors du dossier de l'entrée.
+- **Textes de l'interface** : `fr.json` est modifiable dans l'éditeur (réglage « Textes de l'interface »), sauf les sections techniques (`champs`, `editeur`, `report`, `collections`, `devExample`), conservées telles quelles.
+- **`npm run new:article`** : identifiant tiré du titre (sans marqueurs ni accents, « & » dit « et », 80 caractères au plus), premiers catégorie, format et thème dans l'ordre d'affichage, premier auteur actif, brouillon daté du jour à 8 h, chapô et corps marqués `[À COMPLÉTER PAR L'AUTEUR]`. Options `--guide`, `--categorie`, `--format`, `--theme`, `--auteur`.
+- **Publication programmée** : `/schedule.json` et la logique de décision livrés (section 15.3); la tâche Cloudflare et le Deploy Hook attendent la phase 4.
+- **Infolettre** : courriel produit localement, envoi manuel (section 11.4); le nom de la balise de désabonnement de Brevo reste à vérifier.
+- **Réseau** : l'éditeur charge la police Inter depuis Google Fonts, sur l'ordinateur de l'auteur seulement; le site public n'appelle aucun service extérieur.
 
 ---
 
