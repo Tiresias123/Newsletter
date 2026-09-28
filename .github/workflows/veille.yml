@@ -30,6 +30,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
+        with:
+          # Assez d'historique pour rejoindre la branche si elle avance pendant la collecte.
+          fetch-depth: 50
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
@@ -52,6 +55,8 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/veille/cache.json
           git commit -m "$MESSAGE"
+          # La branche a pu avancer pendant la collecte (enregistrement de l'auteur) : on s'y rebase.
+          git pull --rebase
           git push
 
   # Échec = courriel de GitHub : le site en ligne n'est plus à jour (build en échec, tâche planifiée arrêtée).
