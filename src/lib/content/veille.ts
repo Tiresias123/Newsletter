@@ -3,7 +3,7 @@
 import { z } from '../zod.ts';
 import cache from '../../../data/veille/cache.json' with { type: 'json' };
 
-export const VEILLE_STATUS = ['ok', 'erreur', 'illisible', 'bloque'] as const;
+export const VEILLE_STATUS = ['ok', 'erreur', 'illisible', 'bloque', 'silencieux'] as const;
 export type VeilleStatus = (typeof VEILLE_STATUS)[number];
 
 const item = z.strictObject({
@@ -18,7 +18,8 @@ const item = z.strictObject({
 });
 
 // État de chaque source à la dernière collecte : « erreur » (réponse en échec), « illisible » (page HTML ou
-// XML invalide, souvent un pare-feu), « bloque » (robots.txt). `since` : depuis quand cet état dure.
+// XML invalide, souvent un pare-feu), « bloque » (robots.txt), « silencieux » (fil lisible, mais sans aucune
+// publication récente, tous sujets confondus). `since` : depuis quand cet état dure.
 const health = z.strictObject({ status: z.enum(VEILLE_STATUS), since: z.iso.datetime({ offset: true }), detail: z.string().default('') });
 
 export const veilleCacheSchema = z.strictObject({

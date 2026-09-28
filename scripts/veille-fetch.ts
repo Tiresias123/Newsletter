@@ -8,7 +8,7 @@ import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { getConfig } from '../src/lib/config/index.ts';
 import { veilleCacheSchema, type VeilleCache } from '../src/lib/content/veille.ts';
-import { applyOutcome, emptyCache, prune, serializeCache, type FetchOutcome } from '../src/lib/veille/merge.ts';
+import { applyOutcome, emptyCache, prune, serializeCache, sourceState, type FetchOutcome } from '../src/lib/veille/merge.ts';
 import { parseFeed, UnreadableFeedError } from '../src/lib/veille/parse.ts';
 import { robotsAllows } from '../src/lib/veille/robots.ts';
 
@@ -90,8 +90,16 @@ for (const source of sources) {
   if (diagnostic) {
     const latest = outcome.status === 'ok' ? outcome.entries.map((e) => e.published?.toISOString() ?? '').sort().at(-1) : '';
     const count = outcome.status === 'ok' ? `${outcome.entries.length} entrée(s), la plus récente : ${latest || 'sans date'}` : outcome.detail;
-    console.log(`${source.enabled ? '●' : '○'} ${source.id} : ${outcome.status}${outcome.http ? ` (HTTP ${outcome.http}, ${outcome.type || 'type inconnu'})` : ''} : ${count}`);
-    if (outcome.status === 'ok') for (const e of outcome.entries.slice(0, 2)) console.log(`    « ${e.title} » ${e.url}`);
+    const state = sourceState(source, outcome, now, timezone);
+    const status = state.status === outcome.status ? state.status : `${outcome.status}, ${state.status} (${state.detail})`;
+    console.log(`${source.enabled ? '●' : '○'} ${source.id} : ${status}${outcome.http ? ` (HTTP ${outcome.http}, ${outcome.type || 'type inconnu'})` : ''} : ${count}`);
+    if (outcome.status === 'ok') {
+      for (const e of outcome.entries.slice(0, 3)) {
+        console.log(`    « ${e.title} » ${e.url}`);
+        // Début du résumé : ce que les mots-clés peuvent retenir en plus du titre.
+        if (e.summary) console.log(`      ${e.summary.slice(0, 200)}${e.summary.length > 200 ? '…' : ''}`);
+      }
+    }
     continue;
   }
   const count = applyOutcome(cache, { ...source, organisme: source.organisme ?? '' }, outcome, now, timezone, config.veilleSources.retentionMonths);

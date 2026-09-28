@@ -2,12 +2,13 @@
 // canonique et sur une empreinte du titre, filtre par mots-clés, rétention, état de santé de chaque source.
 // Le cache ne change que si une publication ou un état change : pas de commit inutile deux fois par jour.
 import { createHash } from 'node:crypto';
-import { addMonths, calendarDateInZone, isoInZone } from '../dates.ts';
+import { addMonths, calendarDateInZone, daysBetween, isoInZone } from '../dates.ts';
 import type { VeilleCache, VeilleItem, VeilleStatus } from '../content/veille.ts';
+import { formatDate } from '../format.ts';
 import type { FeedEntry } from './parse.ts';
 
-export type VeilleSourceConfig = { id: string; organisme: string; jurisdiction: string; keywords: string[] };
-export type FetchOutcome = { status: 'ok'; entries: FeedEntry[] } | { status: Exclude<VeilleStatus, 'ok'>; detail: string };
+export type VeilleSourceConfig = { id: string; organisme: string; jurisdiction: string; keywords: string[]; staleDays: number };
+export type FetchOutcome = { status: 'ok'; entries: FeedEntry[] } | { status: Exclude<VeilleStatus, 'ok' | 'silencieux'>; detail: string };
 
 const TRACKING = /^(?:utm_[a-z]+|fbclid|gclid|mc_[a-z]+)$/i;
 const fold = (text: string) =>
@@ -42,12 +43,25 @@ export function matchesKeywords(entry: FeedEntry, keywords: readonly string[]): 
 
 export const emptyCache = (): VeilleCache => ({ updatedAt: null, sources: {}, items: [] });
 
+// État d'une source après sa collecte. Un fil lisible dont la publication la plus récente, tous sujets
+// confondus, dépasse le seuil d'alerte est « silencieux » (fil figé ou abandonné) : les mots-clés, qui peuvent
+// ne rien retenir pendant des mois, n'entrent pas en compte. Un fil sans aucune date n'est pas jugé.
+export function sourceState(source: Pick<VeilleSourceConfig, 'staleDays'>, outcome: FetchOutcome, now: Date, timeZone: string): { status: VeilleStatus; detail: string } {
+  if (outcome.status !== 'ok') return { status: outcome.status, detail: outcome.detail };
+  if (outcome.entries.length === 0) return { status: 'silencieux', detail: 'fil vide' };
+  const dates = outcome.entries.map((e) => e.published?.getTime()).filter((t): t is number => t !== undefined && t <= now.getTime());
+  if (dates.length === 0) return { status: 'ok', detail: '' };
+  const latest = calendarDateInZone(new Date(Math.max(...dates)), timeZone);
+  if (daysBetween(latest, calendarDateInZone(now, timeZone)) <= source.staleDays) return { status: 'ok', detail: '' };
+  return { status: 'silencieux', detail: `dernière publication du fil le ${formatDate(latest)}` };
+}
+
 // Applique le résultat de la collecte d'une source; renvoie le nombre de publications ajoutées.
 export function applyOutcome(cache: VeilleCache, source: VeilleSourceConfig, outcome: FetchOutcome, now: Date, timeZone: string, retentionMonths: number): number {
   const previous = cache.sources[source.id];
-  const detail = outcome.status === 'ok' ? '' : outcome.detail;
-  if (!previous || previous.status !== outcome.status || previous.detail !== detail) {
-    cache.sources[source.id] = { status: outcome.status, since: isoInZone(now, timeZone), detail };
+  const state = sourceState(source, outcome, now, timeZone);
+  if (!previous || previous.status !== state.status || previous.detail !== state.detail) {
+    cache.sources[source.id] = { status: state.status, since: isoInZone(now, timeZone), detail: state.detail };
   }
   if (outcome.status !== 'ok') return 0;
   const cutoff = addMonths(calendarDateInZone(now, timeZone), -retentionMonths);

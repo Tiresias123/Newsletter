@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { applyOutcome, canonicalUrl, emptyCache, matchesKeywords, prune, serializeCache } from '../src/lib/veille/merge.ts';
+import { applyOutcome, canonicalUrl, emptyCache, matchesKeywords, prune, serializeCache, sourceState } from '../src/lib/veille/merge.ts';
 import { htmlToText, parseFeed, parseFeedDate, UnreadableFeedError } from '../src/lib/veille/parse.ts';
 import { robotsAllows } from '../src/lib/veille/robots.ts';
+import { formatDate } from '../src/lib/format.ts';
 
 const TZ = 'America/Toronto';
 const BASE = 'https://www.exemple.gc.ca/fils/communiques.xml';
@@ -76,7 +77,7 @@ describe('robots.txt', () => {
 });
 
 describe('cache de la veille', () => {
-  const source = { id: 'finances', organisme: 'finances-canada', jurisdiction: 'canada', keywords: [] as string[] };
+  const source = { id: 'finances', organisme: 'finances-canada', jurisdiction: 'canada', keywords: [] as string[], staleDays: 30 };
   const now = new Date('2026-09-28T16:00:00Z');
   const entry = (title: string, url: string, published = '2026-09-27T14:00:00Z') => ({ title, url, published: new Date(published), summary: '' });
 
@@ -131,6 +132,23 @@ describe('cache de la veille', () => {
     expect(cache.items.map((i) => i.title)).toEqual(['Récent']);
     expect(Object.keys(cache.sources)).toEqual(['finances']);
   });
+
+  it('juge un fil silencieux sur sa publication la plus récente, quels que soient les mots-clés', () => {
+    const filtered = { ...source, keywords: ['crypto'] };
+    const cache = emptyCache();
+    // Fil vivant, rien de retenu par les mots-clés : ni publication ni alerte.
+    expect(applyOutcome(cache, filtered, { status: 'ok', entries: [entry('Budget', 'https://a.ca/b')] }, now, TZ, 12)).toBe(0);
+    expect(cache.sources.finances?.status).toBe('ok');
+    // Fil figé depuis 2023 : silencieux, sans nouvelle écriture tant que rien ne change.
+    const frozen = { status: 'ok' as const, entries: [entry('Rapport annuel', 'https://a.ca/r', '2023-01-31T14:30:00Z')] };
+    applyOutcome(cache, filtered, frozen, now, TZ, 12);
+    expect(cache.sources.finances).toMatchObject({ status: 'silencieux', detail: `dernière publication du fil le ${formatDate('2023-01-31')}` });
+    const again = structuredClone(cache);
+    applyOutcome(again, filtered, frozen, new Date('2026-09-29T16:00:00Z'), TZ, 12);
+    expect(serializeCache(cache, again, now, TZ).changed).toBe(false);
+    expect(sourceState(filtered, { status: 'ok', entries: [] }, now, TZ)).toEqual({ status: 'silencieux', detail: 'fil vide' });
+    expect(sourceState(filtered, { status: 'ok', entries: [{ ...entry('Sans date', 'https://a.ca/s'), published: undefined }] }, now, TZ).status).toBe('ok');
+  });
 });
 
 describe('santé des sources dans le rapport', () => {
@@ -156,7 +174,16 @@ describe('santé des sources dans le rapport', () => {
       ...base,
       veilleSources: {
         retentionMonths: 12,
-        sources: [source('panne'), source('neuve'), source('calme'), source('active'), source('vide', { url: '' }), source('eteinte', { enabled: false })],
+        sources: [
+          source('panne'),
+          source('neuve'),
+          source('calme'),
+          source('active'),
+          source('vide', { url: '' }),
+          source('eteinte', { enabled: false }),
+          source('filtree', { keywords: ['crypto'] }),
+          source('figee', { keywords: ['crypto'] }),
+        ],
       },
     };
     const found: string[] = [];
@@ -169,6 +196,9 @@ describe('santé des sources dans le rapport', () => {
         panne: { status: 'erreur', since: '2026-09-20T08:00:00-04:00', detail: 'HTTP 503' },
         calme: { status: 'ok', since: '2026-01-01T08:00:00-05:00', detail: '' },
         active: { status: 'ok', since: '2026-01-01T08:00:00-05:00', detail: '' },
+        // Mots-clés sans publication retenue depuis longtemps : normal, pas d'alerte.
+        filtree: { status: 'ok', since: '2026-01-01T08:00:00-05:00', detail: '' },
+        figee: { status: 'silencieux', since: '2026-09-01T08:00:00-04:00', detail: 'dernière publication du fil le 31 janvier 2023' },
       },
       [item('calme', '2026-08-01T10:00:00-04:00'), item('active', '2026-09-27T10:00:00-04:00')],
     );
@@ -177,6 +207,7 @@ describe('santé des sources dans le rapport', () => {
       '["sources",1] veille information neuve',
       '["sources",2] veille avertissement calme',
       '["sources",4,"url"] veille avertissement vide',
+      '["sources",7] veille avertissement figee',
     ]);
   });
 });

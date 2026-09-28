@@ -1,5 +1,5 @@
 // Santé des sources de la veille (ARCHITECTURE, section 14) : un fil mort ne doit jamais ressembler à une
-// semaine calme. Trois cas distingués : erreur, contenu illisible (ou robots.txt), aucune publication récente.
+// semaine calme. Cas distingués : erreur, contenu illisible, robots.txt, fil silencieux, veille arrêtée.
 import { CONFIG_FILES } from '../config/index.ts';
 import { veilleHealth, veilleItems, type VeilleHealth, type VeilleItem, type VeilleStatus } from '../content/veille.ts';
 import { calendarDateInZone, daysBetween } from '../dates.ts';
@@ -10,6 +10,7 @@ const STATUS: Record<Exclude<VeilleStatus, 'ok'>, string> = {
   erreur: 'en erreur',
   illisible: 'illisible (page HTML ou fil invalide : pare-feu ou adresse périmée)',
   bloque: 'interdite au robot par le robots.txt du site',
+  silencieux: 'silencieuse, sans publication récente dans son fil (figé ou abandonné)',
 };
 
 export function checkVeille(
@@ -34,9 +35,13 @@ export function checkVeille(
     }
     if (state.status !== 'ok') {
       const detail = state.detail ? ` (${state.detail})` : '';
-      add(file, where, `${source.label} : source ${STATUS[state.status]} depuis le ${formatDate(state.since.slice(0, 10))}${detail}. Les publications déjà relevées restent affichées.`, 'veille', 'avertissement');
+      const advice = state.status === 'silencieux' ? ' Vérifiez que le fil est toujours alimenté.' : '';
+      add(file, where, `${source.label} : source ${STATUS[state.status]} depuis le ${formatDate(state.since.slice(0, 10))}${detail}.${advice} Les publications déjà relevées restent affichées.`, 'veille', 'avertissement');
       return;
     }
+    // Sans mots-clés, le fil et la veille avancent ensemble : une veille qui n'avance plus signale aussi une
+    // collecte arrêtée. Avec mots-clés, des mois sans publication retenue sont normaux (voir « silencieux »).
+    if (source.keywords.length > 0) return;
     const latest = items.filter((item) => item.sourceId === source.id).map((item) => item.publishedAt.slice(0, 10)).sort().at(-1);
     const quiet = latest ? daysBetween(latest, today) : undefined;
     if (quiet === undefined || quiet > source.staleDays) {
