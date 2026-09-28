@@ -17,11 +17,12 @@ function site(files: Record<string, string>) {
 }
 
 describe('contrôles du site construit', () => {
-  it('exige un index de recherche, le plan du site et robots.txt', () => {
+  it('exige un index de recherche, le plan du site, robots.txt et le calendrier des publications', () => {
     expect(checkBuildOutput(site({ 'index.html': '<html></html>' })).errors).toEqual([
       "Index de recherche absent (dist/pagefind/) : la commande « pagefind » n'a pas été lancée après le build.",
       'sitemap-index.xml absent du site construit.',
       'robots.txt absent du site construit.',
+      'schedule.json absent du site construit.',
     ]);
   });
 
@@ -34,6 +35,7 @@ describe('contrôles du site construit', () => {
         'og/accueil.png': '',
         'sitemap-index.xml': '',
         'robots.txt': '',
+        'schedule.json': '',
         'pagefind/pagefind-entry.json': JSON.stringify({ languages: { 'fr-ca': { page_count: 1 } } }),
       }),
     );
@@ -42,11 +44,11 @@ describe('contrôles du site construit', () => {
 
   it('refuse un index vide et compte les pages indexées', () => {
     const entry = (count: number) => JSON.stringify({ version: '1.5.2', languages: { 'fr-ca': { page_count: count } } });
-    expect(checkBuildOutput(site({ 'index.html': '', 'sitemap-index.xml': '', 'robots.txt': '', 'pagefind/pagefind-entry.json': entry(0) })).errors).toEqual([
+    expect(checkBuildOutput(site({ 'index.html': '', 'sitemap-index.xml': '', 'robots.txt': '', 'schedule.json': '', 'pagefind/pagefind-entry.json': entry(0) })).errors).toEqual([
       "Index de recherche vide : aucune page publiée n'a été indexée.",
     ]);
     rmSync(dist!, { recursive: true, force: true });
-    const report = checkBuildOutput(site({ 'index.html': '', 'a/index.html': '', 'sitemap-index.xml': '', 'robots.txt': '', 'pagefind/pagefind-entry.json': entry(2) }));
-    expect(report).toEqual({ errors: [], warnings: [], files: 5, indexedPages: 2 });
+    const report = checkBuildOutput(site({ 'index.html': '', 'a/index.html': '', 'sitemap-index.xml': '', 'robots.txt': '', 'schedule.json': '', 'pagefind/pagefind-entry.json': entry(2) }));
+    expect(report).toEqual({ errors: [], warnings: [], files: 6, indexedPages: 2 });
   });
 });

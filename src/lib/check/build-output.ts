@@ -1,7 +1,8 @@
 // Contrôles du site construit (dist/), lancés par « npm run build » après Astro et Pagefind : index de
 // recherche présent et non vide (un déploiement ne part jamais sans recherche, ARCHITECTURE section 10),
-// plan du site et robots.txt présents, image Open Graph de chaque page bien produite, nombre de fichiers sous
-// le plafond de Cloudflare Workers (20 000, alerte à 15 000 ; section 19.1).
+// plan du site, robots.txt et calendrier des publications programmées présents, image Open Graph de chaque
+// page bien produite, nombre de fichiers sous le plafond de Cloudflare Workers (20 000, alerte à 15 000 ;
+// section 19.1).
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { REDIRECT_LIMIT } from '../redirects.ts';
@@ -46,7 +47,7 @@ export function checkBuildOutput(dist: string): BuildReport {
   const pages = indexedPages(dist);
   if (pages === undefined) errors.push("Index de recherche absent (dist/pagefind/) : la commande « pagefind » n'a pas été lancée après le build.");
   else if (pages === 0) errors.push("Index de recherche vide : aucune page publiée n'a été indexée.");
-  for (const required of ['sitemap-index.xml', 'robots.txt']) {
+  for (const required of ['sitemap-index.xml', 'robots.txt', 'schedule.json']) {
     if (!existsSync(join(dist, required))) errors.push(`${required} absent du site construit.`);
   }
   const redirects = join(dist, '_redirects');
