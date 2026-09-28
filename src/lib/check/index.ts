@@ -12,6 +12,7 @@ import { contrastChecks } from '../theme/tokens.ts';
 import { PLACEHOLDER_URL, type Add, type CheckMode, type Context } from './context.ts';
 import { checkExternalLinks } from './external.ts';
 import { checkFreshness, lastCommitDates } from './freshness.ts';
+import { checkHosting } from './hosting.ts';
 import { loadContent } from './load.ts';
 import { findMarkers, markersIn } from './markers.ts';
 import { checkArchives, checkBodiesAndLinks, checkImages } from './references.ts';
@@ -75,6 +76,7 @@ export async function runCheck({ root, mode = 'production', now = new Date(), ex
   checkFreshness(graph, entries, lastCommitDates(root), add);
   checkLaunch(ctx);
   checkServices(ctx);
+  checkHosting(ctx);
   checkVeille(ctx, now, { lastRun: options.veilleLastRun });
   checkRedirects(ctx);
   if (externalLinks) {
