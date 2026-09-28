@@ -1,6 +1,8 @@
 ---
 // Bandeau des cours au-dessus de l'en-tête (DA section 8.3) : valeurs et heure du dernier build, sans
 // rafraîchissement ni défilement automatique. Absent du HTML s'il n'y a pas de données.
+// Le conteneur défilant est positionné (relative) : sans cela, les textes pour lecteurs d'écran (sr-only, en
+// position absolue) échapperaient au défilement et élargiraient toute la page sur mobile.
 import { getConfig } from '../../lib/config/index.ts';
 import { formatDateTime, formatMoney } from '../../lib/format.ts';
 import { t } from '../../lib/i18n.ts';
@@ -14,7 +16,7 @@ const market = ticker.enabled ? await getMarket() : undefined;
 {
   market && (
     <aside aria-label={t('market.tickerLabel')} class="border-b border-subtle bg-muted text-sm print:hidden">
-      <div class="page-container flex min-h-9 items-center gap-6 overflow-x-auto whitespace-nowrap py-1.5">
+      <div class="page-container relative flex min-h-9 items-center gap-6 overflow-x-auto whitespace-nowrap py-1.5">
         <ul class="flex items-center gap-6">
           {market.quotes.map((quote) => (
             <li class="flex items-center gap-2">
