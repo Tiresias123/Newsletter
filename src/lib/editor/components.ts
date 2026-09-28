@@ -176,5 +176,8 @@ export function pageComponents() {
       },
     }),
     Tableau: block({ label: blockLabel('Tableau'), schema: table('Tableau') }),
+    FormulaireContact: block({ label: blockLabel('FormulaireContact'), schema: {} }),
+    ResponsableProtection: block({ label: blockLabel('ResponsableProtection'), schema: {} }),
+    InventaireDonnees: block({ label: blockLabel('InventaireDonnees'), schema: {} }),
   };
 }

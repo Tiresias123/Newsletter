@@ -17,12 +17,13 @@ function site(files: Record<string, string>) {
 }
 
 describe('contrôles du site construit', () => {
-  it('exige un index de recherche, le plan du site, robots.txt et le calendrier des publications', () => {
+  it('exige un index de recherche, le plan du site, robots.txt, le calendrier des publications et les en-têtes', () => {
     expect(checkBuildOutput(site({ 'index.html': '<html></html>' })).errors).toEqual([
       "Index de recherche absent (dist/pagefind/) : la commande « pagefind » n'a pas été lancée après le build.",
       'sitemap-index.xml absent du site construit.',
       'robots.txt absent du site construit.',
       'schedule.json absent du site construit.',
+      '_headers absent du site construit.',
     ]);
   });
 
@@ -36,6 +37,7 @@ describe('contrôles du site construit', () => {
         'sitemap-index.xml': '',
         'robots.txt': '',
         'schedule.json': '',
+        _headers: '',
         'pagefind/pagefind-entry.json': JSON.stringify({ languages: { 'fr-ca': { page_count: 1 } } }),
       }),
     );
@@ -44,11 +46,38 @@ describe('contrôles du site construit', () => {
 
   it('refuse un index vide et compte les pages indexées', () => {
     const entry = (count: number) => JSON.stringify({ version: '1.5.2', languages: { 'fr-ca': { page_count: count } } });
-    expect(checkBuildOutput(site({ 'index.html': '', 'sitemap-index.xml': '', 'robots.txt': '', 'schedule.json': '', 'pagefind/pagefind-entry.json': entry(0) })).errors).toEqual([
+    expect(checkBuildOutput(site({ 'index.html': '', 'sitemap-index.xml': '', 'robots.txt': '', 'schedule.json': '', _headers: '', 'pagefind/pagefind-entry.json': entry(0) })).errors).toEqual([
       "Index de recherche vide : aucune page publiée n'a été indexée.",
     ]);
     rmSync(dist!, { recursive: true, force: true });
-    const report = checkBuildOutput(site({ 'index.html': '', 'a/index.html': '', 'sitemap-index.xml': '', 'robots.txt': '', 'schedule.json': '', 'pagefind/pagefind-entry.json': entry(2) }));
-    expect(report).toEqual({ errors: [], warnings: [], files: 6, indexedPages: 2 });
+    const report = checkBuildOutput(site({ 'index.html': '', 'a/index.html': '', 'sitemap-index.xml': '', 'robots.txt': '', 'schedule.json': '', _headers: '', 'pagefind/pagefind-entry.json': entry(2) }));
+    expect(report).toEqual({ errors: [], warnings: [], files: 7, indexedPages: 2 });
+  });
+});
+
+describe('en-têtes des fichiers statiques', () => {
+  it('autorise les scripts intégrés par leur empreinte, jamais les blocs de données', async () => {
+    const { contentSecurityPolicy, headersFile, inlineScriptHashes } = await import('../src/lib/security/headers.ts');
+    const html = '<script>var a=1;</script><script type="module">b()</script><script type="application/ld+json">{}</script><script type="module" src="/_astro/x.js"></script><script type="application/json">{}</script>';
+    const hashes = inlineScriptHashes(html);
+    expect(hashes).toHaveLength(2);
+    expect(hashes[0]).toMatch(/^'sha256-[A-Za-z0-9+/]+=*'$/);
+    const csp = contentSecurityPolicy({ hashes: [...hashes, ...hashes], analytics: { script: 'https://cloud.umami.is', collect: ['https://gateway.umami.is'] } });
+    expect(csp).toContain("script-src 'self' 'sha256-");
+    expect(csp).toContain('https://challenges.cloudflare.com https://cloud.umami.is');
+    // Umami Cloud envoie ses mesures à un autre hôte que celui de son script.
+    expect(csp).toContain("connect-src 'self' https://cloud.umami.is https://gateway.umami.is;");
+    expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
+    expect(csp.match(/sha256-/g)).toHaveLength(2);
+    expect(headersFile({ hashes: [] })).toContain("frame-ancestors 'none'");
+    expect(headersFile({ hashes: [] })).not.toContain('umami');
+  });
+
+  it('respecte les limites du fichier _headers de Cloudflare', async () => {
+    const { headersFile, headersFileProblems } = await import('../src/lib/security/headers.ts');
+    expect(headersFileProblems(headersFile({ hashes: ["'sha256-abc='"], analytics: { script: 'https://cloud.umami.is', collect: ['https://gateway.umami.is'] } }))).toEqual([]);
+    const tooMany = Array.from({ length: 101 }, (_, i) => `/page-${i}/\n  X-Robots-Tag: noindex`).join('\n');
+    expect(headersFileProblems(tooMany)).toEqual(['_headers : 101 règles, au-delà des 100 que Cloudflare applique.']);
+    expect(headersFileProblems(`/*/a/*\n  Content-Security-Policy: ${'x'.repeat(2000)}\n  sans deux-points`)).toHaveLength(3);
   });
 });

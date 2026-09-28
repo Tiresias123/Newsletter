@@ -69,6 +69,9 @@ export const BLOCKS: Record<string, BlockSpec> = {
   // Type vide : aucun filtre (l'éditeur écrit type="").
   ListeSources: { props: { ids: { expression: true }, jurisdiction: {}, type: { values: ['', ...SOURCE_TYPE] } }, children: 'none', pageOnly: true },
   Tableau: { props: table, children: 'none', pageOnly: true },
+  FormulaireContact: { props: {}, children: 'none', pageOnly: true },
+  ResponsableProtection: { props: {}, children: 'none', pageOnly: true },
+  InventaireDonnees: { props: {}, children: 'none', pageOnly: true },
 };
 
 // start et end : position de la balise ouvrante dans le corps ; bare : attributs écrits sans valeur (« title »).

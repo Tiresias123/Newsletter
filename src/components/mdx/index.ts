@@ -9,8 +9,10 @@ import Comparatif from './Comparatif.astro';
 import Definition from './Definition.astro';
 import ExempleChiffre from './ExempleChiffre.astro';
 import FAQ from './FAQ.astro';
+import FormulaireContact from './FormulaireContact.astro';
 import Hero from './Hero.astro';
 import Image from './Image.astro';
+import InventaireDonnees from './InventaireDonnees.astro';
 import ListeArticles from './ListeArticles.astro';
 import ListeSources from './ListeSources.astro';
 import MiseEnGarde from './MiseEnGarde.astro';
@@ -20,6 +22,7 @@ import NoteItem from './NoteItem.astro';
 import NotesList from './NotesList.astro';
 import ProseLink from './ProseLink.astro';
 import ProseTable from './ProseTable.astro';
+import ResponsableProtection from './ResponsableProtection.astro';
 import StatutReglementaire from './StatutReglementaire.astro';
 import Tableau from './Tableau.astro';
 import TexteDeLoi from './TexteDeLoi.astro';
@@ -35,8 +38,10 @@ export const mdxComponents = {
   Definition,
   ExempleChiffre,
   FAQ,
+  FormulaireContact,
   Hero,
   Image,
+  InventaireDonnees,
   ListeArticles,
   ListeSources,
   MiseEnGarde,
@@ -44,6 +49,7 @@ export const mdxComponents = {
   Note,
   NoteItem,
   NotesList,
+  ResponsableProtection,
   StatutReglementaire,
   Tableau,
   TexteDeLoi,

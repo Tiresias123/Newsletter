@@ -1,0 +1,20 @@
+---
+// Bloc de page ResponsableProtection : responsable de la protection des renseignements personnels (Loi 25),
+// lu dans config/legal.json, avec un lien pour lui écrire (accès, rectification, suppression).
+import { getConfig } from '../../lib/config/index.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+const { name, title, email } = getConfig().legal.privacyOfficer;
+---
+
+<div class="not-prose my-6 rounded-card border border-border bg-surface p-5">
+  <p class="text-sm font-semibold text-meta">{t('privacy.officer')}</p>
+  {name && <p class="mt-1 text-lg font-semibold">{frenchTypography(name)}</p>}
+  {title && <p class="text-secondary">{frenchTypography(title)}</p>}
+  {email && /@/.test(email) ? (
+    <p class="mt-3"><a href={`mailto:${email}`} class="font-semibold underline underline-offset-2">{t('privacy.officerWrite')} : {email}</a></p>
+  ) : (
+    email && <p class="mt-3">{frenchTypography(email)}</p>
+  )}
+</div>

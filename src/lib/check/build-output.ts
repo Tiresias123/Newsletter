@@ -6,6 +6,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { REDIRECT_LIMIT } from '../redirects.ts';
+import { headersFileProblems } from '../security/headers.ts';
 
 export const FILE_LIMIT = 20_000;
 export const FILE_WARNING = 15_000;
@@ -47,9 +48,11 @@ export function checkBuildOutput(dist: string): BuildReport {
   const pages = indexedPages(dist);
   if (pages === undefined) errors.push("Index de recherche absent (dist/pagefind/) : la commande « pagefind » n'a pas été lancée après le build.");
   else if (pages === 0) errors.push("Index de recherche vide : aucune page publiée n'a été indexée.");
-  for (const required of ['sitemap-index.xml', 'robots.txt', 'schedule.json']) {
+  for (const required of ['sitemap-index.xml', 'robots.txt', 'schedule.json', '_headers']) {
     if (!existsSync(join(dist, required))) errors.push(`${required} absent du site construit.`);
   }
+  const headers = join(dist, '_headers');
+  if (existsSync(headers)) errors.push(...headersFileProblems(readFileSync(headers, 'utf8')));
   const redirects = join(dist, '_redirects');
   const rules = existsSync(redirects) ? readFileSync(redirects, 'utf8').split('\n').filter((line) => line.trim() && !line.startsWith('#')).length : 0;
   if (rules > REDIRECT_LIMIT) errors.push(`${rules} redirections dans _redirects : au-delà de la limite de ${REDIRECT_LIMIT} de Cloudflare.`);

@@ -1,0 +1,12 @@
+---
+// Bloc de page InventaireDonnees : tableau des renseignements personnels recueillis, lu dans config/legal.json
+// (Loi 25) : il se tient à jour au même endroit que les réglages.
+import DataTable from '../editorial/DataTable.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { t } from '../../lib/i18n.ts';
+
+const COLUMNS = ['processing', 'data', 'where', 'location', 'retention'] as const;
+const rows = getConfig().legal.dataInventory.map((row) => COLUMNS.map((column) => row[column]));
+---
+
+{rows.length > 0 && <div class="my-6"><DataTable caption={t('privacy.inventoryCaption')} columns={COLUMNS.map((c) => t(`privacy.columns.${c}`))} rows={rows} rowHeaders /></div>}

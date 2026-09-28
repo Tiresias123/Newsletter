@@ -1,6 +1,6 @@
 // Contrôles du site construit, après Astro et Pagefind (npm run build) : voir src/lib/check/build-output.ts.
 // En production, filet de sécurité des adresses disparues (src/lib/check/vanished.ts).
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { checkBuildOutput, listFiles } from '../src/lib/check/build-output.ts';
 import { PLACEHOLDER_URL } from '../src/lib/check/index.ts';
@@ -9,9 +9,20 @@ import { fetchOnlineUrls, vanishedUrls } from '../src/lib/check/vanished.ts';
 import { getConfig } from '../src/lib/config/index.ts';
 import { COLLECTION_NAMES } from '../src/lib/content/collections.ts';
 import { buildGraph } from '../src/lib/content/graph.ts';
+import { headersFile, inlineScriptHashes } from '../src/lib/security/headers.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const dist = `${root}dist/`;
+
+// En-têtes des fichiers statiques : CSP avec l'empreinte de chaque script intégré aux pages construites.
+const { services } = getConfig();
+const hashes = listFiles(dist)
+  .filter((file) => file.endsWith('.html'))
+  .flatMap((file) => inlineScriptHashes(readFileSync(file, 'utf8')));
+const { analytics: audience } = services;
+const analytics = audience.enabled && audience.websiteId ? { script: new URL(audience.scriptUrl).origin, collect: audience.collectOrigins } : undefined;
+writeFileSync(`${dist}_headers`, headersFile({ hashes, analytics }));
+
 const report = checkBuildOutput(dist);
 const pages = `${report.indexedPages} ${report.indexedPages > 1 ? 'pages indexées' : 'page indexée'}`;
 console.log(`Site construit : ${report.files} fichiers, ${pages} pour la recherche.`);
