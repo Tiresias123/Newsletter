@@ -599,7 +599,7 @@ Le site se construit seul, sans aucun service. Pour l'infolettre, le formulaire 
 
 1. Copiez `.dev.vars.example` en `.dev.vars`, à côté de `wrangler.jsonc` : ce fichier porte les secrets de l'essai et n'est jamais envoyé sur GitHub. Sa ligne `MEMORY_SERVICES=true` garde les inscriptions et les messages en mémoire : Brevo n'est pas appelé.
 2. Le temps de l'essai, saisissez la clé de site d'essai de Cloudflare `1x00000000000000000000AA` dans **Réglages › Services › Protection contre les robots** (la clé secrète d'essai est déjà dans le modèle). Le rapport « À vérifier » la signale, et la bloque une fois le site en ligne : remettez la vraie clé ensuite.
-3. `npm run build`, puis `npx wrangler dev`, et ouvrez http://localhost:8787. La vérification anti-robot a besoin d'Internet.
+3. `SITE_MODE=preview npm run build` (un build d'aperçu tolère la clé d'essai, même une fois le site en ligne), puis `npx wrangler dev`, et ouvrez http://localhost:8787. La vérification anti-robot a besoin d'Internet.
 
 La tâche planifiée se déclenche à la main avec `curl "http://localhost:8787/cdn-cgi/local/scheduled?cron=7,22,37,52+*+*+*+*"`. N'ajoutez jamais les options `--ip 0.0.0.0` ni `--tunnel`, qui ouvriraient l'essai à d'autres ordinateurs.
 
@@ -611,7 +611,7 @@ La tâche planifiée se déclenche à la main avec `curl "http://localhost:8787/
 
 1. **Compte.** Créez le compte Brevo (forfait gratuit), puis passez l'interface en français : menu du compte, « Mon profil », « Langue ».
 2. **Domaine d'envoi.** Dans « Expéditeurs, domaines et IP dédiées », onglet « Domaines », ajoutez le domaine du site et suivez les consignes : Brevo donne trois ou quatre enregistrements DNS (code Brevo, DKIM, DMARC) à créer chez Cloudflare, dans la zone DNS du domaine. Sans domaine authentifié, Brevo remplace votre adresse d'expédition par une des siennes, et les grandes messageries classent vos envois en indésirables. Une adresse Gmail ou Hotmail ne peut pas servir d'expéditeur.
-3. **Liste.** Dans « Contacts », « Listes », créez la liste « Infolettre hebdomadaire ». Son numéro s'affiche dans la liste des listes : saisissez-le dans **Réglages › Infolettre › Listes d'inscription › Identifiant chez le fournisseur**.
+3. **Liste.** Dans « Contacts », « Listes », créez la liste « Infolettre hebdomadaire ». Son numéro s'affiche dans la liste des listes : saisissez-le dans **Réglages › Infolettre › Listes d'inscription › Identifiant chez le fournisseur**. Seules les listes actives acceptent des inscriptions : les formulaires sans liste précisée (pied de page, barre latérale, page Infolettre) inscrivent à la première liste active, et le rapport refuse une section d'accueil ou un bloc « Infolettre » relié à une liste désactivée.
 4. **Attributs de la preuve de consentement.** Dans les réglages des contacts, « Attributs », créez ces six attributs de type **Texte**, en majuscules, exactement ainsi : `CONSENT_AT`, `CONSENT_SOURCE`, `CONSENT_TEXT_VERSION`, `CONSENT_IP_HASH`, `NL_LIST`, `NL_TAGS`. Brevo ignore sans prévenir un attribut qui n'existe pas : un nom mal écrit, et la preuve n'est pas enregistrée.
 5. **Courriel de confirmation.** Dans « Modèles », créez un modèle en français (« Confirmez votre inscription à l'infolettre… ») :
    - un bouton dont le lien est de type « Double opt-in link » (dans le code, `{{ doubleoptin }}`);
@@ -619,7 +619,7 @@ La tâche planifiée se déclenche à la main avec `curl "http://localhost:8787/
    - l'expéditeur sur votre domaine authentifié;
    - aucun champ de personnalisation (prénom, etc.) : Brevo ne les remplit pas dans ce courriel.
 
-   Activez le modèle, puis saisissez son numéro dans **Réglages › Infolettre › Modèle du courriel de confirmation**. Le lien du courriel mène à la page `/newsletter/confirmation/` du site, dont le titre et le texte se règlent dans **Réglages › Infolettre › Textes**.
+   Activez le modèle, puis saisissez son numéro dans **Réglages › Infolettre › Modèle du courriel de confirmation**. Le lien du courriel mène à la page `/newsletter/confirmation/` du site (adresse fixe), dont le titre et le texte se règlent dans **Réglages › Infolettre › Textes**.
 6. **Clé d'API.** Dans « SMTP et API », « Clés API », créez une clé nommée « Site » et copiez-la aussitôt dans le secret `NEWSLETTER_API_KEY` de Cloudflare (section 31). Ne la collez nulle part ailleurs.
 7. **Blocage des adresses IP.** Dans « Sécurité », « IP autorisées », désactivez le blocage des adresses IP inconnues. Les adresses de Cloudflare changent sans cesse : sans ce réglage, Brevo refuse toutes les inscriptions après trente jours (« unrecognised IP address »).
 8. **Essai.** Sur le site en ligne, inscrivez-vous avec votre propre adresse, cliquez sur le lien du courriel, puis ouvrez le contact dans Brevo : les six attributs doivent être remplis. Réessayez avec la même adresse : le message de succès est le même, mais aucun nouveau courriel n'est envoyé.
@@ -643,7 +643,7 @@ Ce fichier contient des renseignements personnels : **jamais dans le dossier du
 ## 34. Le formulaire de contact
 
 - **Activer** : **Réglages › Services › Formulaire de contact** : « Activé », l'adresse d'expédition (une adresse de votre domaine authentifié chez Brevo, section 32, par exemple `contact@votre-domaine.ca`) et le nom d'expéditeur. Les messages arrivent au **courriel de contact** de **Réglages › Identité du site** (ou à l'adresse du secret `CONTACT_TO`).
-- **Où il apparaît** : sur la page Contact, par le bloc « Formulaire de contact » (section 20). Les liens « Signaler une erreur » et « Suggérer un sujet » des articles y mènent, avec le sujet choisi et l'adresse de la page déjà remplis. Désactivé, le formulaire laisse place à votre courriel de contact.
+- **Où il apparaît** : sur la page Contact, par le bloc « Formulaire de contact » (section 20). Les liens « Signaler une erreur » et « Suggérer un sujet » des articles y mènent, avec le sujet choisi et l'adresse de la page déjà remplis. Désactivé, le formulaire laisse place à votre courriel de contact; ses textes (**Réglages › Textes de l'interface**, section `contactForm`) ne s'affichent pas, et leurs marqueurs ne bloquent pas la mise en ligne.
 - **Répondre** : répondez simplement au courriel reçu : la réponse part au lecteur.
 - **Ne cliquez jamais « Se désabonner »** dans ces courriels : Brevo bloquerait votre propre adresse. Si c'est fait, retirez-la de la liste de blocage des courriels transactionnels, dans Brevo.
 - Le site ne conserve rien : le message est transmis, puis oublié.
@@ -656,13 +656,13 @@ Turnstile, le service anti-robots de Cloudflare, vérifie chaque envoi de formul
 2. Copiez la **clé de site** dans **Réglages › Services › Protection contre les robots › Clé de site**, et la **clé secrète** dans le secret `TURNSTILE_SECRET_KEY` (section 31).
 3. **Changer la clé secrète** (si elle a fuité) : « Rotate secret key » dans Cloudflare; l'ancienne reste valable deux heures, le temps de remplacer le secret.
 
-Sans ces deux clés, les formulaires refusent tout envoi : le rapport « À vérifier » le rappelle (section 16). Les clés d'essai de Cloudflare (celles qui commencent par `1x0000`, `2x0000` ou `3x0000`) ne servent qu'aux essais sur votre ordinateur (section 31) : le rapport les bloque sur le site en ligne, et le Worker refuse la clé secrète d'essai hors essai local.
+Sans ces deux clés, les formulaires refusent tout envoi : le rapport « À vérifier » le rappelle (section 16), et bloque la construction une fois le site en ligne, comme tout réglage manquant qui fait refuser les envois (modèle ou numéro de liste Brevo, aucune liste active, adresse d'expédition du contact). Les clés d'essai de Cloudflare (celles qui commencent par `1x0000`, `2x0000` ou `3x0000`) ne servent qu'aux essais sur votre ordinateur (section 31) : le rapport les bloque sur le site en ligne, et le Worker refuse la clé secrète d'essai hors essai local.
 
 ## 36. La mesure d'audience : Umami
 
 1. Créez un compte Umami Cloud. Le forfait gratuit (« Hobby ») couvre un seul site, 100 000 événements par mois et six mois d'historique. La région des données (États-Unis ou Union européenne) se choisit à la création du compte : prenez l'Union européenne.
 2. Ajoutez le site (« Add website », avec son domaine) et copiez son identifiant (« Website ID »).
-3. Dans **Réglages › Services › Mesure d'audience** : « Activé », l'identifiant, et le domaine du site dans « Domaines mesurés », écrit exactement comme dans la barre d'adresse (`www` compris s'il y a lieu).
+3. Dans **Réglages › Services › Mesure d'audience** : « Activé », l'identifiant, et le domaine du site dans « Domaines mesurés », écrit exactement comme dans la barre d'adresse (`www` compris s'il y a lieu). Le rapport signale un domaine qui ne correspond pas à l'adresse du site : ses visites ne seraient pas comptées.
 4. Une fois le site en ligne, vérifiez que les mesures partent : sur une page du site, ouvrez les outils de développement du navigateur, onglet « Réseau ». Un envoi vers `gateway.umami.is/api/send` doit répondre 200. S'il est bloqué par la politique de sécurité (« CSP »), Umami a changé d'adresse de collecte, comme en juin 2026 : saisissez la nouvelle dans « Adresses de collecte ».
 5. Pour ne pas compter vos propres visites, tapez une fois `localStorage.setItem('umami.disabled', 1)` dans la console du navigateur, sur le site en ligne (à refaire sur chaque navigateur).
 
@@ -672,7 +672,7 @@ Sans ces deux clés, les formulaires refusent tout envoi : le rapport « À v�
 
 **Budget** : une page vue compte pour un événement, une inscription pour deux, un clic sortant pour deux, une recherche pour trois. Ce qu'Umami fait au-delà de 100 000 événements par mois n'est pas documenté \[À VÉRIFIER]. « Les plus lus » (feuille de route, version 2) demandera le forfait Pro (20 $ US par mois selon Umami, à revérifier), seul à ouvrir l'accès programmatique aux statistiques.
 
-**Consentement.** Aucun bandeau n'est nécessaire tant qu'aucun service ne dépose de témoin. Si cela changeait un jour, **Réglages › Services › Consentement aux témoins** fait demander l'accord du lecteur avant tout chargement du script, avec un bouton en pied de page pour changer d'avis. Les textes du bandeau sont dans **Réglages › Textes de l'interface**, section `consentBanner`.
+**Consentement.** Aucun bandeau n'est nécessaire tant qu'aucun service ne dépose de témoin. Si cela changeait un jour, **Réglages › Services › Consentement aux témoins** fait demander l'accord du lecteur avant tout chargement du script, avec un bouton en pied de page pour changer d'avis. Les textes du bandeau sont dans **Réglages › Textes de l'interface**, section `consentBanner`; tant que le consentement n'est pas exigé, ils ne s'affichent pas, et leurs marqueurs ne bloquent pas la mise en ligne.
 
 ## 37. La veille officielle
 
@@ -704,7 +704,7 @@ Le bandeau des cours (au-dessus de l'en-tête) et les sections d'accueil « Les
 2. Déclarez-la comme variable de construction `COINGECKO_API_KEY` (section 31).
 3. Dans **Réglages › Bandeau des cours** : « Activé », puis les actifs (identifiant CoinGecko, par exemple `bitcoin`, symbole et nom). Les sections d'accueil s'activent dans **Réglages › Page d'accueil**.
 
-Les cours sont ceux du dernier build (l'heure est affichée), rafraîchis à chaque construction et chaque nuit, en dollars canadiens : un seul appel à CoinGecko par construction, loin du plafond gratuit (10 000 par mois selon CoinGecko). Sans clé, ou si CoinGecko ne répond pas, le bandeau et les sections disparaissent simplement; une clé refusée est nommée dans le journal du build.
+Les cours sont ceux du dernier build (l'heure est affichée), rafraîchis à chaque construction et chaque nuit, en dollars canadiens (sans décimales dès 100 $, deux décimales dès 1 $, quatre chiffres significatifs en dessous) : un seul appel à CoinGecko par construction, loin du plafond gratuit (10 000 par mois selon CoinGecko). Sans clé, ou si CoinGecko ne répond pas, le bandeau et les sections disparaissent simplement; une clé refusée est nommée dans le journal du build.
 
 **Conditions de CoinGecko** (lues dans des extraits de ses pages, inaccessibles ici \[À VÉRIFIER]) :
 - **Attribution** : la mention « Données fournies par CoinGecko » accompagne les cours et mène à la page de l'API de CoinGecko (**Réglages › Bandeau des cours › Lien de la source**). CoinGecko demanderait la formule anglaise « Powered by CoinGecko » : demandez-lui si la traduction lui convient.
