@@ -1,0 +1,23 @@
+---
+// Page d'arrivée après le clic sur le lien de confirmation du courriel de double consentement : le fournisseur
+// y redirige le lecteur (config/newsletter.json, confirmationUrl). Hors des moteurs de recherche.
+import Button from '../../components/ui/Button.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getConfig } from '../../lib/config/index.ts';
+import { t } from '../../lib/i18n.ts';
+import { frenchTypography } from '../../lib/typo.ts';
+
+const { newsletter } = getConfig();
+const title = frenchTypography(newsletter.texts.confirmedTitle);
+---
+
+<BaseLayout title={title} noindex>
+  <div class="page-container py-20">
+    <h1 class="text-4xl">{title}</h1>
+    <p class="mt-4 max-w-[var(--reading-w)] text-lg text-secondary">{frenchTypography(newsletter.texts.confirmedText)}</p>
+    <div class="mt-8 flex flex-wrap gap-3">
+      <Button href="/" icon="house">{t('notFound.home')}</Button>
+      <Button href="/newsletter/#archive" variant="ghost">{t('newsletterPage.allIssues')}</Button>
+    </div>
+  </div>
+</BaseLayout>

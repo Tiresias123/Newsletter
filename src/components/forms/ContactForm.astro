@@ -1,0 +1,95 @@
+---
+// Formulaire de contact (brief 8.6) : envoi vers /api/contact (Worker), Turnstile chargé à la première
+// interaction, champ piège. Tant qu'il n'est pas activé dans les réglages « Services », la page propose le
+// courriel de contact de l'identité du site. Un lien « /contact/?sujet=erreur&page=/articles/x/ » préremplit
+// le sujet et la page concernée.
+import { getConfig } from '../../lib/config/index.ts';
+import { CONTACT_TOPICS } from '../../lib/contact/mailer.ts';
+import { t } from '../../lib/i18n.ts';
+import Button from '../ui/Button.astro';
+
+const { services, site, newsletter } = getConfig();
+const id = 'contact';
+const messages = {
+  sending: t('forms.sending'),
+  success: t('contactForm.success'),
+  error: t('contactForm.error'),
+  verification: t('forms.verification'),
+  challenge: t('forms.challenge'),
+  debit: t('forms.rateLimited'),
+  network: t('forms.network'),
+  invalide: t('forms.invalid'),
+};
+---
+
+{
+  services.contact.enabled ? (
+    <form
+      action="/api/contact"
+      method="post"
+      class="not-prose my-8 space-y-4 rounded-card border border-border bg-surface p-5 sm:p-6"
+      data-site-form
+      data-action="contact"
+      data-event="contactMessage"
+      data-contact-form
+      data-messages={JSON.stringify(messages)}
+      data-sitekey={services.turnstile.siteKey}
+    >
+      <input type="hidden" name="page" value="" />
+      <div class="hidden" aria-hidden="true">
+        <label for={`${id}-site`}>{t('forms.honeypot')}</label>
+        <input id={`${id}-site`} name="site_web" type="text" tabindex="-1" autocomplete="off" />
+      </div>
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="space-y-1">
+          <label for={`${id}-nom`} class="block text-sm font-semibold">{t('contactForm.name')}</label>
+          <input id={`${id}-nom`} name="name" type="text" required maxlength="100" autocomplete="name" class="input" />
+        </div>
+        <div class="space-y-1">
+          <label for={`${id}-courriel`} class="block text-sm font-semibold">{t('contactForm.email')}</label>
+          <input id={`${id}-courriel`} name="email" type="email" required maxlength="254" autocomplete="email" class="input" />
+        </div>
+      </div>
+      <div class="space-y-1">
+        <label for={`${id}-sujet`} class="block text-sm font-semibold">{t('contactForm.topic')}</label>
+        <select id={`${id}-sujet`} name="topic" class="input" required>
+          {CONTACT_TOPICS.map((topic) => <option value={topic}>{t(`contactForm.topics.${topic}`)}</option>)}
+        </select>
+      </div>
+      <p class="hidden text-sm text-secondary" data-contact-page>
+        {t('contactForm.page')} : <span class="font-semibold" data-contact-page-value />
+      </p>
+      <div class="space-y-1">
+        <label for={`${id}-message`} class="block text-sm font-semibold">{t('contactForm.message')}</label>
+        <textarea id={`${id}-message`} name="message" required minlength="10" maxlength="5000" rows="7" class="input" aria-describedby={`${id}-message-aide`} />
+        <p id={`${id}-message-aide`} class="text-sm text-meta">{t('contactForm.messageHelp')}</p>
+      </div>
+      <p class="text-sm text-secondary">
+        {t('contactForm.privacy')}{' '}
+        <a href={newsletter.texts.privacyUrl} class="font-semibold underline underline-offset-2">{t('contactForm.privacyLink')}</a>
+      </p>
+      <div data-turnstile />
+      <Button type="submit">{t('contactForm.button')}</Button>
+      <p class="form-status text-sm" aria-live="polite" data-form-status />
+      <noscript>
+        <p class="text-sm">{t('forms.noscript')}</p>
+      </noscript>
+    </form>
+  ) : (
+    site.contactEmail && (
+      <p class="my-6">
+        {t('contactForm.unavailable')}{' '}
+        <a href={`mailto:${site.contactEmail}`} class="font-semibold underline underline-offset-2">
+          {site.contactEmail}
+        </a>
+      </p>
+    )
+  )
+}
+
+<script>
+  import { enhanceForms, prefillContact } from '../../lib/forms/client.ts';
+
+  prefillContact();
+  enhanceForms();
+</script>

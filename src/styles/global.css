@@ -468,6 +468,21 @@
     accent-color: var(--c-primary);
   }
 
+  /* État d'un formulaire (envoi, succès, erreur) : le texte dit tout, la couleur ne fait que l'accompagner. */
+  .form-status[data-tone="success"] {
+    color: var(--c-success-text);
+    font-weight: 600;
+  }
+
+  .form-status[data-tone="error"] {
+    color: var(--c-danger-text);
+    font-weight: 600;
+  }
+
+  .form-inverse .form-status[data-tone] {
+    color: inherit;
+  }
+
   .site-header[data-scrolled] {
     box-shadow: var(--c-shadow-hover);
   }

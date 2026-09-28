@@ -1,10 +1,14 @@
 ---
-// Formulaire d'inscription à l'infolettre : textes lus dans config/newsletter.json.
-// Envoi vers /api/newsletter (Worker, phase 4) avec double consentement ; champ piège contre les robots.
+// Formulaire d'inscription à l'infolettre : textes lus dans config/newsletter.json, envoi vers /api/newsletter
+// (Worker) avec double consentement. Preuve de consentement : page, emplacement et version du texte affiché.
+// Turnstile se charge à la première interaction; champ piège contre les robots.
 import { getConfig } from '../../lib/config/index.ts';
 import { interpolate, t } from '../../lib/i18n.ts';
+import { consentVersion } from '../../lib/newsletter/consent.ts';
 import { frenchTypography } from '../../lib/typo.ts';
 import Button from '../ui/Button.astro';
+
+type Placement = 'article' | 'barre-laterale' | 'page' | 'pied-de-page' | 'accueil';
 
 interface Props {
   // Identifiant unique dans la page (plusieurs formulaires peuvent coexister).
@@ -12,25 +16,52 @@ interface Props {
   variant?: 'band' | 'compact' | 'inline' | 'page';
   inverse?: boolean;
   list?: string;
+  // Emplacement du formulaire, enregistré avec le consentement; déduit de la variante par défaut.
+  placement?: Placement;
 }
 
+const PLACEMENTS: Record<NonNullable<Props['variant']>, Placement> = { band: 'accueil', compact: 'barre-laterale', inline: 'article', page: 'page' };
 const { id, variant = 'inline', inverse = false, list = 'generale' } = Astro.props;
-const { newsletter, site } = getConfig();
+const placement = Astro.props.placement ?? PLACEMENTS[variant];
+const { newsletter, site, services } = getConfig();
 const texts = newsletter.texts;
 const consent = frenchTypography(interpolate(texts.consent, { site: site.name }));
+const version = consentVersion(`${consent} ${texts.privacyLinkLabel}`);
+const messages = {
+  sending: t('forms.sending'),
+  success: frenchTypography(texts.success),
+  error: frenchTypography(texts.error),
+  verification: t('forms.verification'),
+  challenge: t('forms.challenge'),
+  debit: t('forms.rateLimited'),
+  network: t('forms.network'),
+  invalide: t('forms.invalid'),
+};
 const stacked = variant === 'compact';
 ---
 
-<form action="/api/newsletter" method="post" class="space-y-3" data-newsletter-form>
+<form
+  action="/api/newsletter"
+  method="post"
+  class:list={['space-y-3', inverse && 'form-inverse']}
+  data-site-form
+  data-action="newsletter"
+  data-event="newsletterSignup"
+  data-placement={placement}
+  data-sitekey={services.turnstile.siteKey}
+  data-messages={JSON.stringify(messages)}
+>
   <input type="hidden" name="list" value={list} />
   <input type="hidden" name="source" value={Astro.url.pathname} />
+  <input type="hidden" name="placement" value={placement} />
+  <input type="hidden" name="consent_version" value={version} />
   <div class="hidden" aria-hidden="true">
     <label for={`${id}-site`}>{t('forms.honeypot')}</label>
     <input id={`${id}-site`} name="site_web" type="text" tabindex="-1" autocomplete="off" />
   </div>
   <label for={`${id}-courriel`} class:list={['block text-sm font-semibold', variant === 'band' && 'sr-only']}>{texts.emailLabel}</label>
   <div class:list={['flex gap-2', stacked ? 'flex-col' : 'flex-col sm:flex-row']}>
-    <input id={`${id}-courriel`} name="email" type="email" required autocomplete="email" class="input" placeholder={texts.emailPlaceholder} />
+    <input id={`${id}-courriel`} name="email" type="email" required maxlength="254" autocomplete="email" class="input" placeholder={texts.emailPlaceholder} />
     <Button type="submit" variant={inverse ? 'inverse' : 'primary'} class="shrink-0">{texts.button}</Button>
   </div>
   <div class="flex items-start gap-2 text-sm">
@@ -40,5 +71,13 @@ const stacked = variant === 'compact';
       <a href={texts.privacyUrl} class="font-semibold underline underline-offset-2">{texts.privacyLinkLabel}</a>
     </label>
   </div>
-  <p class="text-sm" aria-live="polite" data-newsletter-status></p>
+  <div data-turnstile></div>
+  <p class="form-status text-sm" aria-live="polite" data-form-status></p>
+  <noscript><p class="text-sm">{t('forms.noscript')}</p></noscript>
 </form>
+
+<script>
+  import { enhanceForms } from '../../lib/forms/client.ts';
+
+  enhanceForms();
+</script>

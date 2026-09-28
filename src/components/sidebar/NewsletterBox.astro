@@ -10,9 +10,11 @@ interface Props {
   variant?: 'compact' | 'inline';
   // Liste d'inscription (config/newsletter.json) ; la liste générale par défaut.
   list?: string;
+  // Emplacement enregistré avec le consentement (NewsletterForm) : fin d'article par défaut en ligne.
+  placement?: 'article' | 'barre-laterale' | 'page';
 }
 
-const { id = 'barre-infolettre', variant = 'compact', list } = Astro.props;
+const { id = 'barre-infolettre', variant = 'compact', list, placement } = Astro.props;
 const { newsletter } = getConfig();
 // En ligne (fin d'article, bloc de page), une région nommée ; en barre latérale, déjà dans le repère « aside »,
 // un simple bloc : deux régions portant le même titre seraient indistinctes pour un lecteur d'écran.
@@ -26,5 +28,5 @@ const Container = variant === 'inline' ? 'section' : 'div';
 >
   <h2 id={`${id}-titre`} class:list={[variant === 'inline' ? 'text-xl' : 'text-lg']}>{frenchTypography(newsletter.texts.title)}</h2>
   <p class="mb-4 mt-1 text-sm text-secondary">{frenchTypography(newsletter.texts.subtitle)}</p>
-  <NewsletterForm id={id} variant={variant} list={list} />
+  <NewsletterForm id={id} variant={variant} list={list} placement={placement} />
 </Container>

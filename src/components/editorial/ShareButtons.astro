@@ -1,6 +1,7 @@
 ---
 // Barre de partage (brief 7.2, étape 8 ; DA, section 8.2) : liens simples, sans script tiers ; copie du lien
-// avec retour « Lien copié » annoncé ; « Signaler une erreur » et « Suggérer un sujet » par courriel prérempli.
+// avec retour « Lien copié » annoncé ; « Signaler une erreur » et « Suggérer un sujet » vers le formulaire de
+// contact prérempli (sujet et page) s'il est activé, sinon par courriel prérempli.
 import { getConfig } from '../../lib/config/index.ts';
 import { t } from '../../lib/i18n.ts';
 import { absolute } from '../../lib/seo/json-ld.ts';
@@ -14,7 +15,7 @@ interface Props {
 }
 
 const { title, rss = '/rss.xml', print = false } = Astro.props;
-const { site } = getConfig();
+const { site, services } = getConfig();
 const pageUrl = absolute(site.url, Astro.url.pathname);
 const u = encodeURIComponent(pageUrl);
 const text = encodeURIComponent(title);
@@ -27,8 +28,9 @@ const NETWORKS = [
 ] as const;
 const mail = (subject: string, body: string) =>
   site.contactEmail ? `mailto:${site.contactEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}` : '/contact/';
-const reportHref = mail(t('editorial.share.reportSubject', { title }), t('editorial.share.reportBody', { url: pageUrl }));
-const suggestHref = mail(t('editorial.share.suggestSubject'), t('editorial.share.suggestBody', { url: pageUrl }));
+const form = (topic: 'erreur' | 'suggestion') => `/contact/?${new URLSearchParams({ sujet: topic, page: Astro.url.pathname })}`;
+const reportHref = services.contact.enabled ? form('erreur') : mail(t('editorial.share.reportSubject', { title }), t('editorial.share.reportBody', { url: pageUrl }));
+const suggestHref = services.contact.enabled ? form('suggestion') : mail(t('editorial.share.suggestSubject'), t('editorial.share.suggestBody', { url: pageUrl }));
 const button = 'inline-flex size-10 items-center justify-center rounded-button border border-border text-secondary hover:border-control hover:text-text';
 ---
 
