@@ -1,0 +1,35 @@
+// Worker du site (ARCHITECTURE 15.1) : sert dist/ (fichiers statiques, gratuits et illimités) et n'exécute du
+// code que pour /api/* (formulaires) et pour la tâche planifiée. Secrets : tableau de bord de Cloudflare ou
+// « npx wrangler secret put NOM » (guide de l'auteur, section 31), jamais dans ce fichier.
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  // Doit être identique au nom du Worker dans le tableau de bord de Cloudflare.
+  "name": "media-cryptoactifs",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-09-28",
+  "send_metrics": false,
+  "dependencies_instrumentation": { "enabled": false },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    // Seules ces adresses exécutent le Worker : tout le reste est servi en fichier statique.
+    "run_worker_first": ["/api/*"]
+  },
+  // UTC. Toutes les 15 minutes, hors des quarts d'heure ronds : publication programmée; le passage de 5 h 07
+  // UTC (après minuit à Montréal, heure d'été comme d'hiver) fait la reconstruction nocturne (worker/scheduled.ts).
+  "triggers": { "crons": ["7,22,37,52 * * * *"] },
+  // Limitation de débit des formulaires : 5 envois par minute et par clé (empreintes du préfixe d'IP et de
+  // l'adresse courriel), approximative et propre à chaque centre de données de Cloudflare.
+  "ratelimits": [{ "name": "FORM_LIMITER", "namespace_id": "1001", "simple": { "limit": 5, "period": 60 } }],
+  // Journaux sans les détails des requêtes (adresses IP, en-têtes) : seulement les messages du Worker.
+  "observability": { "enabled": true, "logs": { "invocation_logs": false } },
+  // Aperçus de branche (Worker Previews), qui n'héritent de rien : formulaires en mémoire (aucune vraie
+  // inscription, aucun message envoyé), compteurs de débit séparés. La tâche planifiée n'y tourne jamais.
+  "previews": {
+    "vars": { "MEMORY_SERVICES": "true" },
+    "ratelimits": [{ "name": "FORM_LIMITER", "namespace_id": "1002", "simple": { "limit": 5, "period": 60 } }],
+    "observability": { "enabled": true, "logs": { "invocation_logs": false } }
+  }
+}
