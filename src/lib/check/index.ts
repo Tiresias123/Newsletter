@@ -83,9 +83,12 @@ export async function runCheck({ root, mode = 'production', now = new Date(), ex
   return result;
 }
 
-// Contenus affichés dans ce mode : visibles ; pour les sources et les auteurs, cités par un contenu visible.
+// Contenus affichés dans ce mode : visibles, et programmés même avant l'échéance (ils paraîtront sans nouvelle
+// intervention : un marqueur oublié ferait sinon échouer chaque build à l'heure dite, sans témoin); pour les
+// sources et les auteurs, cités par un tel contenu.
 function displayedEntries(graph: Graph, entries: Entry[]): Set<Entry> {
-  const shown = new Set(entries.filter((e) => e.collection !== 'sources' && e.collection !== 'auteurs' && e.visibility.visible));
+  const displayed = (e: Entry) => e.visibility.visible || e.visibility.state === 'programme';
+  const shown = new Set(entries.filter((e) => e.collection !== 'sources' && e.collection !== 'auteurs' && displayed(e)));
   for (const entry of [...shown]) {
     const data = entry.data as { author?: string; sources?: CitedSource[]; officialSources?: CitedSource[] };
     const author = graph.get('auteurs', data.author);

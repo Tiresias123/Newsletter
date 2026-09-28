@@ -61,6 +61,15 @@ describe('check sur des jeux d’essai', () => {
     expect(preview.map((p) => p.severity)).toEqual(['avertissement', 'avertissement']);
   });
 
+  it('bloque dès maintenant les marqueurs d’un contenu programmé, qui paraîtra sans nouvelle intervention', async () => {
+    const problems = await check((f) => {
+      f.mdx('content/articles/programme.mdx', articleData({ status: 'programme', publishedAt: '2026-10-05', publishedTime: '08:00' }), 'Texte [À VÉRIFIER].');
+    });
+    expect(problems.filter((p) => p.rule === 'marqueur' && p.file.startsWith('content/')).map((p) => p.line)).toEqual([
+      'bloquant marqueur content/articles/programme.mdx Corps du texte',
+    ]);
+  });
+
   it('tolère les marqueurs de la configuration tant que le site n’a pas son adresse', async () => {
     const problems = await check(() => {});
     const config = problems.filter((p) => p.rule === 'marqueur');
