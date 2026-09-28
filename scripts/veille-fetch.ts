@@ -8,7 +8,7 @@ import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { getConfig } from '../src/lib/config/index.ts';
 import { veilleCacheSchema, type VeilleCache } from '../src/lib/content/veille.ts';
-import { applyOutcome, emptyCache, prune, serializeCache, sourceState, type FetchOutcome } from '../src/lib/veille/merge.ts';
+import { applyOutcome, emptyCache, matchesKeywords, prune, serializeCache, sourceState, type FetchOutcome } from '../src/lib/veille/merge.ts';
 import { parseFeed, UnreadableFeedError } from '../src/lib/veille/parse.ts';
 import { robotsAllows } from '../src/lib/veille/robots.ts';
 
@@ -94,8 +94,11 @@ for (const source of sources) {
     const status = state.status === outcome.status ? state.status : `${outcome.status}, ${state.status} (${state.detail})`;
     console.log(`${source.enabled ? '●' : '○'} ${source.id} : ${status}${outcome.http ? ` (HTTP ${outcome.http}, ${outcome.type || 'type inconnu'})` : ''} : ${count}`);
     if (outcome.status === 'ok') {
-      for (const e of outcome.entries.slice(0, 3)) {
-        console.log(`    « ${e.title} » ${e.url}`);
+      // Avec des mots-clés : les entrées qu'ils retiennent (toutes dates confondues), pour les ajuster.
+      const kept = source.keywords.length > 0 ? outcome.entries.filter((e) => matchesKeywords(e, source.keywords)) : outcome.entries;
+      if (source.keywords.length > 0) console.log(`    ${kept.length} entrée(s) retenue(s) par les mots-clés`);
+      for (const e of kept.slice(0, 3)) {
+        console.log(`    « ${e.title} » ${e.url}${e.published ? ` (${e.published.toISOString().slice(0, 10)})` : ''}`);
         // Début du résumé : ce que les mots-clés peuvent retenir en plus du titre.
         if (e.summary) console.log(`      ${e.summary.slice(0, 200)}${e.summary.length > 200 ? '…' : ''}`);
       }
