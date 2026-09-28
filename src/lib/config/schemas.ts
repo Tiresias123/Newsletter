@@ -210,7 +210,7 @@ export const servicesSchema = z.strictObject({
     }),
   contact: z.strictObject({ enabled: z.boolean(), senderEmail: optionalText(), senderName: optionalText() }),
   // Consentement préalable à la mesure d'audience (Loi 25) : inutile tant qu'aucun service ne dépose de témoin.
-  consent: z.strictObject({ enabled: z.boolean() }),
+  cookieConsent: z.strictObject({ enabled: z.boolean() }),
 });
 
 // ─── legal.json ─────────────────────────────────────────────────────────────

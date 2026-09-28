@@ -119,8 +119,20 @@ function checkMarkers({ config, entries, shown, add, mode }: Context) {
   }
   const launched = config.site.url !== PLACEHOLDER_URL;
   for (const part of [...DISPLAYED_CONFIG, ...(config.ads.enabled ? (['ads'] as const) : [])]) {
-    for (const { path, markers } of markersIn(config[part], ['note'])) add(CONFIG_FILES[part], path, marker(markers), 'marqueur', severity(launched && mode === 'production'));
+    for (const { path, markers } of markersIn(part === 'messages' ? displayedMessages(config) : config[part], ['note'])) {
+      add(CONFIG_FILES[part], path, marker(markers), 'marqueur', severity(launched && mode === 'production'));
+    }
   }
+}
+
+// Textes de l'interface affichés : ni le bandeau de consentement sans consentement exigé, ni les textes du
+// formulaire de contact désactivé. Leurs marqueurs n'empêchent pas la mise en ligne.
+function displayedMessages({ messages, services }: SiteConfig): Record<string, unknown> {
+  const hidden = new Set([
+    ...(services.analytics.enabled && services.cookieConsent.enabled ? [] : ['consentBanner']),
+    ...(services.contact.enabled ? [] : ['contactForm']),
+  ]);
+  return Object.fromEntries(Object.entries(messages).filter(([key]) => !hidden.has(key)));
 }
 
 // Rappels de configuration avant la mise en ligne.

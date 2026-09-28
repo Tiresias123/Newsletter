@@ -201,8 +201,10 @@ function checkConfigReferences(graph: Graph, add: Add) {
       for (const id of themes) if (!graph.get('themes', id)) add(HOME, ['sections', i, 'themes'], `« ${id} » n'existe pas dans ${label('themes')}.`, 'relation');
       for (const id of jurisdictions) if (!graph.get('juridictions', id)) add(HOME, ['sections', i, 'jurisdictions'], `« ${id} » n'existe pas dans ${label('juridictions')}.`, 'relation');
     }
-    if (section.type === 'newsletter-cta' && !graph.config.newsletter.lists.some((l) => l.id === section.list)) {
-      add(HOME, ['sections', i, 'list'], `La liste « ${section.list} » n'existe pas dans config/newsletter.json.`, 'relation');
+    if (section.type === 'newsletter-cta') {
+      const list = graph.config.newsletter.lists.find((l) => l.id === section.list);
+      if (!list) add(HOME, ['sections', i, 'list'], `La liste « ${section.list} » n'existe pas dans config/newsletter.json.`, 'relation');
+      else if (section.enabled && !list.enabled) add(HOME, ['sections', i, 'list'], `La liste « ${section.list} » est désactivée dans config/newsletter.json : les inscriptions de cette section seraient refusées.`, 'relation');
     }
     if (section.type === 'partner-block' && section.enabled && !graph.config.ads.partners.some((p) => p.id === section.partnerId)) {
       add(HOME, ['sections', i, 'partnerId'], `Le partenaire « ${section.partnerId} » n'existe pas dans config/ads.json.`, 'relation');

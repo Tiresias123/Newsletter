@@ -11,30 +11,34 @@ const TEST_SITE_KEY = /^[123]x0{20}[A-F]{2}$/;
 export function checkServices({ config, add, mode }: Pick<Context, 'config' | 'add' | 'mode'>, hasMarketKey = Boolean(coingeckoKey())): void {
   const { services, newsletter, site } = config;
   const lancement = (file: string, where: PropertyKey[], message: string, severity: Severity = 'avertissement') => add(file, where, message, 'lancement', severity);
-  // Réglage d'essai laissé en place : bloquant pour le site en ligne, toléré avant la mise en ligne et en aperçu.
-  const essai: Severity = site.url !== PLACEHOLDER_URL && mode === 'production' ? 'bloquant' : 'avertissement';
+  // Réglage manquant ou d'essai qui fait refuser les envois d'un formulaire : bloquant pour le site en ligne,
+  // toléré avant la mise en ligne et en aperçu.
+  const required: Severity = site.url !== PLACEHOLDER_URL && mode === 'production' ? 'bloquant' : 'avertissement';
 
   if (!services.turnstile.siteKey) {
-    lancement(CONFIG_FILES.services, ['turnstile', 'siteKey'], "Clé de site Turnstile à saisir : sans elle, l'inscription à l'infolettre et le formulaire de contact sont refusés.");
+    lancement(CONFIG_FILES.services, ['turnstile', 'siteKey'], "Clé de site Turnstile à saisir : sans elle, l'inscription à l'infolettre et le formulaire de contact sont refusés.", required);
   } else if (TEST_SITE_KEY.test(services.turnstile.siteKey)) {
-    lancement(CONFIG_FILES.services, ['turnstile', 'siteKey'], "Clé de site d'essai de Turnstile : elle ne sert qu'aux essais locaux. Saisir la clé du widget du site.", essai);
+    lancement(CONFIG_FILES.services, ['turnstile', 'siteKey'], "Clé de site d'essai de Turnstile : elle ne sert qu'aux essais locaux. Saisir la clé du widget du site.", required);
   }
   if (newsletter.provider === 'test') {
-    lancement(CONFIG_FILES.newsletter, ['provider'], "Fournisseur d'infolettre « Test (aucun envoi) » : les inscriptions ne sont enregistrées nulle part, alors que le lecteur est invité à confirmer.", essai);
+    lancement(CONFIG_FILES.newsletter, ['provider'], "Fournisseur d'infolettre « Test (aucun envoi) » : les inscriptions ne sont enregistrées nulle part, alors que le lecteur est invité à confirmer.", required);
   } else if (newsletter.provider === 'cyberimpact') {
-    lancement(CONFIG_FILES.newsletter, ['provider'], "Cyberimpact n'est pas encore relié au site : l'inscription est refusée. Choisir Brevo, ou faire écrire son connecteur.");
+    lancement(CONFIG_FILES.newsletter, ['provider'], "Cyberimpact n'est pas encore relié au site : l'inscription est refusée. Choisir Brevo, ou faire écrire son connecteur.", required);
+  }
+  if (!newsletter.lists.some((list) => list.enabled)) {
+    lancement(CONFIG_FILES.newsletter, ['lists'], "Aucune liste active : toute inscription à l'infolettre est refusée.", required);
   }
   if (newsletter.provider === 'brevo') {
     if (!newsletter.doubleOptInTemplateId) {
-      lancement(CONFIG_FILES.newsletter, ['doubleOptInTemplateId'], "Numéro du modèle de double consentement Brevo à saisir : sans lui, l'inscription est refusée.");
+      lancement(CONFIG_FILES.newsletter, ['doubleOptInTemplateId'], "Numéro du modèle de double consentement Brevo à saisir : sans lui, l'inscription est refusée.", required);
     }
     newsletter.lists.forEach((list, i) => {
-      if (list.enabled && !list.providerId) lancement(CONFIG_FILES.newsletter, ['lists', i, 'providerId'], `Liste « ${list.label} » active sans numéro de liste Brevo : l'inscription y est refusée.`);
+      if (list.enabled && !list.providerId) lancement(CONFIG_FILES.newsletter, ['lists', i, 'providerId'], `Liste « ${list.label} » active sans numéro de liste Brevo : l'inscription y est refusée.`, required);
     });
   }
   if (services.contact.enabled) {
     if (!services.contact.senderEmail) {
-      lancement(CONFIG_FILES.services, ['contact', 'senderEmail'], "Formulaire de contact activé sans adresse d'expédition (adresse vérifiée chez Brevo) : les messages ne partent pas.");
+      lancement(CONFIG_FILES.services, ['contact', 'senderEmail'], "Formulaire de contact activé sans adresse d'expédition (adresse vérifiée chez Brevo) : les messages ne partent pas.", required);
     }
     if (!site.contactEmail) {
       lancement(CONFIG_FILES.site, ['contactEmail'], 'Formulaire de contact activé sans courriel de contact : les messages ne sont remis que si le secret CONTACT_TO est défini dans Cloudflare.', 'information');
@@ -45,6 +49,11 @@ export function checkServices({ config, add, mode }: Pick<Context, 'config' | 'a
   }
   if (services.analytics.enabled && services.analytics.domains.length === 0) {
     lancement(CONFIG_FILES.services, ['analytics', 'domains'], "Mesure d'audience sans domaine : les aperçus de branche seraient comptés aussi. Indiquez le domaine du site.", 'information');
+  }
+  // Umami compare le nom d'hôte exact de la page : « monsite.ca » ne compte pas « www.monsite.ca ».
+  const host = site.url !== PLACEHOLDER_URL ? URL.parse(site.url)?.hostname : undefined;
+  if (services.analytics.enabled && host && services.analytics.domains.length > 0 && !services.analytics.domains.includes(host)) {
+    lancement(CONFIG_FILES.services, ['analytics', 'domains'], `Mesure d'audience : le domaine du site (${host}) manque aux domaines mesurés, ses visites ne sont pas comptées.`);
   }
   if (marketWanted(config) && !hasMarketKey) {
     lancement(CONFIG_FILES.ticker, ['enabled'], 'Cours de marché activés, mais la clé COINGECKO_API_KEY est absente de ce build : le bandeau et les sections de marché sont masqués.', 'information');

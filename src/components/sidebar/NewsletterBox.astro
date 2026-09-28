@@ -8,7 +8,7 @@ import NewsletterForm from '../newsletter/NewsletterForm.astro';
 interface Props {
   id?: string;
   variant?: 'compact' | 'inline';
-  // Liste d'inscription (config/newsletter.json) ; la liste générale par défaut.
+  // Liste d'inscription (config/newsletter.json) ; la première liste active par défaut.
   list?: string;
   // Emplacement enregistré avec le consentement (NewsletterForm) : fin d'article par défaut en ligne.
   placement?: 'article' | 'barre-laterale' | 'page';

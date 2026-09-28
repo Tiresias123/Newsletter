@@ -13,8 +13,8 @@ export type BlockResolvers = {
   // « hidden » : le contenu existe mais n'est pas publié (le lien ou l'infobulle ne s'affichera pas).
   state: (collection: Target, id: string) => 'visible' | 'hidden' | 'missing';
   partner: (id: string) => boolean;
-  // Liste d'inscription de config/newsletter.json.
-  newsletterList: (id: string) => boolean;
+  // Liste d'inscription de config/newsletter.json : active, désactivée ou absente.
+  newsletterList: (id: string) => 'active' | 'inactive' | 'missing';
   // Chemin relatif à content/images/.
   image: (src: string) => boolean;
 };
@@ -87,7 +87,9 @@ export function checkBlocks(body: string, resolve: BlockResolvers, options: { is
     if (use.name === 'Callout' && variant === 'pour-approfondir' && !href) add('la variante « pour-approfondir » exige un lien (href).');
     if (use.name === 'BlocPartenaire' && typeof id === 'string' && !resolve.partner(id)) add(`partenaire « ${id} » absent de config/ads.json.`);
     if (use.name === 'Image' && typeof src === 'string' && !resolve.image(src)) add(`image introuvable : content/images/${src}.`);
-    if (use.name === 'Newsletter' && typeof list === 'string' && !resolve.newsletterList(list)) add(`liste « ${list} » absente de config/newsletter.json.`);
+    const listState = use.name === 'Newsletter' && typeof list === 'string' ? resolve.newsletterList(list) : 'active';
+    if (listState === 'missing') add(`liste « ${list} » absente de config/newsletter.json.`);
+    else if (listState === 'inactive') add(`liste « ${list} » désactivée dans config/newsletter.json : les inscriptions y seraient refusées.`);
   }
   return problems;
 }

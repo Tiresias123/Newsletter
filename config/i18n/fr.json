@@ -381,7 +381,8 @@
     "colors": "Couleurs",
     "columns": "Colonnes",
     "communiqueFromOrganismeIsOfficial": "Communiqué d'un organisme réputé officiel",
-    "consent": "Consentement aux témoins",
+    "consent": "Texte de consentement",
+    "cookieConsent": "Consentement aux témoins",
     "consultation": "Consultation",
     "contactEmail": "Courriel de contact",
     "container": "Largeur de page (px)",
@@ -1529,9 +1530,8 @@
       "dataInventory": "Tableau de la politique de confidentialité (bloc « Renseignements recueillis ») : un traitement par ligne. À faire valider.",
       "dataInventory.data": "Renseignements personnels concernés, en langage courant.",
       "doubleOptInTemplateId": "Numéro du modèle de double consentement créé chez le fournisseur (Brevo : Modèles, modèle de type « double opt-in »).",
-      "confirmationUrl": "Page où le lien du courriel de confirmation renvoie le lecteur.",
       "lists.providerId": "Numéro de la liste chez le fournisseur (Brevo : Contacts, Listes).",
-      "consent.enabled": "Demande l'accord du lecteur avant de charger la mesure d'audience. Inutile tant qu'aucun service ne dépose de témoin (Umami n'en dépose pas) : à activer seulement si un service tiers en posait un jour."
+      "cookieConsent.enabled": "Demande l'accord du lecteur avant de charger la mesure d'audience. Inutile tant qu'aucun service ne dépose de témoin (Umami n'en dépose pas) : à activer seulement si un service tiers en posait un jour."
     },
     "messages": {
       "url": "Adresse web invalide : elle commence par https://.",

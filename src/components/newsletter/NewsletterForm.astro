@@ -21,9 +21,11 @@ interface Props {
 }
 
 const PLACEMENTS: Record<NonNullable<Props['variant']>, Placement> = { band: 'accueil', compact: 'barre-laterale', inline: 'article', page: 'page' };
-const { id, variant = 'inline', inverse = false, list = 'generale' } = Astro.props;
+const { id, variant = 'inline', inverse = false } = Astro.props;
 const placement = Astro.props.placement ?? PLACEMENTS[variant];
 const { newsletter, site, services } = getConfig();
+// Sans liste précisée : la première liste active (le Worker refuse une liste désactivée).
+const list = Astro.props.list ?? newsletter.lists.find((l) => l.enabled)?.id ?? '';
 const texts = newsletter.texts;
 const consent = frenchTypography(interpolate(texts.consent, { site: site.name }));
 const version = consentVersion(`${consent} ${texts.privacyLinkLabel}`);

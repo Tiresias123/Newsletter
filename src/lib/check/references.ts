@@ -34,7 +34,10 @@ export function checkBodiesAndLinks({ graph, config, entries, shown, add, root }
       return !entry ? 'missing' : entry.visibility.visible ? 'visible' : 'hidden';
     },
     partner: (id: string) => config.ads.partners.some((p) => p.id === id),
-    newsletterList: (id: string) => config.newsletter.lists.some((l) => l.id === id),
+    newsletterList: (id: string) => {
+      const list = config.newsletter.lists.find((l) => l.id === id);
+      return list ? (list.enabled ? 'active' : 'inactive') : 'missing';
+    },
     image: (src: string) => {
       const file = resolve(imagesDir, src);
       usedImages.add(file);

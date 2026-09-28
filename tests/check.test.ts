@@ -77,6 +77,20 @@ describe('check sur des jeux d’essai', () => {
     expect(config.every((p) => p.severity === 'avertissement')).toBe(true);
   });
 
+  it('ignore les marqueurs des textes jamais affichés : bandeau de consentement et formulaire de contact désactivés', async () => {
+    fixture = createFixture();
+    const base = testConfig();
+    const fields = async (services: Partial<typeof base.services>) => {
+      const config = { ...base, site: { ...base.site, url: 'https://www.site.test' }, services: { ...base.services, ...services } };
+      const result = await runCheck({ root: fixture?.root ?? '', now: NOW, config });
+      return result.problems.filter((p) => p.rule === 'marqueur' && p.file === 'config/i18n/fr.json').map((p) => `${p.severity} ${p.field}`);
+    };
+    const off = await fields({ contact: { enabled: false, senderEmail: '', senderName: '' }, cookieConsent: { enabled: false } });
+    expect(off.some((f) => f.includes('consentBanner') || f.includes('contactForm'))).toBe(false);
+    const on = await fields({ contact: { enabled: true, senderEmail: '', senderName: '' }, cookieConsent: { enabled: true }, analytics: { ...base.services.analytics, enabled: true, websiteId: 'abc' } });
+    expect(on.filter((f) => f.includes('consentBanner') || f.includes('contactForm')).map((f) => f.split(' ')[0])).toEqual(['bloquant', 'bloquant']);
+  });
+
   it('situe les blocs mal formés à leur ligne dans le fichier', async () => {
     const problems = await check((f) => f.mdx('content/articles/essai.mdx', articleData(PUBLISHED), 'Intro.\n\n<Encadre>x</Encadre>\n'));
     const lines = readFileSync(join(fixture?.root ?? '', 'content/articles/essai.mdx'), 'utf8').split('\n');

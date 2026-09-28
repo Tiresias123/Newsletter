@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { buildGraph, countWords } from '../src/lib/content/graph.ts';
 import { loadContent } from '../src/lib/check/load.ts';
+import { getConfig } from '../src/lib/config/index.ts';
 import { articleData, createFixture, NOW, testConfig, type Fixture } from './helpers/fixture.ts';
 
 let fixture: Fixture;
@@ -20,6 +21,22 @@ describe('graphe de contenu', () => {
   it('signale une relation vers un contenu inexistant', () => {
     const graph = graphOf((f) => f.mdx('content/articles/essai.mdx', articleData({ themes: ['inconnu'] })));
     expect(graph.problems).toMatchObject([{ rule: 'relation', severity: 'bloquant', message: expect.stringContaining('« inconnu »') }]);
+  });
+
+  it('refuse une section d’inscription reliée à une liste absente ou désactivée', () => {
+    fixture = createFixture();
+    const content = loadContent(fixture.root);
+    const base = testConfig();
+    const cta = getConfig().homepage.sections.find((s) => s.type === 'newsletter-cta');
+    if (!cta) throw new Error('section « newsletter-cta » attendue dans config/homepage.json');
+    const newsletter = { ...base.newsletter, lists: [{ id: 'generale', label: 'Générale', enabled: true }, { id: 'pause', label: 'En pause', enabled: false }] };
+    const messages = (list: string, enabled = true) =>
+      buildGraph(content.raw, { ...base, newsletter, homepage: { ...base.homepage, sections: [{ ...cta, list, enabled }] } }, { now: NOW, includeDrafts: false, timezone: 'America/Toronto' }).problems.map((p) => `${p.severity} ${p.message}`);
+    expect(messages('generale')).toEqual([]);
+    expect(messages('inconnue')).toEqual([expect.stringMatching(/^bloquant .*n'existe pas/)]);
+    expect(messages('pause')).toEqual([expect.stringMatching(/^bloquant .*désactivée/)]);
+    // Section masquée : rien n'est envoyé.
+    expect(messages('pause', false)).toEqual([]);
   });
 
   it('applique les exigences d’une catégorie vérifiée dès la publication', () => {

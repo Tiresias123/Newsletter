@@ -32,7 +32,7 @@ describe('blocs riches', () => {
     state: (collection: 'lexique' | 'dossiers' | 'auteurs', id: string) =>
       collection === 'lexique' && id === 'staking' ? ('visible' as const) : id === 'brouillon' ? ('hidden' as const) : ('missing' as const),
     partner: (id: string) => id === 'partenaire',
-    newsletterList: (id: string) => id === 'generale',
+    newsletterList: (id: string) => (id === 'generale' ? ('active' as const) : id === 'pause' ? ('inactive' as const) : ('missing' as const)),
     image: (src: string) => src === 'ok.webp',
   };
   const problems = (body: string) => checkBlocks(body, resolvers).map((p) => `${p.line} ${p.message}`);
@@ -82,6 +82,7 @@ describe('blocs riches', () => {
     expect(problems('<BlocPartenaire id="autre" />')[0]).toContain('absent de config/ads.json');
     expect(checkBlocks('<Newsletter list="autre" />', resolvers, { isPage: true }).map((p) => p.message)).toEqual(['bloc Newsletter : liste « autre » absente de config/newsletter.json.']);
     expect(checkBlocks('<Newsletter list="generale" />', resolvers, { isPage: true })).toEqual([]);
+    expect(checkBlocks('<Newsletter list="pause" />', resolvers, { isPage: true }).map((p) => p.message)).toEqual(['bloc Newsletter : liste « pause » désactivée dans config/newsletter.json : les inscriptions y seraient refusées.']);
   });
 });
 

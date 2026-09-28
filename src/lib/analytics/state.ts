@@ -5,7 +5,7 @@ import { getConfig } from '../config/index.ts';
 import { isPreview } from '../content/astro.ts';
 
 export function analyticsState(): { active: boolean; consentRequired: boolean } {
-  const { analytics, consent } = getConfig().services;
+  const { analytics, cookieConsent } = getConfig().services;
   const active = !isPreview() && analytics.enabled && Boolean(analytics.websiteId);
-  return { active, consentRequired: active && consent.enabled };
+  return { active, consentRequired: active && cookieConsent.enabled };
 }

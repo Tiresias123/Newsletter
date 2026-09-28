@@ -12,7 +12,7 @@
   "contact": {
     "enabled": false
   },
-  "consent": {
+  "cookieConsent": {
     "enabled": false
   }
 }

@@ -84,7 +84,8 @@ export const singletons = {
       doubleOptIn: fields.ignored(),
       unsubscribeUrl: f.text('unsubscribeUrl', undefined, { required: true }),
       doubleOptInTemplateId: f.integer('doubleOptInTemplateId', undefined, { min: 1 }),
-      confirmationUrl: f.link('confirmationUrl'),
+      // Seule /newsletter/confirmation/ affiche la confirmation (src/pages/newsletter/confirmation.astro).
+      confirmationUrl: fields.ignored(),
       lists: fields.array(
         fields.object({
           id: f.text('id', undefined, { required: true }),
@@ -239,7 +240,7 @@ export const singletons = {
         { enabled: f.checkbox('enabled', false, 'contact'), senderEmail: f.text('senderEmail', 'contact'), senderName: f.text('senderName', 'contact') },
         labelled('contact'),
       ),
-      consent: fields.object({ enabled: f.checkbox('enabled', false, 'consent') }, labelled('consent')),
+      cookieConsent: fields.object({ enabled: f.checkbox('enabled', false, 'cookieConsent') }, labelled('cookieConsent')),
     },
   }),
   messages: singleton({ label: configLabel('messages'), path: 'config/i18n/fr', format: json, schema: interfaceTextsSchema() }),
