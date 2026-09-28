@@ -22,9 +22,11 @@ interface Props {
   // « plain » : sans cadre (rangées d'une liste), « card » : carte bordée.
   surface?: 'card' | 'plain';
   inverse?: boolean;
+  // Image la plus grande du haut de page (plus grand élément affiché) : demandée en priorité.
+  priority?: boolean;
 }
 
-const { card, variant = 'medium', level = 3, surface = 'card', inverse = false } = Astro.props;
+const { card, variant = 'medium', level = 3, surface = 'card', inverse = false, priority = false } = Astro.props;
 const Heading = `h${level}` as const;
 const withImage = variant !== 'compact';
 const withDek = variant === 'featured' || variant === 'large';
@@ -77,7 +79,8 @@ const horizontal = variant === 'horizontal';
             widths={IMAGE_WIDTHS[variant]}
             sizes={IMAGE_SIZES[variant]}
             class="aspect-[2/1] w-full object-cover"
-            loading={variant === 'featured' ? 'eager' : 'lazy'}
+            loading={priority || variant === 'featured' ? 'eager' : 'lazy'}
+            fetchpriority={priority ? 'high' : undefined}
           />
         ) : (
           <GeneratedCover category={horizontal ? undefined : card.category} />
