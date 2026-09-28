@@ -9,9 +9,21 @@
       "url": "https://api.io.canada.ca/io-server/gc/news/fr/v2?dept=departmentfinance&sort=publishedDate&orderBy=desc&pick=50&format=atom",
       "format": "atom",
       "language": "fr",
-      "keywords": [],
-      "enabled": false,
-      "note": "Centre des nouvelles de Canada.ca. À tester en accès direct en phase 4. [À VÉRIFIER]"
+      "keywords": [
+        "crypto",
+        "actif numérique",
+        "monnaie numérique",
+        "monnaie stable",
+        "jeton stable",
+        "stablecoin",
+        "chaîne de blocs",
+        "blockchain",
+        "blanchiment",
+        "paiement de détail"
+      ],
+      "staleDays": 30,
+      "enabled": true,
+      "note": "Lu avec succès le 28 septembre 2026 (diagnostic depuis GitHub Actions). Toutes les nouvelles du ministère : les mots-clés ne gardent que les sujets du site. Mots-clés proposés, à ajuster [À VALIDER PAR L'AUTEUR]."
     },
     {
       "id": "arc",
@@ -21,9 +33,20 @@
       "url": "https://api.io.canada.ca/io-server/gc/news/fr/v2?dept=revenueagency&sort=publishedDate&orderBy=desc&pick=50&format=atom",
       "format": "atom",
       "language": "fr",
-      "keywords": [],
-      "enabled": false,
-      "note": "Adresse construite sur le modèle du ministère des Finances. À tester en phase 4. [À VÉRIFIER]"
+      "keywords": [
+        "crypto",
+        "actif numérique",
+        "monnaie numérique",
+        "monnaie stable",
+        "jeton stable",
+        "stablecoin",
+        "chaîne de blocs",
+        "blockchain",
+        "jeton non fongible"
+      ],
+      "staleDays": 90,
+      "enabled": true,
+      "note": "Lu avec succès le 28 septembre 2026 (diagnostic depuis GitHub Actions). Publications espacées (parfois deux mois sans nouvelle) : seuil d'alerte de 90 jours. Mots-clés proposés, à ajuster [À VALIDER PAR L'AUTEUR]."
     },
     {
       "id": "canafe",
@@ -35,7 +58,7 @@
       "language": "fr",
       "keywords": [],
       "enabled": false,
-      "note": "Le Centre des nouvelles pourrait être incomplet : comparer avec la page de nouvelles de CANAFE en phase 4. [À VÉRIFIER]"
+      "note": "Lu le 28 septembre 2026, mais le Centre des nouvelles n'a plus rien publié pour CANAFE depuis janvier 2023 : suivre la page de nouvelles de CANAFE (abonnement par courriel)."
     },
     {
       "id": "banque-du-canada",
@@ -45,9 +68,21 @@
       "url": "https://www.banqueducanada.ca/content_type/communiques/feed/",
       "format": "rss",
       "language": "fr",
-      "keywords": [],
-      "enabled": false,
-      "note": "Fil des communiqués (page officielle des fils RSS). À tester en phase 4. [À VÉRIFIER]"
+      "keywords": [
+        "crypto",
+        "actif numérique",
+        "monnaie numérique",
+        "monnaie stable",
+        "jeton stable",
+        "stablecoin",
+        "chaîne de blocs",
+        "blockchain",
+        "paiement de détail",
+        "service de paiement"
+      ],
+      "staleDays": 45,
+      "enabled": true,
+      "note": "Lu avec succès le 28 septembre 2026 (diagnostic depuis GitHub Actions). Fil des communiqués. Mots-clés proposés, à ajuster [À VALIDER PAR L'AUTEUR]."
     },
     {
       "id": "gazette-canada-partie-1",
@@ -59,7 +94,7 @@
       "language": "fr",
       "keywords": [],
       "enabled": false,
-      "note": "Un élément du fil correspond à un numéro de la Gazette, pas à un règlement. À tester en phase 4. [À VÉRIFIER]"
+      "note": "Lu avec succès le 28 septembre 2026, mais chaque élément est un numéro entier de la Gazette, avec un résumé générique : aucun mot-clé ne peut isoler un règlement. Activé sans mots-clés, il annoncerait chaque numéro (un par semaine). [À VALIDER PAR L'AUTEUR]"
     },
     {
       "id": "gazette-canada-partie-2",
@@ -71,7 +106,7 @@
       "language": "fr",
       "keywords": [],
       "enabled": false,
-      "note": "Règlements publiés. À tester en phase 4. [À VÉRIFIER]"
+      "note": "Lu avec succès le 28 septembre 2026, mais chaque élément est un numéro entier (toutes les deux semaines), avec un résumé générique : même choix que pour la Partie I. [À VALIDER PAR L'AUTEUR]"
     },
     {
       "id": "revenu-quebec-nouvelles-fiscales",
@@ -83,7 +118,7 @@
       "language": "fr",
       "keywords": [],
       "enabled": false,
-      "note": "Revenu Québec a annoncé l'abandon de ses fils RSS : prévoir l'abonnement par courriel. [À VÉRIFIER]"
+      "note": "Refusé au robot (HTTP 403) le 28 septembre 2026, et Revenu Québec a annoncé l'abandon de ses fils : abonnement par courriel."
     },
     {
       "id": "legisinfo",
@@ -95,12 +130,21 @@
       "language": "fr",
       "keywords": [
         "crypto",
-        "stablecoin",
         "actif numérique",
-        "digital asset"
+        "monnaie numérique",
+        "monnaie stable",
+        "jeton stable",
+        "stablecoin",
+        "chaîne de blocs",
+        "blockchain",
+        "blanchiment",
+        "recyclage des produits de la criminalité",
+        "paiement de détail",
+        "dispositions du budget"
       ],
-      "enabled": false,
-      "note": "Adresse française à l'essai (l'anglaise, https://www.parl.ca/legisinfo/en/bills/rss, a été lue le 28 septembre 2026). [À VÉRIFIER]"
+      "staleDays": 90,
+      "enabled": true,
+      "note": "Lu avec succès le 28 septembre 2026 (diagnostic depuis GitHub Actions). Fil français (titres en français; les liens mènent aux pages anglaises de LEGISinfo). Un élément par projet de loi, daté de sa dernière étape. Pause parlementaire l'été : seuil d'alerte de 90 jours. Mots-clés proposés, à ajuster [À VALIDER PAR L'AUTEUR]."
     },
     {
       "id": "amf",
