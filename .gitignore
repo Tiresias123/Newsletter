@@ -11,3 +11,5 @@ dist/
 *.log
 docs/A-VERIFIER.md
 exports/
+test-results/
+playwright-report/

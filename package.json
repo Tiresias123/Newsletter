@@ -18,8 +18,10 @@
     "content:format": "node scripts/content-format.ts",
     "veille:fetch": "node scripts/veille-fetch.ts",
     "surveillance": "node scripts/surveillance.ts",
+    "worker:size": "node scripts/worker-size.ts",
     "typecheck": "astro check",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "astro": "astro"
   },
   "dependencies": {
@@ -47,10 +49,12 @@
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
+    "@playwright/test": "1.63.0",
     "@types/js-yaml": "4.0.9",
     "@types/node": "24.13.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "axe-core": "4.13.0",
     "pagefind": "1.5.2",
     "typescript": "6.0.3",
     "vitest": "5.0.2",

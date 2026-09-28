@@ -1,0 +1,61 @@
+# Intégration continue (brief, phase 5 ; ARCHITECTURE 15.7) : à chaque envoi qui touche le site, et à la
+# demande, les contrôles exigés avant un commit (CLAUDE.md), la taille du Worker et les parcours de fumée.
+# Dépôt privé : une dizaine de minutes par exécution, sur les 2 000 minutes gratuites par mois.
+name: ci
+
+on:
+  push:
+    # Documentation et cache de la veille : rien à vérifier qui change le site (le cache est relu par la
+    # construction de Cloudflare, qui échouerait de toute façon).
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - 'data/veille/cache.json'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un nouvel envoi sur la même branche remplace la vérification en cours.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verification:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Historique complet : le rapport date la dernière modification de chaque contenu.
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Types
+        run: npm run typecheck
+      - name: Tests
+        run: npm test
+      - name: Format de l'éditeur
+        run: npm run content:format -- --verifier
+      - name: Construction de production
+        run: npm run build
+      - name: Taille du Worker
+        run: npm run worker:size
+      - name: Navigateur des parcours
+        run: npx playwright install --with-deps chromium
+      - name: Parcours de fumée
+        run: npm run test:e2e
+      - name: Rapport des parcours
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rapport-playwright
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
