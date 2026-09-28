@@ -4,15 +4,21 @@ import { z } from '../zod.ts';
 import { formatProblems, problemsFromZod } from '../errors.ts';
 import { calendarDate } from './fields.ts';
 
-const cell = z.union([z.string(), z.number()]).transform(String);
+// Cellule : texte ou nombre ; l'éditeur enregistre une cellule vide comme null.
+const cell = z.union([z.string(), z.number(), z.null()]).transform((value) => (value === null ? '' : String(value)));
+// Montant : l'éditeur l'enregistre en texte (« -6000 »), car il ne relit pas un nombre négatif.
+const amount = z.union([
+  z.number(),
+  z.string().regex(/^-?\d+(?:\.\d+)?$/, { error: 'Montant invalide : chiffres seulement, avec un signe moins et un point décimal au besoin (ex. -2500.5).' }).transform(Number),
+]);
 
 export const blockSchemas = {
   exempleChiffre: z.strictObject({
-    rows: z.array(z.strictObject({ label: z.string().min(1), amount: z.number() })).min(1),
-    total: z.strictObject({ label: z.string().min(1), amount: z.number() }),
+    rows: z.array(z.strictObject({ label: z.string().min(1), amount })).min(1),
+    total: z.strictObject({ label: z.string().min(1), amount }),
   }),
   chronologie: z.array(z.strictObject({ date: calendarDate(), title: z.string().min(1), description: z.string().default(''), url: z.string().optional() })).min(1),
-  table: z.strictObject({ columns: z.array(z.string()).min(1), rows: z.array(z.array(cell)).min(1) }),
+  table: z.strictObject({ columns: z.array(cell).min(1), rows: z.array(z.array(cell)).min(1) }),
   faq: z.array(z.strictObject({ question: z.string().min(1), answer: z.string().min(1) })).min(1),
   ids: z.array(z.string().min(1)),
 };

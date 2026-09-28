@@ -13,7 +13,9 @@ interface Props {
 
 const { ids, jurisdiction, type } = Astro.props;
 const graph = await getGraph();
-const items = reusableSources(graph, { ids: ids === undefined ? undefined : parseBlock('ListeSources', blockSchemas.ids, ids), jurisdiction, type });
+// Une liste vide (« ids={[]} », que l'éditeur écrit toujours) vaut « pas de sélection » : toutes les sources filtrées.
+const chosen = ids === undefined ? [] : parseBlock('ListeSources', blockSchemas.ids, ids);
+const items = reusableSources(graph, { ids: chosen.length > 0 ? chosen : undefined, jurisdiction: jurisdiction || undefined, type: type || undefined });
 ---
 
 <div class="my-8"><SourceList items={items} /></div>
