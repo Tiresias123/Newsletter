@@ -18,20 +18,37 @@ declare global {
 }
 
 const SCRIPT = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onTurnstileReady';
+// Délais : chargement du script, jeton d'une vérification invisible, défi interactif résolu par le lecteur.
+const LOAD_WAIT_MS = 15_000;
 const TOKEN_WAIT_MS = 20_000;
+const CHALLENGE_WAIT_MS = 120_000;
 // Largeur minimale du widget en taille « flexible »; en deçà (petits écrans), taille compacte.
 const FLEXIBLE_MIN_WIDTH = 300;
 let loading: Promise<Turnstile> | undefined;
 
+// Script chargé une seule fois; bloqué ou sans réponse, échec au bout de 15 secondes, et nouvel essai possible.
 function loadTurnstile(): Promise<Turnstile> {
-  loading ??= new Promise((resolve, reject) => {
-    window.onTurnstileReady = () => (window.turnstile ? resolve(window.turnstile) : reject(new Error('turnstile')));
+  if (window.turnstile) return Promise.resolve(window.turnstile);
+  loading ??= new Promise<Turnstile>((resolve, reject) => {
+    const fail = () => {
+      clearTimeout(timer);
+      loading = undefined;
+      reject(new Error('turnstile'));
+    };
+    const timer = setTimeout(fail, LOAD_WAIT_MS);
+    window.onTurnstileReady = () => {
+      clearTimeout(timer);
+      if (window.turnstile) resolve(window.turnstile);
+      else fail();
+    };
+    // Script déjà demandé par un essai trop lent : on attend encore sa réponse, sans le redemander.
+    if (document.querySelector(`script[src="${SCRIPT}"]`)) return;
     const script = document.createElement('script');
     script.src = SCRIPT;
     script.async = true;
     script.onerror = () => {
-      loading = undefined;
-      reject(new Error('turnstile'));
+      script.remove();
+      fail();
     };
     document.head.append(script);
   });
@@ -57,6 +74,8 @@ function enhanceForm(form: HTMLFormElement): void {
   let widget: string | undefined;
   let token: string | undefined;
   let waiting: ((value: string) => void) | undefined;
+  // Défi interactif à l'écran : le lecteur a besoin de temps pour le résoudre.
+  let interactive = false;
 
   const say = (text: string, tone: 'info' | 'success' | 'error') => {
     if (!status) return;
@@ -83,7 +102,11 @@ function enhanceForm(form: HTMLFormElement): void {
         token = value;
         waiting?.(value);
       },
-      'before-interactive-callback': () => say(messages.challenge, 'info'),
+      'before-interactive-callback': () => {
+        interactive = true;
+        say(messages.challenge, 'info');
+      },
+      'after-interactive-callback': () => (interactive = false),
       'expired-callback': () => (token = undefined),
       // Erreur prise en charge (message affiché) : rien de plus dans la console.
       'error-callback': () => {
@@ -94,17 +117,27 @@ function enhanceForm(form: HTMLFormElement): void {
     });
   };
 
-  // Sans clé de site (Turnstile pas encore configuré), pas de jeton : le Worker refusera l'envoi.
+  // Sans clé de site (Turnstile pas encore configuré), pas de jeton : le Worker refusera l'envoi. Sinon, attente
+  // du jeton : 20 secondes, ou deux minutes si un défi interactif est à l'écran.
   const getToken = () =>
     token || !siteKey
       ? Promise.resolve(token ?? '')
       : new Promise<string>((resolve, reject) => {
-          waiting = resolve;
-          setTimeout(() => reject(new VerificationError()), TOKEN_WAIT_MS);
+          const started = Date.now();
+          let timer: ReturnType<typeof setTimeout>;
+          const check = () => {
+            if (Date.now() - started < (interactive ? CHALLENGE_WAIT_MS : TOKEN_WAIT_MS)) timer = setTimeout(check, 1000);
+            else reject(new VerificationError());
+          };
+          timer = setTimeout(check, 1000);
+          waiting = (value) => {
+            clearTimeout(timer);
+            resolve(value);
+          };
         });
 
-  // Premier contact avec le formulaire : champ qui prend le focus, ou clic direct sur le bouton après un
-  // remplissage automatique (Safari ne donne pas le focus au bouton cliqué).
+  // Premier contact avec le formulaire : champ qui prend le focus (clic ou tabulation), ou clic direct sur le
+  // bouton après un remplissage automatique (Safari ne donne pas le focus au bouton cliqué).
   const start = () => void prepare().catch(() => say(messages.verification, 'error'));
   form.addEventListener('focusin', start, { once: true });
   button?.addEventListener('pointerdown', start, { once: true });
@@ -114,12 +147,15 @@ function enhanceForm(form: HTMLFormElement): void {
     if (button) button.disabled = true;
     form.setAttribute('aria-busy', 'true');
     say(messages.sending, 'info');
+    // Jeton transmis au Worker : consommé, qu'il soit accepté ou non.
+    let used = false;
     try {
       await prepare().catch(() => {
         throw new VerificationError();
       });
       const data = new FormData(form);
       data.set('cf-turnstile-response', await getToken());
+      used = true;
       const response = await fetch(form.action, { method: 'POST', body: data, headers: { accept: 'application/json' } });
       const result = (await response.json().catch(() => ({}))) as { ok?: boolean; error?: string };
       if (result.ok) {
@@ -133,9 +169,11 @@ function enhanceForm(form: HTMLFormElement): void {
     } catch (error) {
       say(error instanceof VerificationError ? messages.verification : messages.network, 'error');
     } finally {
-      // Un jeton ne sert qu'une fois : nouveau défi pour un nouvel envoi.
-      token = undefined;
-      if (widget !== undefined) window.turnstile?.reset(widget);
+      // Un jeton ne sert qu'une fois : nouveau défi pour un nouvel envoi. Un défi encore en cours n'est pas relancé.
+      if (used) {
+        token = undefined;
+        if (widget !== undefined) window.turnstile?.reset(widget);
+      }
       if (button) button.disabled = false;
       form.removeAttribute('aria-busy');
     }

@@ -57,7 +57,7 @@ const messages = {
         </select>
       </div>
       <p class="hidden text-sm text-secondary" data-contact-page>
-        {t('contactForm.page')} : <span class="font-semibold" data-contact-page-value />
+        {t('contactForm.fieldLabel', { label: t('contactForm.page') })} <span class="font-semibold" data-contact-page-value />
       </p>
       <div class="space-y-1">
         <label for={`${id}-message`} class="block text-sm font-semibold">{t('contactForm.message')}</label>

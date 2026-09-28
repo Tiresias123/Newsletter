@@ -23,11 +23,13 @@ export class MemoryMailer implements Mailer {
 // Courriel reçu par l'auteur : répondre au message répond directement au lecteur.
 export function contactMail(message: ContactMessage, to: string, siteName: string): OutgoingMail {
   const topic = t(`contactForm.topics.${message.topic}`);
+  // Libellé suivi de sa valeur (typographie du libellé seulement : la valeur du lecteur reste telle quelle).
+  const field = (label: string, value: string) => `${t('contactForm.fieldLabel', { label })} ${value}`;
   const lines = [
-    `${t('contactForm.name')} : ${message.name}`,
-    `${t('contactForm.email')} : ${message.email}`,
-    `${t('contactForm.topic')} : ${topic}`,
-    ...(message.page ? [`${t('contactForm.page')} : ${message.page}`] : []),
+    field(t('contactForm.name'), message.name),
+    field(t('contactForm.email'), message.email),
+    field(t('contactForm.topic'), topic),
+    ...(message.page ? [field(t('contactForm.page'), message.page)] : []),
     '',
     message.message,
   ];
