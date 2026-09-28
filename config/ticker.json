@@ -3,9 +3,29 @@
   "provider": "coingecko",
   "currency": "cad",
   "assets": [
-    { "id": "bitcoin", "symbol": "BTC", "label": "Bitcoin", "enabled": true },
-    { "id": "ethereum", "symbol": "ETH", "label": "Ether", "enabled": true },
-    { "id": "solana", "symbol": "SOL", "label": "Solana", "enabled": true },
-    { "id": "ripple", "symbol": "XRP", "label": "XRP", "enabled": true }
+    {
+      "id": "bitcoin",
+      "symbol": "BTC",
+      "label": "Bitcoin",
+      "enabled": true
+    },
+    {
+      "id": "ethereum",
+      "symbol": "ETH",
+      "label": "Ether",
+      "enabled": true
+    },
+    {
+      "id": "solana",
+      "symbol": "SOL",
+      "label": "Solana",
+      "enabled": true
+    },
+    {
+      "id": "ripple",
+      "symbol": "XRP",
+      "label": "XRP",
+      "enabled": true
+    }
   ]
 }

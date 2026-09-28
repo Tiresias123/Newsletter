@@ -1,13 +1,8 @@
 {
   "title": "Loi de l'impôt sur le revenu",
   "sourceType": "legislation",
-  "issuer": "parlement-canada",
-  "issuerLabel": "",
-  "jurisdiction": "canada",
   "url": "https://laws-lois.justice.gc.ca/fra/lois/I-3.3/",
-  "archivedUrl": "",
-  "documentDate": "",
-  "accessedDate": "",
-  "documentNumber": "",
+  "issuer": "parlement-canada",
+  "jurisdiction": "canada",
   "citation": "L.R.C. (1985), ch. 1 (5e suppl.) [À VÉRIFIER]"
 }

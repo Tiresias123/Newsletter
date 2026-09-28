@@ -8,12 +8,39 @@
       "enabled": true,
       "openInNewTab": false,
       "highlight": false,
-      "badge": "",
       "children": [
-        { "label": "Canada", "url": "/juridictions/canada/#actualites", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
-        { "label": "Québec", "url": "/juridictions/quebec/#actualites", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
-        { "label": "États-Unis", "url": "/juridictions/etats-unis/#actualites", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
-        { "label": "International", "url": "/juridictions/international/#actualites", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" }
+        {
+          "label": "Canada",
+          "url": "/juridictions/canada/#actualites",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        },
+        {
+          "label": "Québec",
+          "url": "/juridictions/quebec/#actualites",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        },
+        {
+          "label": "États-Unis",
+          "url": "/juridictions/etats-unis/#actualites",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        },
+        {
+          "label": "International",
+          "url": "/juridictions/international/#actualites",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        }
       ]
     },
     {
@@ -24,12 +51,39 @@
       "enabled": true,
       "openInNewTab": false,
       "highlight": false,
-      "badge": "",
       "children": [
-        { "label": "Canada", "url": "/juridictions/canada/#reglementation", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
-        { "label": "Québec", "url": "/juridictions/quebec/#reglementation", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
-        { "label": "Provinces", "url": "/juridictions/#provincial", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
-        { "label": "International", "url": "/juridictions/international/#reglementation", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" }
+        {
+          "label": "Canada",
+          "url": "/juridictions/canada/#reglementation",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        },
+        {
+          "label": "Québec",
+          "url": "/juridictions/quebec/#reglementation",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        },
+        {
+          "label": "Provinces",
+          "url": "/juridictions/#provincial",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        },
+        {
+          "label": "International",
+          "url": "/juridictions/international/#reglementation",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        }
       ]
     },
     {
@@ -40,12 +94,39 @@
       "enabled": true,
       "openInNewTab": false,
       "highlight": false,
-      "badge": "",
       "children": [
-        { "label": "Particuliers", "url": "/fiscalite/traitements/#particulier", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
-        { "label": "Entreprises", "url": "/fiscalite/traitements/#societe", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
-        { "label": "DeFi et staking", "url": "/fiscalite/traitements/#staker", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" },
-        { "label": "Traitements fiscaux", "url": "/fiscalite/traitements/", "icon": "", "description": "", "enabled": true, "openInNewTab": false, "highlight": false, "badge": "" }
+        {
+          "label": "Particuliers",
+          "url": "/fiscalite/traitements/#particulier",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        },
+        {
+          "label": "Entreprises",
+          "url": "/fiscalite/traitements/#societe",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        },
+        {
+          "label": "DeFi et staking",
+          "url": "/fiscalite/traitements/#staker",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        },
+        {
+          "label": "Traitements fiscaux",
+          "url": "/fiscalite/traitements/",
+          "icon": "",
+          "enabled": true,
+          "openInNewTab": false,
+          "highlight": false
+        }
       ]
     },
     {
@@ -56,7 +137,6 @@
       "enabled": true,
       "openInNewTab": false,
       "highlight": false,
-      "badge": "",
       "children": []
     },
     {
@@ -67,7 +147,6 @@
       "enabled": true,
       "openInNewTab": false,
       "highlight": false,
-      "badge": "",
       "children": []
     },
     {
@@ -78,7 +157,6 @@
       "enabled": true,
       "openInNewTab": false,
       "highlight": false,
-      "badge": "",
       "children": []
     }
   ],
@@ -91,32 +169,96 @@
     {
       "title": "À propos",
       "links": [
-        { "label": "À propos", "url": "/a-propos/", "enabled": true },
-        { "label": "Méthodologie", "url": "/methodologie/", "enabled": true },
-        { "label": "Politique éditoriale", "url": "/politique-editoriale/", "enabled": true },
-        { "label": "Politique de correction", "url": "/politique-de-correction/", "enabled": true },
-        { "label": "Transparence", "url": "/transparence/", "enabled": true },
-        { "label": "Contact", "url": "/contact/", "enabled": true }
+        {
+          "label": "À propos",
+          "url": "/a-propos/",
+          "enabled": true
+        },
+        {
+          "label": "Méthodologie",
+          "url": "/methodologie/",
+          "enabled": true
+        },
+        {
+          "label": "Politique éditoriale",
+          "url": "/politique-editoriale/",
+          "enabled": true
+        },
+        {
+          "label": "Politique de correction",
+          "url": "/politique-de-correction/",
+          "enabled": true
+        },
+        {
+          "label": "Transparence",
+          "url": "/transparence/",
+          "enabled": true
+        },
+        {
+          "label": "Contact",
+          "url": "/contact/",
+          "enabled": true
+        }
       ]
     },
     {
       "title": "Ressources",
       "links": [
-        { "label": "Lexique", "url": "/lexique/", "enabled": true },
-        { "label": "Agenda", "url": "/agenda/", "enabled": true },
-        { "label": "Veille officielle", "url": "/veille/", "enabled": true },
-        { "label": "Juridictions", "url": "/juridictions/", "enabled": true },
-        { "label": "Textes officiels", "url": "/textes/", "enabled": true },
-        { "label": "Traitements fiscaux", "url": "/fiscalite/traitements/", "enabled": true }
+        {
+          "label": "Lexique",
+          "url": "/lexique/",
+          "enabled": true
+        },
+        {
+          "label": "Agenda",
+          "url": "/agenda/",
+          "enabled": true
+        },
+        {
+          "label": "Veille officielle",
+          "url": "/veille/",
+          "enabled": true
+        },
+        {
+          "label": "Juridictions",
+          "url": "/juridictions/",
+          "enabled": true
+        },
+        {
+          "label": "Textes officiels",
+          "url": "/textes/",
+          "enabled": true
+        },
+        {
+          "label": "Traitements fiscaux",
+          "url": "/fiscalite/traitements/",
+          "enabled": true
+        }
       ]
     },
     {
       "title": "Mentions légales",
       "links": [
-        { "label": "Mentions légales", "url": "/mentions-legales/", "enabled": true },
-        { "label": "Confidentialité", "url": "/confidentialite/", "enabled": true },
-        { "label": "Avertissement", "url": "/avertissement/", "enabled": true },
-        { "label": "Déclaration d'intérêts", "url": "/declaration-d-interets/", "enabled": true }
+        {
+          "label": "Mentions légales",
+          "url": "/mentions-legales/",
+          "enabled": true
+        },
+        {
+          "label": "Confidentialité",
+          "url": "/confidentialite/",
+          "enabled": true
+        },
+        {
+          "label": "Avertissement",
+          "url": "/avertissement/",
+          "enabled": true
+        },
+        {
+          "label": "Déclaration d'intérêts",
+          "url": "/declaration-d-interets/",
+          "enabled": true
+        }
       ]
     }
   ]

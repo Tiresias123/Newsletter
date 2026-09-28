@@ -63,85 +63,195 @@
   },
   "badgeStyles": {
     "plein-500": {
-      "light": { "bg": "brand.500", "fg": "white" },
-      "dark": { "bg": "brand.500", "fg": "white" },
+      "light": {
+        "bg": "brand.500",
+        "fg": "white"
+      },
+      "dark": {
+        "bg": "brand.500",
+        "fg": "white"
+      },
       "rule": "brand.500"
     },
     "plein-700": {
-      "light": { "bg": "brand.700", "fg": "white" },
-      "dark": { "bg": "brand.700", "fg": "brand.100" },
+      "light": {
+        "bg": "brand.700",
+        "fg": "white"
+      },
+      "dark": {
+        "bg": "brand.700",
+        "fg": "brand.100"
+      },
       "rule": "brand.700"
     },
     "plein-900": {
-      "light": { "bg": "brand.900", "fg": "white" },
-      "dark": { "bg": "brand.900", "fg": "brand.200" },
+      "light": {
+        "bg": "brand.900",
+        "fg": "white"
+      },
+      "dark": {
+        "bg": "brand.900",
+        "fg": "brand.200"
+      },
       "rule": "brand.900"
     },
     "doux-800": {
-      "light": { "bg": "brand.100", "fg": "brand.800" },
-      "dark": { "bg": "brand.800", "fg": "brand.100" },
+      "light": {
+        "bg": "brand.100",
+        "fg": "brand.800"
+      },
+      "dark": {
+        "bg": "brand.800",
+        "fg": "brand.100"
+      },
       "rule": "brand.800"
     },
     "doux-900": {
-      "light": { "bg": "brand.100", "fg": "brand.900" },
-      "dark": { "bg": "brand.900", "fg": "brand.200" },
+      "light": {
+        "bg": "brand.100",
+        "fg": "brand.900"
+      },
+      "dark": {
+        "bg": "brand.900",
+        "fg": "brand.200"
+      },
       "rule": "brand.900"
     },
     "clair-300": {
-      "light": { "bg": "brand.300", "fg": "brand.950" },
-      "dark": { "bg": "brand.300", "fg": "brand.950" },
+      "light": {
+        "bg": "brand.300",
+        "fg": "brand.950"
+      },
+      "dark": {
+        "bg": "brand.300",
+        "fg": "brand.950"
+      },
       "rule": "brand.400"
     },
     "ardoise": {
-      "light": { "bg": "neutral.slate100", "fg": "neutral.slate700" },
-      "dark": { "bg": "dark.border", "fg": "dark.textSecondary" },
+      "light": {
+        "bg": "neutral.slate100",
+        "fg": "neutral.slate700"
+      },
+      "dark": {
+        "bg": "dark.border",
+        "fg": "dark.textSecondary"
+      },
       "rule": "neutral.slate700"
     },
     "plein": {
-      "light": { "bg": "brand.600", "fg": "white" },
-      "dark": { "bg": "brand.600", "fg": "white" }
+      "light": {
+        "bg": "brand.600",
+        "fg": "white"
+      },
+      "dark": {
+        "bg": "brand.600",
+        "fg": "white"
+      }
     },
     "contour-point": {
-      "light": { "border": "brand.600", "fg": "brand.600", "dot": "brand.900" },
-      "dark": { "border": "dark.link", "fg": "dark.link", "dot": "brand.200" }
+      "light": {
+        "fg": "brand.600",
+        "border": "brand.600",
+        "dot": "brand.900"
+      },
+      "dark": {
+        "fg": "dark.link",
+        "border": "dark.link",
+        "dot": "brand.200"
+      }
     },
     "contour": {
-      "light": { "border": "neutral.slate500", "fg": "neutral.slate500" },
-      "dark": { "border": "dark.textSecondary", "fg": "dark.textSecondary" }
+      "light": {
+        "fg": "neutral.slate500",
+        "border": "neutral.slate500"
+      },
+      "dark": {
+        "fg": "dark.textSecondary",
+        "border": "dark.textSecondary"
+      }
     }
   },
   "statusStyles": {
     "projet": {
-      "light": { "border": "neutral.slate500", "fg": "neutral.slate500" },
-      "dark": { "border": "dark.textSecondary", "fg": "dark.textSecondary" }
+      "light": {
+        "fg": "neutral.slate500",
+        "border": "neutral.slate500"
+      },
+      "dark": {
+        "fg": "dark.textSecondary",
+        "border": "dark.textSecondary"
+      }
     },
     "consultation": {
-      "light": { "bg": "brand.100", "fg": "brand.800" },
-      "dark": { "bg": "brand.800", "fg": "brand.100" }
+      "light": {
+        "bg": "brand.100",
+        "fg": "brand.800"
+      },
+      "dark": {
+        "bg": "brand.800",
+        "fg": "brand.100"
+      }
     },
     "adopte": {
-      "light": { "bg": "brand.600", "fg": "white" },
-      "dark": { "bg": "brand.600", "fg": "white" }
+      "light": {
+        "bg": "brand.600",
+        "fg": "white"
+      },
+      "dark": {
+        "bg": "brand.600",
+        "fg": "white"
+      }
     },
     "en-vigueur": {
-      "light": { "bg": "semantic.successStrong", "fg": "white" },
-      "dark": { "bg": "semantic.successStrong", "fg": "white" }
+      "light": {
+        "bg": "semantic.successStrong",
+        "fg": "white"
+      },
+      "dark": {
+        "bg": "semantic.successStrong",
+        "fg": "white"
+      }
     },
     "partiellement-en-vigueur": {
-      "light": { "bg": "semantic.success50", "fg": "semantic.successStrong" },
-      "dark": { "bg": "dark.successBg", "fg": "dark.success" }
+      "light": {
+        "bg": "semantic.success50",
+        "fg": "semantic.successStrong"
+      },
+      "dark": {
+        "bg": "dark.successBg",
+        "fg": "dark.success"
+      }
     },
     "modifie": {
-      "light": { "bg": "brand.50", "fg": "brand.700" },
-      "dark": { "bg": "dark.infoBg", "fg": "brand.200" }
+      "light": {
+        "bg": "brand.50",
+        "fg": "brand.700"
+      },
+      "dark": {
+        "bg": "dark.infoBg",
+        "fg": "brand.200"
+      }
     },
     "abroge": {
-      "light": { "bg": "neutral.slate200", "fg": "neutral.slate700" },
-      "dark": { "bg": "dark.border", "fg": "dark.textSecondary" }
+      "light": {
+        "bg": "neutral.slate200",
+        "fg": "neutral.slate700"
+      },
+      "dark": {
+        "bg": "dark.border",
+        "fg": "dark.textSecondary"
+      }
     },
     "retire": {
-      "light": { "border": "neutral.slate400", "fg": "neutral.slate700" },
-      "dark": { "border": "dark.borderStrong", "fg": "dark.textSecondary" }
+      "light": {
+        "fg": "neutral.slate700",
+        "border": "neutral.slate400"
+      },
+      "dark": {
+        "fg": "dark.textSecondary",
+        "border": "dark.borderStrong"
+      }
     }
   },
   "fonts": {
@@ -150,7 +260,17 @@
     "legalSerif": true
   },
   "type": {
-    "scale": [12, 14, 16, 18, 20, 24, 30, 36, 48],
+    "scale": [
+      12,
+      14,
+      16,
+      18,
+      20,
+      24,
+      30,
+      36,
+      48
+    ],
     "articleBodyMobile": 17,
     "leading": {
       "heading": 1.15,

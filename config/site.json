@@ -5,15 +5,21 @@
   "url": "https://example.com",
   "locale": "fr-CA",
   "timezone": "America/Toronto",
-  "contactEmail": "",
-  "logo": {
-    "light": "",
-    "dark": ""
-  },
+  "logo": {},
   "socials": [
-    { "network": "linkedin", "url": "", "enabled": false },
-    { "network": "x", "url": "", "enabled": false },
-    { "network": "rss", "url": "/rss.xml", "enabled": true }
+    {
+      "network": "linkedin",
+      "enabled": false
+    },
+    {
+      "network": "x",
+      "enabled": false
+    },
+    {
+      "network": "rss",
+      "url": "/rss.xml",
+      "enabled": true
+    }
   ],
   "announcement": {
     "enabled": true,
@@ -21,6 +27,5 @@
     "linkLabel": "Voir les dossiers",
     "linkUrl": "/dossiers/"
   },
-  "dataHosting": "[À COMPLÉTER PAR L'AUTEUR]",
-  "copyrightHolder": ""
+  "dataHosting": "[À COMPLÉTER PAR L'AUTEUR]"
 }

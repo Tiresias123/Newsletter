@@ -1,11 +1,9 @@
 {
   "title": "[EXEMPLE] Échéance fiscale trimestrielle [À VÉRIFIER]",
-  "date": "2026-10-31",
-  "endDate": "",
-  "time": "",
   "type": "echeance-fiscale",
+  "date": "2026-10-31",
+  "time": "",
   "jurisdiction": "quebec",
-  "url": "",
   "description": "[À COMPLÉTER PAR L'AUTEUR]",
   "relatedDossier": "",
   "status": "brouillon"

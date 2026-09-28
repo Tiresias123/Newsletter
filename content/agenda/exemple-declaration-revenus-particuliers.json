@@ -1,11 +1,9 @@
 {
   "title": "[EXEMPLE] Date limite de production des déclarations de revenus des particuliers [À VÉRIFIER]",
-  "date": "2027-04-30",
-  "endDate": "",
-  "time": "",
   "type": "echeance-fiscale",
+  "date": "2027-04-30",
+  "time": "",
   "jurisdiction": "canada",
-  "url": "",
   "description": "[À COMPLÉTER PAR L'AUTEUR]",
   "relatedDossier": "fiscalite-cryptoactifs",
   "status": "brouillon"

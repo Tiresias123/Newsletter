@@ -1,13 +1,7 @@
 {
   "title": "[À VÉRIFIER] Page de l'ARC sur l'imposition des opérations en cryptoactifs",
   "sourceType": "doctrine-administrative",
-  "issuer": "arc",
-  "issuerLabel": "",
-  "jurisdiction": "canada",
   "url": "https://www.canada.ca/fr/agence-revenu.html",
-  "archivedUrl": "",
-  "documentDate": "",
-  "accessedDate": "",
-  "documentNumber": "",
-  "citation": ""
+  "issuer": "arc",
+  "jurisdiction": "canada"
 }

@@ -4,12 +4,11 @@
     {
       "id": "partenaire-exemple",
       "name": "[EXEMPLE] Partenaire",
-      "logo": "",
       "url": "https://example.com",
-      "campaign": "",
-      "startDate": "",
-      "endDate": "",
-      "placement": ["article", "home"],
+      "placement": [
+        "article",
+        "home"
+      ],
       "disclosure": "Publicité",
       "enabled": false
     }

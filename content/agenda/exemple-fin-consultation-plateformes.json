@@ -1,11 +1,9 @@
 {
   "title": "[EXEMPLE] Fin d'une consultation sur l'encadrement des plateformes [À VÉRIFIER]",
-  "date": "2026-10-15",
-  "endDate": "",
-  "time": "",
   "type": "consultation",
+  "date": "2026-10-15",
+  "time": "",
   "jurisdiction": "canada",
-  "url": "",
   "description": "[À COMPLÉTER PAR L'AUTEUR]",
   "relatedDossier": "plateformes-negociation-cryptoactifs",
   "status": "brouillon"
