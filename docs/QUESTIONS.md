@@ -215,7 +215,7 @@ Les pages de Brevo étaient inaccessibles depuis l'environnement de travail : l
 
 ### B2. Seuils de la limitation de débit
 
-5 envois par minute depuis un même appareil, et 5 par minute pour une même adresse courriel. Le mécanisme de Cloudflare est approximatif (chaque centre de données compte de son côté) et ne permet aucun quota horaire ou quotidien : c'est l'écart avec les points 8.5 et 8.8 du brief. Sa disponibilité en forfait gratuit sera constatée au premier déploiement; à défaut, Turnstile, le champ piège et le double consentement suffisent.
+5 envois par minute depuis une même adresse IP (tout un réseau derrière un même routeur ou un même opérateur mobile compte pour une), et, pour l'infolettre, 5 par minute pour une même adresse courriel. Le mécanisme de Cloudflare est approximatif (chaque centre de données compte de son côté) et ne permet aucun quota horaire ou quotidien : c'est l'écart avec les points 8.5 et 8.8 du brief. Sa disponibilité en forfait gratuit sera constatée au premier déploiement; à défaut, Turnstile, le champ piège et le double consentement suffisent.
 
 **Recommandation** : garder ces seuils. **Oui?**
 
@@ -254,3 +254,9 @@ Module livré, désactivé. CoinGecko exigerait la mention anglaise « Powered 
 Le site demande aux navigateurs de n'utiliser que HTTPS pendant un an (`Strict-Transport-Security: max-age=31536000`), sans préchargement ni sous-domaines, qui seraient quasi irréversibles.
 
 **Recommandation** : oui. **Oui?**
+
+### B9. Bandeau de consentement et localisation par adresse IP
+
+Le site n'affiche pas de bandeau, puisque la mesure d'audience ne dépose aucun témoin (brief, section 9). Mais Umami se sert de l'adresse IP du visiteur pour le situer (pays, région, ville), sans la conserver. Dire si cette localisation demande un avis ou un consentement préalable relève de la Loi 25 : ce n'est pas à moi de trancher [À VALIDER PAR L'AUTEUR]. Le bandeau existe, désactivé (**Réglages › Services › Consentement aux témoins**).
+
+**Recommandation** : faire valider la question; d'ici là, pas de bandeau, conformément au brief. **Oui?**
