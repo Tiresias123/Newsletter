@@ -26,7 +26,7 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'] } },
   ],
   webServer: {
-    command: 'node scripts/e2e-server.ts',
+    command: 'node scripts/trial-server.ts',
     url: `http://127.0.0.1:${E2E_PORT}/`,
     // Construction d'aperçu comprise.
     timeout: 600_000,

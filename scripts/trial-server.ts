@@ -1,6 +1,7 @@
-// Serveur des parcours de fumée (playwright.config.ts) : construction d'aperçu (tous les gabarits, formulaires
-// avec la clé Turnstile d'essai), puis le Worker et dist/ par wrangler dev, en mode d'essai (rien n'est envoyé,
-// aucun secret requis). E2E_SANS_BUILD=1 réutilise le dist/ existant. Écoute sur 127.0.0.1 seulement.
+// npm run trial : le site tel qu'en ligne, sur http://127.0.0.1:8791, pour un essai (guide, section 31) et pour
+// les parcours de fumée (playwright.config.ts). Construction d'aperçu (tous les gabarits, formulaires avec la
+// clé Turnstile d'essai), puis le Worker et dist/ par wrangler dev, en mode d'essai : rien n'est envoyé, aucun
+// secret n'est requis. E2E_SANS_BUILD=1 réutilise le dist/ existant. Écoute sur 127.0.0.1 seulement.
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
