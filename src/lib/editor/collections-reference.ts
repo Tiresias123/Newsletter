@@ -21,7 +21,7 @@ import * as f from './fields.ts';
 import { heading } from './heading.ts';
 import { image } from './images.ts';
 import type { CollectionName } from '../content/collections.ts';
-import { collectionLabel, editorText, labelled } from './labels.ts';
+import { collectionLabel, labelled } from './labels.ts';
 import messages from '../../../config/i18n/fr.json' with { type: 'json' };
 
 const mdx = { contentField: 'body' } as const;
@@ -182,7 +182,7 @@ export const referenceCollections = {
     columns: ['title', 'sourceType'],
     schema: {
       title: f.slugField('title'),
-      sourceType: f.choice('sourceType', 'sourceType', SOURCE_TYPE, 'gouvernement'),
+      sourceType: f.pick('sourceType', 'sourceType', SOURCE_TYPE),
       url: f.url('url', undefined, true),
       archivedUrl: f.url('archivedUrl'),
       issuer: f.relation('issuer', 'organismes'),
@@ -248,11 +248,7 @@ export const referenceCollections = {
       icon: f.icon(),
       order: f.integer('order', undefined, { defaultValue: 100 }),
       requireVerification: f.checkbox('requireVerification', false),
-      defaultDisclaimer: fields.select({
-        ...labelled('defaultDisclaimer'),
-        options: [{ label: editorText('valeurs', 'none'), value: '' }, ...legal.disclaimers.map((d) => ({ label: `${d.title} (${d.id})`, value: d.id }))],
-        defaultValue: '',
-      }),
+      defaultDisclaimer: f.disclaimer('defaultDisclaimer', legal.disclaimers),
     },
   }),
   themes: taxonomy('themes', 'themes', { group: f.select('group', 'themeGroup', THEME_GROUP, 'general') } as unknown as Record<string, ReturnType<typeof f.text>>),

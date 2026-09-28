@@ -2,7 +2,6 @@
 // { discriminant, value } comme le lit src/lib/config/schemas.ts. Un formulaire par type de section.
 import { fields } from '@keystatic/core';
 import ads from '../../../config/ads.json' with { type: 'json' };
-import newsletter from '../../../config/newsletter.json' with { type: 'json' };
 import * as f from './fields.ts';
 import { editorText, labelled } from './labels.ts';
 
@@ -40,7 +39,6 @@ const section = (type: string, schema: Record<string, unknown>) => ({
 });
 
 export function homepageSchema() {
-  const lists = newsletter.lists.map((l) => ({ label: l.label, value: l.id }));
   const partners = [{ label: editorText('valeurs', 'none'), value: '' }, ...ads.partners.map((p) => ({ label: p.name, value: p.id }))];
   return {
     sections: fields.blocks(
@@ -55,7 +53,7 @@ export function homepageSchema() {
         'market-brief': section('market-brief', {}),
         'trending-assets': section('trending-assets', { count: count(6) }),
         'most-read': section('most-read', { manualSelection: f.relations('manualSelection', 'articles'), count: count(5) }),
-        'newsletter-cta': section('newsletter-cta', { list: fields.select({ ...labelled('list'), options: lists, defaultValue: lists[0]?.value ?? 'generale' }) }),
+        'newsletter-cta': section('newsletter-cta', { list: f.newsletterList() }),
         'partner-block': section('partner-block', { partnerId: fields.select({ ...labelled('partnerId'), options: partners, defaultValue: '' }) }),
         'custom-html': section('custom-html', { content: f.text('content', 'custom-html', { multiline: true }) }),
       },

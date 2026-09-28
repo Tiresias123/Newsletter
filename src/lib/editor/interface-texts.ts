@@ -14,7 +14,10 @@ function schemaOf(tree: Tree): Schema {
   return Object.fromEntries(
     Object.entries(tree).map(([key, value]) => [
       key,
-      typeof value === 'string' ? fields.text({ label: key, multiline: value.length > 80 }) : fields.object(schemaOf(value), { label: key }),
+      // Texte obligatoire : vidé, il serait retiré du fichier et la page qui l'affiche ne se construirait plus.
+      typeof value === 'string'
+        ? fields.text({ label: key, multiline: value.length > 80, validation: { isRequired: true } })
+        : fields.object(schemaOf(value), { label: key }),
     ]),
   );
 }

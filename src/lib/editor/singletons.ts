@@ -86,6 +86,7 @@ export const singletons = {
       lists: fields.array(fields.object({ id: f.text('id', undefined, { required: true }), label: f.text('label', undefined, { required: true }), enabled: f.checkbox('enabled', false) }), {
         ...labelled('lists'),
         itemLabel: (props) => props.fields.label.value,
+        validation: { length: { min: 1 } },
       }),
       texts: fields.object(
         {
@@ -113,7 +114,7 @@ export const singletons = {
       privacyOfficer: fields.object({ name: f.text('name', 'privacyOfficer'), title: f.text('title', 'privacyOfficer'), email: f.text('email') }, labelled('privacyOfficer')),
       disclaimers: fields.array(
         fields.object({ id: f.text('id', undefined, { required: true }), title: f.text('title', undefined, { required: true }), text: f.text('text', 'disclaimers', { multiline: true, required: true }) }),
-        { ...labelled('disclaimers'), itemLabel: (props) => `${props.fields.title.value} (${props.fields.id.value})` },
+        { ...labelled('disclaimers'), itemLabel: (props) => `${props.fields.title.value} (${props.fields.id.value})`, validation: { length: { min: 1 } } },
       ),
       officialSourceTypes: fields.multiselect({ ...labelled('officialSourceTypes'), options: options('sourceType', SOURCE_TYPE) }),
       officialSourceTypesValidated: f.checkbox('officialSourceTypesValidated', false),
@@ -174,7 +175,7 @@ export const singletons = {
     schema: {
       redirects: fields.array(
         // Code en nombre (301 ou 302) : une liste de Keystatic n'enregistre que du texte, que Zod refuserait.
-        fields.object({ from: f.text('from', undefined, { required: true }), to: f.link('to'), status: f.integer('status', 'redirects', { defaultValue: 301, min: 301, max: 302 }) }),
+        fields.object({ from: f.text('from', undefined, { required: true }), to: f.link('to'), status: f.integer('redirectStatus', 'redirects', { defaultValue: 301, min: 301, max: 302 }) }),
         { ...labelled('redirects'), itemLabel: (props) => `${props.fields.from.value} → ${props.fields.to.value}` },
       ),
     },

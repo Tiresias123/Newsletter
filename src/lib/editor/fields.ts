@@ -3,6 +3,7 @@
 // préviennent l'auteur dès la saisie. Constats de l'étude de Keystatic 0.6.9 (ARCHITECTURE, section 4.3) :
 // une date, un nombre ou une adresse vides sont omis du fichier ; une liste facultative a une option vide.
 import { fields } from '@keystatic/core';
+import newsletter from '../../../config/newsletter.json' with { type: 'json' };
 import { HALF_HOURS } from '../dates.ts';
 import { formatTime } from '../format.ts';
 import { ICON_NAMES } from '../icons.ts';
@@ -90,6 +91,23 @@ export const textList = (key: string, scope?: string, length?: Length) =>
     validation: length ? { length } : undefined,
   });
 
+// Liste fermée sans valeur proposée : l'auteur doit choisir (« À choisir » est refusé par npm run check).
+// Pour le type d'une source : un type officiel proposé d'office satisferait à tort la règle de la source officielle.
+export const pick = (key: string, group: Parameters<typeof options>[0], values: readonly string[], scope?: string) =>
+  fields.select({ ...labelled(key, scope), options: [{ label: editorText('valeurs', 'choose'), value: '' }, ...options(group, values)], defaultValue: '' });
+
+// Avertissement : vide, celui par défaut (de la catégorie, sinon le général) ; « aucun », pas d'avertissement.
+export const disclaimer = (key: string, ids: readonly { id: string; title: string }[]) =>
+  fields.select({
+    ...labelled(key),
+    options: [
+      { label: editorText('valeurs', 'disclaimer.default'), value: '' },
+      { label: editorText('valeurs', 'disclaimer.none'), value: 'aucun' },
+      ...ids.filter((d) => d.id !== 'aucun').map((d) => ({ label: `${d.title} (${d.id})`, value: d.id })),
+    ],
+    defaultValue: '',
+  });
+
 export const status = (scope?: string) => choice('status', 'status', PUBLICATION_STATUS, 'brouillon', scope);
 export const reviewEvery = () => choice('reviewEvery', 'reviewEvery', REVIEW_EVERY, 'aucun');
 
@@ -98,6 +116,14 @@ const halfHours = HALF_HOURS.map((value) => ({ label: formatTime(value), value }
 export const publishedTime = () => fields.select({ ...labelled('publishedTime'), options: halfHours, defaultValue: '08:00' });
 export const optionalTime = (key: string, scope?: string) =>
   fields.select({ ...labelled(key, scope), options: [{ label: editorText('valeurs', 'noTime'), value: '' }, ...halfHours], defaultValue: '' });
+
+// Liste de diffusion de config/newsletter.json, la première par défaut : jamais un identifiant écrit en dur,
+// qu'un renommage dans les réglages rendrait invalide (l'éditeur ne se chargerait plus).
+export function newsletterList(key = 'list', scope?: string) {
+  const lists = newsletter.lists.map((l) => ({ label: l.label, value: l.id }));
+  const first = lists[0];
+  return first ? fields.select({ ...labelled(key, scope), options: lists, defaultValue: first.value }) : text(key, scope, { required: true });
+}
 
 export const icon = () => selectField('icon', undefined, ICON_NAMES.map((value) => ({ label: value, value })), undefined);
 
@@ -139,7 +165,7 @@ export const sources = (key = 'sources') =>
         schema: fields.object({
           label: text('label', undefined, { required: true }),
           url: url('url', undefined, true),
-          type: choice('sourceType', 'sourceType', SOURCE_TYPE, 'gouvernement'),
+          type: pick('sourceType', 'sourceType', SOURCE_TYPE),
           date: date('documentDate'),
           archivedUrl: url('archivedUrl'),
         }),

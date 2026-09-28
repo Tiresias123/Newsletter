@@ -38,9 +38,12 @@ export function editor(): AstroIntegration {
     hooks: {
       'astro:config:setup': ({ command, config, logger, updateConfig }) => {
         if (command !== 'dev') return;
-        // L'éditeur écrit dans content/ et config/ sans authentification : jamais sur un serveur ouvert au réseau.
-        if (config.server.host && !['127.0.0.1', 'localhost', '::1'].includes(String(config.server.host))) {
-          logger.warn("Éditeur désactivé : le serveur est ouvert au réseau (option --host). Relancez « npm run dev » sans --host pour utiliser /keystatic.");
+        // L'éditeur écrit dans content/ et config/ sans authentification : jamais sur un serveur ouvert au réseau
+        // (--host), ni joignable sous un autre nom que l'adresse locale (--allowedHosts, pour un tunnel par exemple).
+        const { host, allowedHosts } = config.server as { host?: string | boolean; allowedHosts?: string[] | true };
+        const exposed = (host && !['127.0.0.1', 'localhost', '::1'].includes(String(host))) || allowedHosts === true || (Array.isArray(allowedHosts) && allowedHosts.length > 0);
+        if (exposed) {
+          logger.warn("Éditeur désactivé : le serveur est ouvert au réseau (option --host ou --allowedHosts). Relancez « npm run dev » sans ces options pour utiliser /keystatic.");
           return;
         }
         // Astro exécute ensuite les intégrations ajoutées ici, dans l'ordre.

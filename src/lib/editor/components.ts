@@ -4,18 +4,20 @@ import { fields } from '@keystatic/core';
 import { block, inline, mark, wrapper } from '@keystatic/core/content-components';
 import { createElement } from 'react';
 import ads from '../../../config/ads.json' with { type: 'json' };
-import newsletter from '../../../config/newsletter.json' with { type: 'json' };
 import { CALLOUT_VARIANTS } from '../content/blocks.ts';
 import { SOURCE_TYPE } from '../content/enums.ts';
 import messages from '../../../config/i18n/fr.json' with { type: 'json' };
 import { frenchTypography } from '../typo.ts';
 import type { CollectionName } from '../content/collections.ts';
+import { newsletterList } from './fields.ts';
 import { bodyImage } from './images.ts';
 import { editorText, label, labelled, options } from './labels.ts';
 
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const AMOUNT = /^-?\d+(?:\.\d+)?$/;
 const DIGITS = /^\d*$/;
+// Listes d'un bloc : au moins un élément, comme au rendu (content/block-props.ts).
+const AT_LEAST_ONE = { length: { min: 1 } };
 
 // Icônes de la barre d'outils (tracés de Lucide, licence ISC), dessinées sans dépendance.
 const icon = (...paths: string[]) =>
@@ -32,10 +34,11 @@ const cell = () => fields.text({ label: label('text') });
 
 const table = (name: string) => ({
   caption: prop(name, 'caption', { required: true }),
-  columns: fields.array(cell(), { ...labelled('columns', name), itemLabel: (p) => p.value }),
+  columns: fields.array(cell(), { ...labelled('columns', name), itemLabel: (p) => p.value, validation: AT_LEAST_ONE }),
   rows: fields.array(fields.array(cell(), { label: label('cells'), itemLabel: (p) => p.value }), {
     ...labelled('rows', name),
     itemLabel: (p) => p.elements.map((c) => c.value).join(' · '),
+    validation: AT_LEAST_ONE,
   }),
 });
 
@@ -71,7 +74,7 @@ export function bodyComponents(collection: CollectionName) {
       label: blockLabel('ExempleChiffre'),
       schema: {
         title: prop('ExempleChiffre', 'title'),
-        rows: fields.array(amountRow('ExempleChiffre'), { ...labelled('rows', 'ExempleChiffre'), itemLabel: (p) => p.fields.label.value }),
+        rows: fields.array(amountRow('ExempleChiffre'), { ...labelled('rows', 'ExempleChiffre'), itemLabel: (p) => p.fields.label.value, validation: AT_LEAST_ONE }),
         total: amountRow('ExempleChiffre'),
       },
     }),
@@ -85,7 +88,7 @@ export function bodyComponents(collection: CollectionName) {
             description: prop('Chronologie', 'description', { multiline: true }),
             url: prop('Chronologie', 'url'),
           }),
-          { ...labelled('items', 'Chronologie'), itemLabel: (p) => `${p.fields.date.value ?? ''} ${p.fields.title.value}` },
+          { ...labelled('items', 'Chronologie'), itemLabel: (p) => `${p.fields.date.value ?? ''} ${p.fields.title.value}`, validation: AT_LEAST_ONE },
         ),
       },
     }),
@@ -128,6 +131,7 @@ export function bodyComponents(collection: CollectionName) {
         items: fields.array(fields.object({ question: prop('FAQ', 'question', { required: true }), answer: prop('FAQ', 'answer', { multiline: true, required: true }) }), {
           ...labelled('items', 'FAQ'),
           itemLabel: (p) => p.fields.question.value,
+          validation: AT_LEAST_ONE,
         }),
       },
     }),
@@ -146,7 +150,6 @@ export function bodyComponents(collection: CollectionName) {
 
 // Blocs de page (content/pages/), en plus des blocs du corps.
 export function pageComponents() {
-  const lists = newsletter.lists.map((l) => ({ label: l.label, value: l.id }));
   return {
     ...bodyComponents('pages'),
     Hero: wrapper({ label: blockLabel('Hero'), schema: { title: prop('Hero', 'title', { required: true }), ctaLabel: prop('Hero', 'ctaLabel'), ctaUrl: prop('Hero', 'ctaUrl') } }),
@@ -163,7 +166,7 @@ export function pageComponents() {
       },
     }),
     CarteAuteur: block({ label: blockLabel('CarteAuteur'), schema: { id: fields.relationship({ label: label('author'), collection: 'auteurs', validation: { isRequired: true } }) } }),
-    Newsletter: block({ label: blockLabel('Newsletter'), schema: { list: fields.select({ ...labelled('list', 'Newsletter'), options: lists, defaultValue: lists[0]?.value ?? 'generale' }) } }),
+    Newsletter: block({ label: blockLabel('Newsletter'), schema: { list: newsletterList('list', 'Newsletter') } }),
     ListeSources: block({
       label: blockLabel('ListeSources'),
       schema: {

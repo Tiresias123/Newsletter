@@ -619,7 +619,8 @@
     "warningBg": "Alerte, fond",
     "warningStrong": "Alerte, appuyé",
     "website": "Site officiel",
-    "whoIsAffected": "Personnes visées"
+    "whoIsAffected": "Personnes visées",
+    "redirectStatus": "Code de redirection"
   },
   "forms": {
     "honeypot": "Laissez ce champ vide",
@@ -1244,7 +1245,12 @@
         "list": "Liste"
       },
       "noTime": "Sans heure",
-      "none": "Aucun"
+      "none": "Aucun",
+      "choose": "À choisir",
+      "disclaimer": {
+        "default": "Par défaut",
+        "none": "Aucun"
+      }
     },
     "aide": {
       "title": "Titre affiché sur la page et dans les listes.",
@@ -1282,8 +1288,8 @@
       "reviewedBy": "Nom de la personne qui a relu le contenu, s'il y a lieu.",
       "corrections": "Chaque note, datée, s'affiche sous le titre.",
       "note": "Ce qui a été corrigé, en une ou deux phrases.",
-      "disclaimerVariant": "Avertissement affiché en fin de contenu. Vide : celui de la catégorie.",
-      "defaultDisclaimer": "Avertissement des contenus de la catégorie, sauf choix contraire dans le contenu.",
+      "disclaimerVariant": "Avertissement affiché en fin de contenu. Par défaut : celui de la catégorie (l'avertissement réglementaire pour un dossier). Aucun : pas d'avertissement.",
+      "defaultDisclaimer": "Avertissement des contenus de la catégorie, sauf choix contraire dans le contenu. Par défaut : l'avertissement général. Aucun : pas d'avertissement.",
       "sources": "Source réutilisable (collection « Sources ») ou source ponctuelle. En réglementation et en fiscalité, au moins une source officielle.",
       "source": "Choisissez une source de la collection « Sources ».",
       "relatedDossiers": "Le bloc « Cette réglementation » reprend le statut et les dates du premier dossier.",
@@ -1350,7 +1356,7 @@
       "seeAlso": "Termes voisins du lexique.",
       "officialSources": "Sources officielles de la définition.",
       "synonyms": "Autres façons de dire, une par ligne.",
-      "sourceType": "Nature de la source : les types officiels sont listés dans les réglages juridiques.",
+      "sourceType": "Nature de la source : les types officiels sont listés dans les réglages juridiques. À choisir : le rapport « À vérifier » bloque la publication tant qu'aucun type n'est choisi.",
       "issuerLabel": "Si l'émetteur n'est pas dans la collection « Organismes ».",
       "url": "Adresse complète (https://…).",
       "documentDate": "Date du document.",
@@ -1417,7 +1423,7 @@
       "officialSourceTypes": "Types de sources qui comptent comme officielles pour la règle « au moins une source officielle ».",
       "veilleSources.sources": "Flux des autorités relevés automatiquement (phase 4).",
       "partners.name": "Nom du partenaire, affiché avec la mention « Publicité ».",
-      "redirects.status": "301 : déplacement définitif (le cas normal); 302 : temporaire.",
+      "redirects.redirectStatus": "301 : déplacement définitif (le cas normal); 302 : temporaire.",
       "ticker.enabled": "Affiche le bandeau des cours au-dessus de l'en-tête.",
       "ticker.id": "Identifiant de l'actif chez CoinGecko, par exemple « bitcoin ».",
       "organismes.logo": "Le site n'affiche pas de logo d'organisme : la vignette reprend le sigle.",

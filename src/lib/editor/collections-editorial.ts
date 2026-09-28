@@ -3,7 +3,6 @@
 import { collection, fields } from '@keystatic/core';
 import ads from '../../../config/ads.json' with { type: 'json' };
 import legal from '../../../config/legal.json' with { type: 'json' };
-import newsletter from '../../../config/newsletter.json' with { type: 'json' };
 import { AUDIENCE, GUIDE_LEVEL, LEGAL_STATUS, NEWSLETTER_STATUS, WHO_IS_AFFECTED } from '../content/enums.ts';
 import { bodyComponents, pageComponents } from './components.ts';
 import * as f from './fields.ts';
@@ -16,12 +15,7 @@ export const MDX_OPTIONS = { image: false, heading: [2, 3] } as const;
 export const body = (collection: CollectionName) => fields.mdx({ label: label('body'), components: bodyComponents(collection), options: MDX_OPTIONS });
 const pageBody = () => fields.mdx({ label: label('body'), components: pageComponents(), options: MDX_OPTIONS });
 
-const disclaimers = () =>
-  fields.select({
-    ...labelled('disclaimerVariant'),
-    options: [{ label: editorText('valeurs', 'none'), value: '' }, ...legal.disclaimers.map((d) => ({ label: `${d.title} (${d.id})`, value: d.id }))],
-    defaultValue: '',
-  });
+const disclaimers = () => f.disclaimer('disclaimerVariant', legal.disclaimers);
 
 export const cover = (collection: CollectionName) =>
   fields.object(
@@ -80,8 +74,8 @@ function articleSchema(scope: 'articles' | 'guides', extra: Record<string, Retur
     relatedOrganismes: f.relations('relatedOrganismes', 'organismes', scope),
     relatedTraitements: f.relations('relatedTraitements', 'traitements', scope),
     relatedArticles: f.relations('relatedArticles', 'articles', scope),
-    _infolettre: heading('infolettre'),
-    newsletterEligible: f.checkbox('newsletterEligible', true, scope),
+    // Seuls les articles entrent dans l'infolettre : la case reste invisible sur les guides.
+    ...(scope === 'guides' ? { newsletterEligible: fields.ignored() } : { _infolettre: heading('infolettre'), newsletterEligible: f.checkbox('newsletterEligible', true, scope) }),
     _referencement: heading('referencement'),
     seo: seo(scope),
     ...f.reserved(),
@@ -215,7 +209,7 @@ export const editorialCollections = {
       issueNumber: f.integer('issueNumber', undefined, { min: 1, required: true }),
       status: f.select('status', 'newsletterStatus', NEWSLETTER_STATUS, 'brouillon', 'newsletters'),
       sentAt: f.date('sentAt'),
-      list: fields.select({ ...labelled('list'), options: newsletter.lists.map((l) => ({ label: l.label, value: l.id })), defaultValue: 'generale' }),
+      list: f.newsletterList(),
       providerId: f.text('providerId'),
       sponsor: fields.select({
         ...labelled('sponsor'),
