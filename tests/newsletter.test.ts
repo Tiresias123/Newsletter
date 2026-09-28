@@ -104,3 +104,15 @@ describe('courriel', () => {
     expect(text).toContain('Un titre d’article de test assez long');
   });
 });
+
+describe('version du texte de consentement', () => {
+  it('porte sur le texte affiché : nom du site, typographie et libellé du lien de confidentialité', async () => {
+    const { consentVersion, displayedConsent } = await import('../src/lib/newsletter/consent.ts');
+    const texts = { consent: "J'accepte de recevoir l'infolettre de {site} : un numéro par semaine.", privacyLinkLabel: 'Politique de confidentialité' };
+    const shown = displayedConsent(texts, 'Mon site');
+    expect(shown.text).toBe("J'accepte de recevoir l'infolettre de Mon site : un numéro par semaine.");
+    expect(shown.version).toBe(consentVersion(`${shown.text} ${texts.privacyLinkLabel}`));
+    // Renommer le site change la version, sans modification de config/newsletter.json.
+    expect(displayedConsent(texts, 'Autre nom').version).not.toBe(shown.version);
+  });
+});

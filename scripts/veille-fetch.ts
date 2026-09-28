@@ -6,6 +6,7 @@
 //   --source <id> : une seule source.
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { PLACEHOLDER_URL } from '../src/lib/check/context.ts';
 import { getConfig } from '../src/lib/config/index.ts';
 import { veilleCacheSchema, type VeilleCache } from '../src/lib/content/veille.ts';
 import { createCollector, ROBOT } from '../src/lib/veille/collect.ts';
@@ -21,8 +22,10 @@ const only = args.includes('--source') ? args[args.indexOf('--source') + 1] : un
 
 const config = getConfig();
 const { timezone } = config.site;
-// Robot identifié, avec une adresse de contact (bonne conduite, ARCHITECTURE section 14).
-const AGENT = `${ROBOT}/1.0 (+${config.site.url.replace(/\/$/, '')}/a-propos/${config.site.contactEmail ? `; ${config.site.contactEmail}` : ''})`;
+// Robot identifié (bonne conduite, ARCHITECTURE section 14) : adresse du site une fois celui-ci en ligne, et
+// courriel de contact de l'identité du site (le rapport « À vérifier » le demande).
+const contact = [config.site.url !== PLACEHOLDER_URL ? `+${config.site.url.replace(/\/$/, '')}/` : '', config.site.contactEmail ?? ''].filter(Boolean).join('; ');
+const AGENT = `${ROBOT}/1.0${contact ? ` (${contact})` : ''}`;
 const collect = createCollector({ agent: AGENT, timeoutMs: TIMEOUT_MS, timeZone: timezone });
 
 function readCache(): VeilleCache {

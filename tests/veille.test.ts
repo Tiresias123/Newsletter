@@ -314,6 +314,7 @@ describe('santé des sources dans le rapport', () => {
     });
     const config = {
       ...base,
+      site: { ...base.site, contactEmail: 'contact@site.test' },
       veilleSources: {
         retentionMonths: 12,
         sources: [
@@ -352,6 +353,10 @@ describe('santé des sources dans le rapport', () => {
       '["sources",7] veille avertissement figee',
       '["sources",8] veille information sansdate',
     ]);
+    // Sans courriel de contact, le robot s'annoncerait sans moyen de joindre l'auteur.
+    const anonymous: string[] = [];
+    checkVeille({ config: { ...config, site: { ...config.site, contactEmail: '' } }, add: (file, where) => anonymous.push(`${file} ${JSON.stringify(where)}`) }, now, { health: {}, items: [] });
+    expect(anonymous[0]).toBe('config/site.json ["contactEmail"]');
   });
 
   it('signale une tâche « veille » qui ne passe plus (désactivée ou suspendue)', async () => {

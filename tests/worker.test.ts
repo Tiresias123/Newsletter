@@ -216,6 +216,9 @@ describe('formulaire de contact', () => {
     expect(await status(message(), baseEnv())).toBe(503);
     errors.mockRestore();
     expect(mailer.sent).toHaveLength(0);
+    // Essai en mémoire : aucun envoi réel, aucune adresse de réception exigée.
+    expect(await status(message(), baseEnv({ MEMORY_SERVICES: 'true' }))).toBe(200);
+    expect(mailer.sent[0]?.to).toBe('essai@exemple.invalid');
   });
 
   it('envoie par l’API transactionnelle de Brevo', async () => {

@@ -4,7 +4,7 @@ import { CONFIG_FILES, validateConfig, type SiteConfig } from '../config/index.t
 import { COLLECTION_NAMES } from '../content/collections.ts';
 import type { CitedSource } from '../content/fields.ts';
 import { buildGraph, type Entry, type Graph, type GraphProblem, type Severity } from '../content/graph.ts';
-import { veilleItems } from '../content/veille.ts';
+import { veilleHealth, veilleItems } from '../content/veille.ts';
 import { describePath } from '../errors.ts';
 import { formatNumber } from '../format.ts';
 import { t } from '../i18n.ts';
@@ -155,6 +155,10 @@ function checkLaunch({ config, add }: Context) {
   }
   const veille = config.homepage.sections.findIndex((s) => s.type === 'veille-latest' && s.enabled);
   if (veille >= 0 && veilleItems().length === 0) {
-    add(CONFIG_FILES.homepage, ['sections', veille], "Section « veille » activée, mais le cache est vide : elle reste masquée jusqu'à la première collecte (tâche « veille » ou npm run veille:fetch).", 'lancement', 'information');
+    const message =
+      Object.keys(veilleHealth()).length === 0
+        ? "Section « veille » activée, mais rien n'a encore été collecté : elle reste masquée jusqu'à la première collecte (tâche « veille » ou npm run veille:fetch)."
+        : "Section « veille » activée, mais aucune publication n'est retenue pour l'instant : elle reste masquée jusqu'à la première publication qui passe les mots-clés des sources.";
+    add(CONFIG_FILES.homepage, ['sections', veille], message, 'lancement', 'information');
   }
 }

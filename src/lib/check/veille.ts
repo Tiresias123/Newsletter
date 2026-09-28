@@ -31,6 +31,10 @@ export function checkVeille({ config, add }: Pick<Context, 'config' | 'add'>, no
   const file = CONFIG_FILES.veilleSources;
   const today = calendarDateInZone(now, config.site.timezone);
   checkLastRun(add, lastRun, now, config.site.timezone);
+  // Le robot s'annonce aux sites officiels avec le courriel de contact (bonne conduite).
+  if (!config.site.contactEmail && config.veilleSources.sources.some((s) => s.enabled && s.url)) {
+    add(CONFIG_FILES.site, ['contactEmail'], "Courriel de contact à saisir : le robot de la veille s'annonce aux sites officiels sans moyen de vous joindre.", 'veille', 'avertissement');
+  }
   config.veilleSources.sources.forEach((source, i) => {
     if (!source.enabled) return;
     const where = ['sources', i];

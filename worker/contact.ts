@@ -32,7 +32,8 @@ export async function handleContact(request: Request, env: Env, mailer: Mailer |
   if (form.fields.site_web) return ok();
   const fields = validate(form.fields, RULES);
   if (!fields) return fail(400, 'invalide');
-  const to = env.CONTACT_TO || site.contactEmail;
+  // En mémoire (essai local, aperçus), rien ne part : l'adresse de réception n'est pas exigée (domaine réservé).
+  const to = env.CONTACT_TO || site.contactEmail || (env.MEMORY_SERVICES === 'true' ? 'essai@exemple.invalid' : undefined);
   const salt = env.IP_HASH_SALT;
   if (!mailer || !to || !salt) {
     console.error('contact : service d’envoi, adresse de réception ou sel absents de la configuration du Worker');

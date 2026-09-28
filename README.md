@@ -6,7 +6,7 @@ Site statique construit avec [Astro](https://astro.build) : le contenu est réd
 
 ## Démarrer
 
-Prérequis : Node.js 24 (voir `.nvmrc`; Node 22.12 au minimum).
+Prérequis : Node.js 24 (voir `.nvmrc`; Node 22.18 au minimum, pour les scripts écrits en TypeScript).
 
 ```sh
 npm install
@@ -23,6 +23,7 @@ npm run dev      # site local sur http://127.0.0.1:4321, brouillons visibles
 | `npm run preview` | sert `dist/` en local |
 | `npm run new:article -- "Titre"` | crée un article en brouillon, prérempli (`-- "Titre" --guide` pour un guide : options après `--`) |
 | `npm run newsletter:draft` | prépare le prochain numéro de l'infolettre; avec `-- --html`, produit le courriel dans `exports/infolettre/` |
+| `npm run consent:version` | version du texte de consentement de l'infolettre et texte exact qu'elle désigne |
 | `npm run content:format` | remet les fichiers de `content/` et `config/` au format de l'éditeur (`-- --verifier` : contrôle sans écrire) |
 | `npm run veille:fetch` | relève les publications des sources de la veille officielle (`-- --diagnostic` : essai sans écrire) |
 | `npm run surveillance` | vérifie que le site en ligne est à jour |
@@ -50,7 +51,7 @@ config/      réglages du site, menus, accueil, thème, textes de l'interface
 data/        données produites par des scripts (cache de la veille)
 src/         code du site (composants, gabarits, bibliothèques)
 worker/      Worker Cloudflare : formulaires (/api/newsletter, /api/contact) et tâche planifiée
-scripts/     commandes (check, contrôles après le build, new:article, newsletter:draft, content:format, veille:fetch, surveillance)
+scripts/     commandes (check, contrôles après le build, new:article, newsletter:draft, consent:version, content:format, veille:fetch, surveillance)
 .github/     tâches GitHub Actions (veille officielle, surveillance, rapport hebdomadaire)
 exports/     courriels de l'infolettre produits en local (non versionné)
 tests/       tests automatiques
