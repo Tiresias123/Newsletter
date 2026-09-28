@@ -161,6 +161,8 @@ export const tickerSchema = z.strictObject({
 export const newsletterConfigSchema = z.strictObject({
   provider: z.enum(['brevo', 'cyberimpact', 'test']),
   doubleOptIn: z.literal(true, { error: 'Le double consentement (double opt-in) est obligatoire.' }),
+  // Lien de désabonnement du courriel : balise que le fournisseur remplace à l'envoi (« {{ unsubscribe }} » chez Brevo).
+  unsubscribeUrl: z.string().min(1),
   lists: z.array(z.strictObject({ id: slug(), label: z.string().min(1), enabled: z.boolean() })).min(1),
   texts: z.strictObject({
     title: z.string().min(1),

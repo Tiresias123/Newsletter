@@ -1,10 +1,23 @@
 {
   "provider": "brevo",
   "doubleOptIn": true,
+  "unsubscribeUrl": "{{ unsubscribe }}",
   "lists": [
-    { "id": "generale", "label": "Infolettre hebdomadaire", "enabled": true },
-    { "id": "reglementation", "label": "Réglementation", "enabled": false },
-    { "id": "fiscalite", "label": "Fiscalité", "enabled": false }
+    {
+      "id": "generale",
+      "label": "Infolettre hebdomadaire",
+      "enabled": true
+    },
+    {
+      "id": "reglementation",
+      "label": "Réglementation",
+      "enabled": false
+    },
+    {
+      "id": "fiscalite",
+      "label": "Fiscalité",
+      "enabled": false
+    }
   ],
   "texts": {
     "title": "L'essentiel de la réglementation des cryptoactifs, chaque semaine",
