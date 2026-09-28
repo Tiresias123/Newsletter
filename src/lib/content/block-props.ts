@@ -7,10 +7,8 @@ import { calendarDate } from './fields.ts';
 // Cellule : texte ou nombre ; l'éditeur enregistre une cellule vide comme null.
 const cell = z.union([z.string(), z.number(), z.null()]).transform((value) => (value === null ? '' : String(value)));
 // Montant : l'éditeur l'enregistre en texte (« -6000 »), car il ne relit pas un nombre négatif.
-const amount = z.union([
-  z.number(),
-  z.string().regex(/^-?\d+(?:\.\d+)?$/, { error: 'Montant invalide : chiffres seulement, avec un signe moins et un point décimal au besoin (ex. -2500.5).' }).transform(Number),
-]);
+const AMOUNT_ERROR = 'Montant invalide : chiffres seulement, avec un signe moins et un point décimal au besoin (ex. -2500.5).';
+const amount = z.union([z.number(), z.string().regex(/^-?\d+(?:\.\d+)?$/).transform(Number)], { error: AMOUNT_ERROR });
 
 export const blockSchemas = {
   exempleChiffre: z.strictObject({

@@ -1,6 +1,7 @@
 // Contrat des blocs utilisables dans le corps MDX (brief 6.14 et 6.15, ARCHITECTURE 7.15) : nom du composant,
 // propriétés attendues, valeurs permises. Le script check refuse tout écart ; les composants
 // (src/components/mdx/) et l'éditeur (src/lib/editor/components.ts) suivent ce même contrat.
+import { SOURCE_TYPE } from './enums.ts';
 
 export const CALLOUT_VARIANTS = [
   'important',
@@ -65,11 +66,34 @@ export const BLOCKS: Record<string, BlockSpec> = {
   },
   CarteAuteur: { props: { id: { required: true, references: 'auteurs' } }, children: 'none', pageOnly: true },
   Newsletter: { props: { list: {} }, children: 'none', pageOnly: true },
-  ListeSources: { props: { ids: { expression: true }, jurisdiction: {}, type: {} }, children: 'none', pageOnly: true },
+  // Type vide : aucun filtre (l'éditeur écrit type="").
+  ListeSources: { props: { ids: { expression: true }, jurisdiction: {}, type: { values: ['', ...SOURCE_TYPE] } }, children: 'none', pageOnly: true },
   Tableau: { props: table, children: 'none', pageOnly: true },
 };
 
-export type BlockUse = { name: string; props: Record<string, string | { expression: string }>; selfClosing: boolean; line: number };
+// start et end : position de la balise ouvrante dans le corps ; bare : attributs écrits sans valeur (« title »).
+export type BlockUse = {
+  name: string;
+  props: Record<string, string | { expression: string }>;
+  selfClosing: boolean;
+  line: number;
+  start: number;
+  end: number;
+  bare: string[];
+};
+
+// Fin d'une expression entre accolades commençant à `start`, textes entre guillemets compris.
+function expressionEnd(text: string, start: number): number {
+  let depth = 0;
+  for (let i = start; i < text.length; i += 1) {
+    const c = text[i];
+    if (c === '"' || c === "'" || c === '`') {
+      for (i += 1; i < text.length && text[i] !== c; i += 1) if (text[i] === '\\') i += 1;
+    } else if (c === '{') depth += 1;
+    else if (c === '}' && --depth === 0) return i;
+  }
+  return text.length;
+}
 
 // Remplace le code (blocs et extraits) par des blancs : on n'y cherche ni blocs ni liens,
 // et les numéros de ligne restent justes.
@@ -86,6 +110,7 @@ export function findBlocks(body: string): BlockUse[] {
   for (let match = tag.exec(text); match; match = tag.exec(text)) {
     let i = match.index + match[0].length;
     const props: BlockUse['props'] = {};
+    const bare: string[] = [];
     let selfClosing = false;
     while (i < text.length) {
       const rest = text.slice(i);
@@ -108,26 +133,24 @@ export function findBlocks(body: string): BlockUse[] {
       i += name[0].length;
       if (text[i] !== '=') {
         props[name[1] as string] = 'true';
+        bare.push(name[1] as string);
         continue;
       }
       i += 1;
       const quote = text[i];
       if (quote === '"' || quote === "'") {
         const end = text.indexOf(quote, i + 1);
+        if (end < 0) break;
         props[name[1] as string] = text.slice(i + 1, end);
         i = end + 1;
       } else if (quote === '{') {
-        let depth = 0;
         const start = i;
-        for (; i < text.length; i += 1) {
-          if (text[i] === '{') depth += 1;
-          else if (text[i] === '}' && --depth === 0) break;
-        }
+        i = expressionEnd(text, start);
         props[name[1] as string] = { expression: text.slice(start + 1, i) };
         i += 1;
-      }
+      } else break;
     }
-    uses.push({ name: match[1] as string, props, selfClosing, line: text.slice(0, match.index).split('\n').length });
+    uses.push({ name: match[1] as string, props, selfClosing, line: text.slice(0, match.index).split('\n').length, start: match.index, end: Math.min(i, text.length), bare });
   }
   return uses;
 }

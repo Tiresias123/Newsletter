@@ -1,6 +1,10 @@
 // Contrôle des blocs d'un corps MDX contre leur contrat (content/blocks.ts) : nom connu, propriétés permises
 // et obligatoires, valeurs et formes, références, contenu attendu, blocs de page hors des pages.
+import { blockSchemas } from '../content/block-props.ts';
 import { BLOCKS, findBlocks } from '../content/blocks.ts';
+import { describePath } from '../errors.ts';
+import type { z } from '../zod.ts';
+import { parseLiteral } from './literal.ts';
 import { findMarkers } from './markers.ts';
 
 type Target = 'lexique' | 'dossiers' | 'auteurs';
@@ -19,6 +23,31 @@ export type BlockResolvers = {
 export type BlockProblem = { line: number; message: string; warning?: boolean };
 
 const TARGETS: Record<Target, string> = { lexique: 'le lexique', dossiers: 'les dossiers', auteurs: 'les auteurs' };
+
+// Propriétés en expression validées comme au rendu (content/block-props.ts), quand elles sont littérales :
+// sans ce contrôle, un bloc mal formé (liste vide, date invalide) n'arrêterait le build qu'au rendu de la page.
+const EXPRESSIONS: Record<string, { props: string[]; schema: z.ZodType; single?: boolean }> = {
+  ExempleChiffre: { props: ['rows', 'total'], schema: blockSchemas.exempleChiffre },
+  Chronologie: { props: ['items'], schema: blockSchemas.chronologie, single: true },
+  Comparatif: { props: ['columns', 'rows'], schema: blockSchemas.table },
+  Tableau: { props: ['columns', 'rows'], schema: blockSchemas.table },
+  FAQ: { props: ['items'], schema: blockSchemas.faq, single: true },
+  ListeSources: { props: ['ids'], schema: blockSchemas.ids, single: true },
+};
+
+function expressionProblems(name: string, props: Record<string, string | { expression: string }>): string[] {
+  const spec = EXPRESSIONS[name];
+  if (!spec) return [];
+  const values = spec.props.map((prop) => {
+    const value = props[prop];
+    return typeof value === 'object' ? parseLiteral(value.expression) : undefined;
+  });
+  if (!values.every((v) => v !== undefined)) return [];
+  const input = spec.single ? values[0]?.value : Object.fromEntries(spec.props.map((prop, i) => [prop, values[i]?.value]));
+  const result = spec.schema.safeParse(input);
+  if (result.success) return [];
+  return result.error.issues.map((issue) => `${spec.single ? `${spec.props[0]} › ` : ''}${describePath(issue.path)} : ${issue.message}`.replace(' › fichier entier', ''));
+}
 
 export function checkBlocks(body: string, resolve: BlockResolvers, options: { isPage?: boolean } = {}): BlockProblem[] {
   const problems: BlockProblem[] = [];
@@ -50,6 +79,7 @@ export function checkBlocks(body: string, resolve: BlockResolvers, options: { is
     for (const [prop, rule] of Object.entries(spec.props)) {
       if (rule.required && !(prop in use.props)) add(`propriété obligatoire « ${prop} » manquante.`);
     }
+    for (const message of expressionProblems(use.name, use.props)) add(message);
     if (spec.children === 'required' && use.selfClosing) add(`ce bloc entoure un texte : <${use.name} …>texte</${use.name}>.`);
     if (spec.children === 'none' && !use.selfClosing) add(`ce bloc s'écrit sans contenu, en balise autofermante : <${use.name} … />.`);
 
