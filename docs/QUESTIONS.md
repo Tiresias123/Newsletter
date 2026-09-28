@@ -221,7 +221,7 @@ Les pages de Brevo étaient inaccessibles depuis l'environnement de travail : l
 
 ### B3. Termes de recherche dans la mesure d'audience
 
-Le terme tapé (50 caractères au plus) est transmis avec le nombre de résultats, sauf s'il ressemble à une adresse courriel ou à un numéro. Il montre ce que les lecteurs cherchent sans le trouver, mais un lecteur peut y taper un renseignement personnel.
+Le terme tapé (50 caractères au plus) est transmis avec le nombre de résultats, sauf s'il pourrait contenir un renseignement personnel (adresse courriel, cinq chiffres ou plus, longue suite de caractères sans espace). Il montre ce que les lecteurs cherchent sans le trouver, mais un lecteur peut y taper un renseignement personnel.
 
 **Recommandation** : garder les termes. **Oui?**
 
@@ -233,7 +233,7 @@ Quatre sources actives (ministère des Finances, ARC, Banque du Canada, LEGISinf
 
 ### B5. Turnstile chargé au premier contact avec un formulaire
 
-Cloudflare conseille de charger Turnstile dès l'ouverture de la page, pour une vérification un peu plus rapide. Le site ne contacte Cloudflare qu'au premier clic ou à la première saisie dans un formulaire.
+Cloudflare conseille de charger Turnstile dès l'ouverture de la page, pour une vérification un peu plus rapide. Le site ne contacte Cloudflare que lorsqu'un champ d'un formulaire reçoit le focus (clic ou tabulation) ou qu'on appuie sur son bouton.
 
 **Recommandation** : au premier contact, par discrétion. **Oui?**
 
