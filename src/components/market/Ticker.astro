@@ -25,7 +25,7 @@ const market = ticker.enabled ? await getMarket() : undefined;
           ))}
         </ul>
         <p class="ml-auto text-meta">
-          <a href="https://www.coingecko.com/" rel="noopener" class="hover:underline">{t('market.source')}</a>,{' '}
+          <a href={ticker.sourceUrl} rel="noopener" class="hover:underline">{t('market.source')}</a>,{' '}
           {formatDateTime(market.fetchedAt, t('market.time', { time: '{time}' }), site.timezone)}
         </p>
       </div>

@@ -2,6 +2,7 @@
   "enabled": false,
   "provider": "coingecko",
   "currency": "cad",
+  "sourceUrl": "https://www.coingecko.com/en/api",
   "assets": [
     {
       "id": "bitcoin",

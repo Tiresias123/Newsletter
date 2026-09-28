@@ -154,6 +154,8 @@ export const tickerSchema = z.strictObject({
   enabled: z.boolean(),
   provider: z.literal('coingecko'),
   currency: z.literal('cad'),
+  // Lien de la mention de la source, près des cours (attribution exigée par CoinGecko).
+  sourceUrl: z.url().default('https://www.coingecko.com/en/api'),
   assets: z.array(z.strictObject({ id: z.string().min(1), symbol: z.string().min(1).max(10), label: z.string().min(1), enabled: z.boolean().default(true) })),
 });
 

@@ -21,12 +21,19 @@ export type MarketAsset = { id: string; symbol: string; label: string };
 type MarketRow = { id?: unknown; current_price?: unknown; price_change_percentage_24h?: unknown; sparkline_in_7d?: { price?: unknown } };
 
 export async function fetchMarket(assets: readonly MarketAsset[], apiKey: string, now = new Date(), fetchImpl: typeof fetch = fetch): Promise<MarketData> {
-  const params = new URLSearchParams({ vs_currency: 'cad', ids: assets.map((a) => a.id).join(','), sparkline: 'true', price_change_percentage: '24h', precision: '2' });
+  // price_change_percentage_24h figure toujours dans la réponse : aucun paramètre de plus.
+  const params = new URLSearchParams({ vs_currency: 'cad', ids: assets.map((a) => a.id).join(','), sparkline: 'true', precision: '2' });
   const response = await fetchImpl(`${COINGECKO_API}/coins/markets?${params}`, {
     headers: { accept: 'application/json', 'x-cg-demo-api-key': apiKey },
     signal: AbortSignal.timeout(10_000),
   });
-  if (!response.ok) throw new Error(`CoinGecko : HTTP ${response.status}`);
+  if (!response.ok) {
+    // Codes de CoinGecko : 10002 (clé absente ou mal transmise), 10010 et 10011 (clé d'un autre forfait).
+    const body = (await response.json().catch(() => ({}))) as { status?: { error_code?: unknown } };
+    const code = typeof body.status?.error_code === 'number' ? body.status.error_code : undefined;
+    const keyRefused = response.status === 401 || (code !== undefined && [10002, 10010, 10011].includes(code));
+    throw new Error(`CoinGecko : HTTP ${response.status}${code ? ` (code ${code})` : ''}${keyRefused ? ', clé refusée : vérifiez COINGECKO_API_KEY (clé « Demo »)' : ''}`);
+  }
   const rows = (await response.json()) as unknown;
   if (!Array.isArray(rows)) throw new Error('CoinGecko : réponse inattendue');
   const byId = new Map((rows as MarketRow[]).map((row) => [row.id, row]));

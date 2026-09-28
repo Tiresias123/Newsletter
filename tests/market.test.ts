@@ -31,6 +31,9 @@ describe('données de marché', () => {
   it('échoue si CoinGecko refuse ou ne renvoie aucun cours : le module est alors masqué', async () => {
     await expect(fetchMarket(assets, 'k', new Date(), (async () => new Response('', { status: 429 })) as typeof fetch)).rejects.toThrow('HTTP 429');
     await expect(fetchMarket(assets, 'k', new Date(), (async () => Response.json([])) as typeof fetch)).rejects.toThrow('aucun cours');
+    // Clé absente, mal transmise ou d'un autre forfait : le journal du build le dit clairement.
+    const refused = (async () => Response.json({ status: { error_code: 10002, error_message: 'API Key Missing' } }, { status: 401 })) as typeof fetch;
+    await expect(fetchMarket(assets, 'k', new Date(), refused)).rejects.toThrow('HTTP 401 (code 10002), clé refusée');
   });
 
   it('trace une courbe sans axe, bornée à sa boîte', () => {

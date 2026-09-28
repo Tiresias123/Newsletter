@@ -211,6 +211,7 @@ export const singletons = {
       enabled: f.checkbox('enabled', false, 'ticker'),
       provider: fields.ignored(),
       currency: fields.ignored(),
+      sourceUrl: f.url('sourceUrl', 'ticker', true),
       assets: fields.array(
         fields.object({ id: f.text('id', 'ticker', { required: true }), symbol: f.text('symbol', undefined, { required: true, length: { max: 10 } }), label: f.text('label', undefined, { required: true }), enabled: f.checkbox('enabled', true) }),
         { ...labelled('assets'), itemLabel: (props) => `${props.fields.symbol.value} ${props.fields.label.value}` },
