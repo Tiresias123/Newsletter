@@ -1,15 +1,14 @@
 ---
 // Mesure d'audience (brief 8.7, ARCHITECTURE 12.2) : script Umami, sans témoin, chargé seulement dans le site
 // de production (ni en développement, ni dans un aperçu), si les réglages « Services » l'activent. Si le
-// consentement préalable est exigé, le script n'est chargé qu'après l'accord du lecteur. Le pont relaie les
-// événements du site et compte les clics vers d'autres sites.
+// consentement préalable est exigé, le script n'est chargé qu'après l'accord du lecteur (bandeau rendu dans le
+// corps de la page, BaseLayout). Le pont relaie les événements du site et compte les clics vers d'autres sites.
+import { analyticsState } from '../../lib/analytics/state.ts';
 import { BEFORE_SEND } from '../../lib/analytics/umami.ts';
 import { getConfig } from '../../lib/config/index.ts';
-import { isPreview } from '../../lib/content/astro.ts';
-import ConsentBanner from './ConsentBanner.astro';
 
-const { analytics, consent } = getConfig().services;
-const active = !isPreview() && analytics.enabled && Boolean(analytics.websiteId);
+const { analytics } = getConfig().services;
+const { active, consentRequired } = analyticsState();
 // Réglages du script : domaines mesurés, refus du suivi respecté, ancres ignorées; avant chaque envoi, le pont
 // retire les termes de recherche des adresses (analytics/umami.ts).
 const attributes = {
@@ -21,9 +20,8 @@ const attributes = {
 };
 ---
 
-{active && !consent.enabled && <script is:inline defer src={analytics.scriptUrl} {...attributes} />}
-{active && consent.enabled && <meta name="analytics" content={analytics.scriptUrl} {...attributes} data-consent="required" />}
-{active && consent.enabled && <ConsentBanner />}
+{active && !consentRequired && <script is:inline defer src={analytics.scriptUrl} {...attributes} />}
+{consentRequired && <meta name="analytics" content={analytics.scriptUrl} {...attributes} data-consent="required" />}
 
 <script>
   import { startAnalyticsBridge } from '../../lib/analytics/umami.ts';

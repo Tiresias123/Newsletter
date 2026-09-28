@@ -23,12 +23,25 @@ export function campaignOnly(address: string, origin: string): string {
   }
 }
 
-// Rien ne part si le navigateur signale le refus du suivi (Global Privacy Control).
+// Consentement exigé sur cette page (balise meta du build).
+let consentRequired = false;
+// Dernière page vue envoyée : la recherche réécrit l'adresse (?q=) à chaque terme, ce qui ne doit pas compter
+// une page vue de plus.
+let lastPageview: string | undefined;
+
+// Rien ne part si le navigateur signale le refus du suivi (Global Privacy Control), ni, quand le consentement
+// est exigé, sans l'accord du lecteur (même retiré après le chargement du script).
 function beforeSend(_type: string, payload: Record<string, unknown>): Record<string, unknown> | false {
   if ((navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl) return false;
+  if (consentRequired && readChoice() !== 'oui') return false;
   for (const key of ['url', 'referrer']) {
     const value = payload[key];
     if (typeof value === 'string' && value) payload[key] = campaignOnly(value, location.origin);
+  }
+  // Page vue : envoi sans nom d'événement.
+  if (!payload.name) {
+    if (payload.url === lastPageview) return false;
+    lastPageview = typeof payload.url === 'string' ? payload.url : undefined;
   }
   return payload;
 }
@@ -50,8 +63,9 @@ function saveChoice(value: 'oui' | 'non' | null): void {
   }
 }
 
-// Script Umami ajouté après consentement, avec les attributs préparés au build.
+// Script Umami ajouté après consentement, avec les attributs préparés au build; une seule fois par page.
 function load(meta: HTMLMetaElement): void {
+  if (document.querySelector('script[data-website-id]')) return;
   const script = document.createElement('script');
   script.defer = true;
   script.src = meta.content;
@@ -88,6 +102,7 @@ function askConsent(meta: HTMLMetaElement): void {
 export function startAnalyticsBridge(): void {
   const meta = document.querySelector<HTMLMetaElement>('meta[name="analytics"][data-consent="required"]');
   if (!meta && !document.querySelector('script[data-website-id]')) return;
+  consentRequired = meta !== null;
   (window as unknown as Record<string, unknown>)[BEFORE_SEND] = beforeSend;
   if (meta) askConsent(meta);
   document.addEventListener(ANALYTICS_EVENT, (event) => {

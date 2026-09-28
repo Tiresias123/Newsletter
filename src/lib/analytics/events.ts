@@ -9,3 +9,8 @@ export const ANALYTICS_EVENT = 'site:analytics';
 export function track(name: AnalyticsEvent, data: EventData = {}): void {
   document.dispatchEvent(new CustomEvent(ANALYTICS_EVENT, { detail: { name, data } }));
 }
+
+// Texte qui pourrait contenir un renseignement personnel, à ne pas transmettre : adresse courriel, numéro
+// (téléphone, NAS, compte : cinq chiffres ou plus au total, séparateurs compris), ou suite d'au moins vingt
+// caractères sans espace (adresse de portefeuille, clé, identifiant).
+export const looksPersonal = (text: string): boolean => text.includes('@') || (text.match(/\d/g) ?? []).length >= 5 || /\S{20,}/.test(text);

@@ -1,6 +1,7 @@
 ---
 // Pied de page sur fond bleu nuit : présentation, colonnes de liens (config/navigation.json),
 // infolettre, réseaux, copyright et lieu d'hébergement des données.
+import { analyticsState } from '../../lib/analytics/state.ts';
 import { getConfig } from '../../lib/config/index.ts';
 import { t } from '../../lib/i18n.ts';
 import { frenchTypography } from '../../lib/typo.ts';
@@ -8,9 +9,9 @@ import NewsletterForm from '../newsletter/NewsletterForm.astro';
 import Icon from '../ui/Icon.astro';
 import Logo from './Logo.astro';
 
-const { site, navigation, services } = getConfig();
-// Consentement exigé : un bouton pour revenir sur son choix de mesure d'audience (ConsentBanner).
-const consentReset = services.consent.enabled && services.analytics.enabled;
+const { site, navigation } = getConfig();
+// Consentement exigé sur le site en ligne : un bouton pour revenir sur son choix de mesure d'audience (ConsentBanner).
+const consentReset = analyticsState().consentRequired;
 const columns = navigation.footer.map((c) => ({ ...c, links: c.links.filter((l) => l.enabled) })).filter((c) => c.links.length > 0);
 const socials = site.socials.filter((s) => s.enabled && s.url);
 const year = new Date().getFullYear();
