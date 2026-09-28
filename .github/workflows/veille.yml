@@ -1,0 +1,73 @@
+# Veille officielle et surveillance du site (ARCHITECTURE 14 et 15.4), deux fois par jour ouvrable, heure de
+# Montréal. Les tâches planifiées ne travaillent que sur main, la branche de production : sur une autre
+# branche, seul le lancement manuel (onglet Actions, « Run workflow ») les exécute.
+name: veille
+
+on:
+  schedule:
+    - cron: '7 8 * * 1-5'
+      timezone: 'America/Toronto'
+    - cron: '7 14 * * 1-5'
+      timezone: 'America/Toronto'
+  workflow_dispatch:
+    inputs:
+      diagnostic:
+        description: 'Essayer toutes les sources (même désactivées) et afficher le résultat, sans rien enregistrer'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: veille
+  cancel-in-progress: false
+
+jobs:
+  veille:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Diagnostic des sources
+        if: inputs.diagnostic
+        run: npm run veille:fetch -- --diagnostic
+      - name: Collecte
+        id: collecte
+        if: ${{ !inputs.diagnostic }}
+        run: npm run veille:fetch
+      # Commit seulement si le cache a changé : il déclenche la reconstruction du site.
+      - name: Enregistrement
+        if: steps.collecte.outputs.changed == 'true'
+        env:
+          MESSAGE: ${{ steps.collecte.outputs.message }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/veille/cache.json
+          git commit -m "$MESSAGE"
+          git push
+
+  # Échec = courriel de GitHub : le site en ligne n'est plus à jour (build en échec, tâche planifiée arrêtée).
+  surveillance:
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 50
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run surveillance

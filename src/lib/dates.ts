@@ -79,6 +79,16 @@ export function timeInZone(instant: Date, timeZone: string): string {
   return `${get('hour')}:${get('minute')}`;
 }
 
+// Instant écrit en ISO 8601 avec le décalage du fuseau (« 2026-09-28T22:00:00-04:00 ») : sa date lue
+// telle quelle (les dix premiers caractères) est la date locale.
+export function isoInZone(instant: Date, timeZone: string): string {
+  const offset = zoneOffsetMinutes(instant, timeZone);
+  const local = new Date(instant.getTime() + offset * 60000).toISOString().slice(0, 19);
+  const sign = offset < 0 ? '-' : '+';
+  const abs = Math.abs(offset);
+  return `${local}${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`;
+}
+
 export function addMonths(date: CalendarDate, months: number): CalendarDate {
   const { year, month, day } = splitCalendarDate(date);
   const target = new Date(Date.UTC(year, month - 1 + months, 1));

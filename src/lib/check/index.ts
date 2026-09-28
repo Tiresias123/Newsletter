@@ -15,6 +15,7 @@ import { checkFreshness, lastCommitDates } from './freshness.ts';
 import { loadContent } from './load.ts';
 import { findMarkers, markersIn } from './markers.ts';
 import { checkArchives, checkBodiesAndLinks, checkImages } from './references.ts';
+import { checkVeille } from './veille.ts';
 import { collectRedirects, resolveRedirects, siteUrls } from '../redirects.ts';
 
 export type { CheckMode } from './context.ts';
@@ -72,6 +73,7 @@ export async function runCheck({ root, mode = 'production', now = new Date(), ex
   checkArchives(ctx);
   checkFreshness(graph, entries, lastCommitDates(root), add);
   checkLaunch(ctx);
+  checkVeille(ctx, now);
   checkRedirects(ctx);
   if (externalLinks) {
     for (const r of await checkExternalLinks(external.keys())) {
@@ -136,6 +138,6 @@ function checkLaunch({ config, add }: Context) {
   }
   const veille = config.homepage.sections.findIndex((s) => s.type === 'veille-latest' && s.enabled);
   if (veille >= 0 && veilleItems().length === 0) {
-    add(CONFIG_FILES.homepage, ['sections', veille], "Section « veille » activée, mais le cache est vide : elle reste masquée jusqu'à la première collecte (phase 4).", 'lancement', 'information');
+    add(CONFIG_FILES.homepage, ['sections', veille], "Section « veille » activée, mais le cache est vide : elle reste masquée jusqu'à la première collecte (tâche « veille » ou npm run veille:fetch).", 'lancement', 'information');
   }
 }
