@@ -3,6 +3,7 @@
 import 'virtual:theme.css';
 import '../styles/global.css';
 import { Font } from 'astro:assets';
+import Analytics from '../components/layout/Analytics.astro';
 import AnnouncementBar from '../components/layout/AnnouncementBar.astro';
 import Footer from '../components/layout/Footer.astro';
 import Header from '../components/layout/Header.astro';
@@ -45,6 +46,7 @@ const bodyFont = FONT_VARIABLES[fonts.body] ?? '--font-inter';
     {fonts.legalSerif && headingFont !== '--font-source-serif-4' && <Font cssVariable="--font-source-serif-4" />}
     <SeoHead {...Astro.props} />
     <script type="application/json" id="messages-dates" set:html={JSON.stringify(relativeDateMessages)} />
+    <Analytics />
   </head>
   <body class="min-h-dvh bg-bg text-text antialiased">
     <SkipLink />

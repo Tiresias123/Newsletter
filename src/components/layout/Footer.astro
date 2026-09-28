@@ -8,7 +8,9 @@ import NewsletterForm from '../newsletter/NewsletterForm.astro';
 import Icon from '../ui/Icon.astro';
 import Logo from './Logo.astro';
 
-const { site, navigation } = getConfig();
+const { site, navigation, services } = getConfig();
+// Consentement exigé : un bouton pour revenir sur son choix de mesure d'audience (ConsentBanner).
+const consentReset = services.consent.enabled && services.analytics.enabled;
 const columns = navigation.footer.map((c) => ({ ...c, links: c.links.filter((l) => l.enabled) })).filter((c) => c.links.length > 0);
 const socials = site.socials.filter((s) => s.enabled && s.url);
 const year = new Date().getFullYear();
@@ -59,6 +61,7 @@ const year = new Date().getFullYear();
     <div class="page-container flex flex-wrap justify-between gap-2 py-4 text-xs text-meta-inverse">
       <p>{t('footer.copyright', { year, holder: site.copyrightHolder || site.name })}</p>
       {site.dataHosting && <p>{t('footer.dataHosting', { place: site.dataHosting })}</p>}
+      {consentReset && <button type="button" class="underline underline-offset-2" data-consent-reset>{t('consentBanner.manage')}</button>}
     </div>
   </div>
 </footer>

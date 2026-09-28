@@ -1,0 +1,23 @@
+---
+// Consentement minimal à la mesure d'audience (brief 9, ARCHITECTURE 17) : affiché seulement si les réglages
+// « Services » l'exigent, avant tout chargement du script. Choix gardé dans le navigateur; le bouton du pied de
+// page permet de le changer.
+import { getConfig } from '../../lib/config/index.ts';
+import { t } from '../../lib/i18n.ts';
+import Button from '../ui/Button.astro';
+
+const { newsletter } = getConfig();
+---
+
+<section hidden aria-label={t('consentBanner.label')} class="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-surface shadow-lg print:hidden" data-consent-banner>
+  <div class="page-container flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <p class="text-sm">
+      {t('consentBanner.text')}{' '}
+      <a href={newsletter.texts.privacyUrl} class="font-semibold underline underline-offset-2">{t('consentBanner.privacyLink')}</a>
+    </p>
+    <div class="flex shrink-0 gap-2">
+      <Button type="button" variant="secondary" data-consent="non">{t('consentBanner.refuse')}</Button>
+      <Button type="button" data-consent="oui">{t('consentBanner.accept')}</Button>
+    </div>
+  </div>
+</section>

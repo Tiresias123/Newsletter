@@ -1,6 +1,7 @@
 // Interface de recherche dans le navigateur (fenêtre et page /recherche/) : saisie et filtres, résultats groupés
 // par type, « Voir plus » (fenêtre) ou « Afficher plus » (page), flèches pour parcourir les résultats.
 // Ne connaît que le contrat SearchProvider.
+import { track } from '../analytics/events.ts';
 import { formatDate } from '../format.ts';
 import type { FilterKey, FilterLabels, SearchFilters, SearchGroup, SearchHit, SearchProvider } from './types.ts';
 
@@ -81,6 +82,21 @@ export function mountSearch(root: HTMLElement, provider: SearchProvider & { prel
     history.replaceState(null, '', params.size > 0 ? `?${params}` : location.pathname);
   };
 
+  // Mesure d'audience : une recherche est comptée quand le lecteur s'arrête de taper (3 caractères au moins).
+  // Un terme qui ressemble à une adresse courriel ou à un numéro n'est pas transmis, seulement le nombre de
+  // résultats.
+  let reported = '';
+  let reportTimer: ReturnType<typeof setTimeout> | undefined;
+  const report = (query: string, total: number) => {
+    clearTimeout(reportTimer);
+    const term = query.toLowerCase().slice(0, 50);
+    if (term.length < 3 || term === reported) return;
+    reportTimer = setTimeout(() => {
+      reported = term;
+      track('search', /@|\d{5}/.test(term) ? { results: total } : { query: term, results: total });
+    }, 1500);
+  };
+
   const run = async () => {
     const query = input.value.trim();
     const current = { ...fixed, ...filters() };
@@ -97,6 +113,7 @@ export function mountSearch(root: HTMLElement, provider: SearchProvider & { prel
       if (id !== token) return;
       output.replaceChildren(...response.groups.map((g) => groupElement(g, query, current)));
       status.textContent = response.total === 0 ? messages.none : fill(response.total === 1 ? messages.results.one : messages.results.other, { count: response.total });
+      report(query, response.total);
     } catch (error) {
       if (id !== token) return;
       output.replaceChildren();
