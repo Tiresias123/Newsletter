@@ -43,31 +43,39 @@ export function matchesKeywords(entry: FeedEntry, keywords: readonly string[]): 
 
 export const emptyCache = (): VeilleCache => ({ updatedAt: null, sources: {}, items: [] });
 
+// Détail d'un fil lisible dont aucune date n'est lisible : il ne peut pas être jugé silencieux, et ses
+// publications sont datées du jour de leur première collecte (le rapport « À vérifier » le signale).
+export const UNDATED = 'aucune date lisible dans le fil';
+
 // État d'une source après sa collecte. Un fil lisible dont la publication la plus récente, tous sujets
 // confondus, dépasse le seuil d'alerte est « silencieux » (fil figé ou abandonné) : les mots-clés, qui peuvent
-// ne rien retenir pendant des mois, n'entrent pas en compte. Un fil sans aucune date n'est pas jugé.
+// ne rien retenir pendant des mois, n'entrent pas en compte.
 export function sourceState(source: Pick<VeilleSourceConfig, 'staleDays'>, outcome: FetchOutcome, now: Date, timeZone: string): { status: VeilleStatus; detail: string } {
   if (outcome.status !== 'ok') return { status: outcome.status, detail: outcome.detail };
   if (outcome.entries.length === 0) return { status: 'silencieux', detail: 'fil vide' };
   const dates = outcome.entries.map((e) => e.published?.getTime()).filter((t): t is number => t !== undefined && t <= now.getTime());
-  if (dates.length === 0) return { status: 'ok', detail: '' };
+  if (dates.length === 0) return { status: 'ok', detail: UNDATED };
   const latest = calendarDateInZone(new Date(Math.max(...dates)), timeZone);
   if (daysBetween(latest, calendarDateInZone(now, timeZone)) <= source.staleDays) return { status: 'ok', detail: '' };
   return { status: 'silencieux', detail: `dernière publication du fil le ${formatDate(latest)}` };
 }
 
-// Applique le résultat de la collecte d'une source; renvoie le nombre de publications ajoutées.
+// Applique le résultat de la collecte d'une source; renvoie le nombre de publications ajoutées ou redatées.
 export function applyOutcome(cache: VeilleCache, source: VeilleSourceConfig, outcome: FetchOutcome, now: Date, timeZone: string, retentionMonths: number): number {
   const previous = cache.sources[source.id];
   const state = sourceState(source, outcome, now, timeZone);
-  if (!previous || previous.status !== state.status || previous.detail !== state.detail) {
-    cache.sources[source.id] = { status: state.status, since: isoInZone(now, timeZone), detail: state.detail };
+  const sameStatus = previous?.status === state.status;
+  // `since` ne bouge qu'au changement d'état. Une panne garde aussi la cause relevée à son début : le message
+  // varie d'un passage à l'autre (délai dépassé, HTTP 503, HTTP 502…) sans rien apprendre de plus, et chaque
+  // variation créerait un commit, donc un build.
+  if (!previous || !sameStatus || (outcome.status === 'ok' && previous.detail !== state.detail)) {
+    cache.sources[source.id] = { status: state.status, since: previous && sameStatus ? previous.since : isoInZone(now, timeZone), detail: state.detail };
   }
   if (outcome.status !== 'ok') return 0;
   const cutoff = addMonths(calendarDateInZone(now, timeZone), -retentionMonths);
-  const ids = new Set(cache.items.map((i) => i.id));
+  const byId = new Map(cache.items.map((i) => [i.id, i]));
   const titles = new Set(cache.items.map((i) => titleKey(i.sourceId, i.title, i.publishedAt)));
-  let added = 0;
+  let count = 0;
   for (const entry of outcome.entries) {
     if (!matchesKeywords(entry, source.keywords)) continue;
     // Sans date dans le fil : date de la première collecte.
@@ -83,14 +91,25 @@ export function applyOutcome(cache: VeilleCache, source: VeilleSourceConfig, out
       publishedAt,
       summary: entry.summary,
     };
+    const known = byId.get(item.id);
+    if (known) {
+      // Déjà relevée, mais redatée dans le fil un jour suivant (LEGISinfo : nouvelle étape d'un projet de loi) :
+      // elle remonte avec son nouveau titre, comme une nouveauté.
+      if (entry.published && publishedAt.slice(0, 10) > known.publishedAt.slice(0, 10)) {
+        Object.assign(known, { title: item.title, publishedAt, summary: item.summary });
+        titles.add(titleKey(known.sourceId, known.title, known.publishedAt));
+        count += 1;
+      }
+      continue;
+    }
     const key = titleKey(item.sourceId, item.title, item.publishedAt);
-    if (ids.has(item.id) || titles.has(key)) continue;
-    ids.add(item.id);
+    if (titles.has(key)) continue;
+    byId.set(item.id, item);
     titles.add(key);
     cache.items.push(item);
-    added += 1;
+    count += 1;
   }
-  return added;
+  return count;
 }
 
 // Retire les publications trop anciennes et l'état des sources disparues de la configuration; trie.

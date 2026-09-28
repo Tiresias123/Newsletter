@@ -1,7 +1,7 @@
 // Choix des contenus de chaque section de l'accueil (config/homepage.json). Fonctions pures, testables.
 import type { HomepageSection } from '../config/schemas.ts';
 import { calendarDateInZone, daysBetween, type CalendarDate } from '../dates.ts';
-import { articleCard, dossierCard, jurisdictionBadges, type BadgeModel, type CardModel } from './cards.ts';
+import { articleCard, dossierCard, jurisdictionBadges, veilleOrigin, type BadgeModel, type CardModel } from './cards.ts';
 import type { Entry, Graph } from './graph.ts';
 import { veilleItems, type VeilleItem } from './veille.ts';
 
@@ -122,5 +122,5 @@ export function mostReadItems(graph: Graph, section: Section<'most-read'>): Card
 export function veilleLatestItems(graph: Graph, section: Section<'veille-latest'>): Array<VeilleItem & { organismeLabel: string }> {
   return veilleItems()
     .slice(0, section.count)
-    .map((item) => ({ ...item, organismeLabel: graph.get('organismes', item.organisme)?.data.acronym || graph.config.veilleSources.sources.find((s) => s.id === item.sourceId)?.label || '' }));
+    .map((item) => ({ ...item, organismeLabel: veilleOrigin(graph, item).label }));
 }

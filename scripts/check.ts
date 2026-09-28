@@ -1,6 +1,7 @@
 // npm run check : validations du point 8.2 du brief et rapport docs/A-VERIFIER.md (non versionné).
 // Mode production par défaut (brouillons masqués) ; SITE_MODE=preview vérifie le mode aperçu.
 // Option --liens-externes : interroge aussi chaque lien externe (rapport hebdomadaire, réseau requis).
+// Variable VEILLE_DERNIER_PASSAGE : dernier passage planifié de la tâche « veille » (rapport hebdomadaire).
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { runCheck } from '../src/lib/check/index.ts';
@@ -10,7 +11,7 @@ import { t } from '../src/lib/i18n.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const mode = process.env.SITE_MODE === 'preview' ? 'apercu' : 'production';
-const result = await runCheck({ root, mode, externalLinks: process.argv.includes('--liens-externes') });
+const result = await runCheck({ root, mode, externalLinks: process.argv.includes('--liens-externes'), veilleLastRun: process.env.VEILLE_DERNIER_PASSAGE || undefined });
 
 mkdirSync(`${root}docs`, { recursive: true });
 writeFileSync(`${root}docs/A-VERIFIER.md`, renderMarkdown(result));

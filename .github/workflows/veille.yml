@@ -1,6 +1,7 @@
 # Veille officielle et surveillance du site (ARCHITECTURE 14 et 15.4), deux fois par jour ouvrable, heure de
 # Montréal. Les tâches planifiées ne travaillent que sur main, la branche de production : sur une autre
-# branche, seul le lancement manuel (onglet Actions, « Run workflow ») les exécute.
+# branche, seul le lancement manuel (onglet Actions, « Run workflow ») exécute la collecte; la surveillance, qui
+# compare main au site en ligne, ne tourne que sur main.
 name: veille
 
 on:
@@ -61,7 +62,7 @@ jobs:
 
   # Échec = courriel de GitHub : le site en ligne n'est plus à jour (build en échec, tâche planifiée arrêtée).
   surveillance:
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

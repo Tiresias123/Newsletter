@@ -25,6 +25,8 @@ export type CheckOptions = {
   mode?: CheckMode;
   now?: Date;
   externalLinks?: boolean;
+  // Dernier passage planifié de la tâche « veille » (rapport hebdomadaire seulement, src/lib/check/veille.ts).
+  veilleLastRun?: string;
   // Configuration déjà validée (tests) ; par défaut, celle de config/.
   config?: SiteConfig;
 };
@@ -73,7 +75,7 @@ export async function runCheck({ root, mode = 'production', now = new Date(), ex
   checkFreshness(graph, entries, lastCommitDates(root), add);
   checkLaunch(ctx);
   checkServices(ctx);
-  checkVeille(ctx, now);
+  checkVeille(ctx, now, { lastRun: options.veilleLastRun });
   checkRedirects(ctx);
   if (externalLinks) {
     for (const r of await checkExternalLinks(external.keys())) {

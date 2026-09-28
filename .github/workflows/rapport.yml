@@ -1,6 +1,7 @@
 # Rapport hebdomadaire (brief 8.8, ARCHITECTURE 15.4) : chaque lundi, « npm run check » complet, liens externes
 # compris, publié dans un ticket GitHub (étiquette « rapport ») : GitHub en avise l'auteur par courriel. Le
-# rapport de la semaine précédente est fermé. Sur main seulement, sauf lancement manuel.
+# rapport de la semaine précédente est fermé. Sur main seulement, sauf lancement manuel : sur une autre branche,
+# le titre nomme la branche et aucun rapport n'est fermé.
 name: rapport
 
 on:
@@ -12,6 +13,8 @@ on:
 permissions:
   contents: read
   issues: write
+  # Dernier passage de la tâche « veille ».
+  actions: read
 
 jobs:
   rapport:
@@ -28,6 +31,16 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # Une tâche « veille » arrêtée (désactivée, suspendue par GitHub) arrête aussi la surveillance du site :
+      # le rapport le signale (src/lib/check/veille.ts). Sans réponse de GitHub, rien n'est signalé.
+      - name: Dernier passage de la veille
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if last=$(gh run list --workflow veille.yml --branch main --event schedule --limit 1 --json createdAt --jq '.[0].createdAt // "aucun"'); then
+            echo "VEILLE_DERNIER_PASSAGE=$last" >> "$GITHUB_ENV"
+          fi
       # Des erreurs bloquantes font échouer « check » : le rapport est publié quand même.
       - name: Vérification complète
         id: check
@@ -36,16 +49,20 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           BLOQUANT: ${{ steps.check.outputs.bloquant }}
+          BRANCHE: ${{ github.ref_name }}
         run: |
           gh label create rapport --color 0E1230 --description 'Rapport hebdomadaire « À vérifier »' --force
           title="Rapport « À vérifier » du $(TZ=America/Toronto date +%Y-%m-%d)"
+          if [ "$BRANCHE" != "main" ]; then title="$title (branche $BRANCHE)"; fi
           if [ "$BLOQUANT" = "oui" ]; then title="$title : erreurs bloquantes"; fi
           # Un ticket est limité à 65 536 caractères : coupe en caractères, jamais au milieu d'un caractère.
           node -e "const fs = require('node:fs'); fs.writeFileSync('rapport.md', [...fs.readFileSync('docs/A-VERIFIER.md', 'utf8')].slice(0, 60000).join(''))"
           new=$(gh issue create --title "$title" --label rapport --body-file rapport.md)
           # L'auteur, propriétaire du dépôt, est désigné : GitHub l'en avise par courriel.
           gh issue edit "$new" --add-assignee "$GITHUB_REPOSITORY_OWNER" || true
-          # Le rapport de la semaine précédente n'est fermé qu'une fois le nouveau créé.
-          for number in $(gh issue list --label rapport --state open --json number,url --jq ".[] | select(.url != \"$new\") | .number"); do
-            gh issue close "$number" --comment "Remplacé par $new"
-          done
+          # Le rapport de la semaine précédente n'est fermé qu'une fois le nouveau créé, et seulement par celui de main.
+          if [ "$BRANCHE" = "main" ]; then
+            for number in $(gh issue list --label rapport --state open --json number,title,url --jq ".[] | select(.url != \"$new\" and (.title | contains(\"(branche \") | not)) | .number"); do
+              gh issue close "$number" --comment "Remplacé par $new"
+            done
+          fi

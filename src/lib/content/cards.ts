@@ -1,6 +1,7 @@
 // Modèles de cartes : l'objet unique que reçoivent ArticleCard et les sections (brief, point 3.3).
 import { calendarDateInZone } from '../dates.ts';
 import type { Entry, Graph } from './graph.ts';
+import type { VeilleItem } from './veille.ts';
 
 export type BadgeModel = { id: string; label: string; style: string; url?: string };
 
@@ -33,6 +34,14 @@ export function jurisdictionBadges(graph: Graph, ids: readonly string[]): BadgeM
     const j = graph.get('juridictions', id);
     return j ? [{ id, label: j.data.name, style: j.data.badgeStyle, url: j.visibility.visible ? j.url : undefined }] : [];
   });
+}
+
+// Origine d'une publication de la veille : son organisme, à défaut le libellé de sa source (LEGISinfo, Gazette…).
+// `key` sert au filtre « Source » de /veille/.
+export function veilleOrigin(graph: Graph, item: VeilleItem): { key: string; label: string; organisme?: Entry<'organismes'> } {
+  const organisme = graph.get('organismes', item.organisme || undefined);
+  if (organisme) return { key: organisme.id, label: organisme.data.acronym || organisme.data.name, organisme };
+  return { key: `source:${item.sourceId}`, label: graph.config.veilleSources.sources.find((s) => s.id === item.sourceId)?.label ?? '' };
 }
 
 function previewState(entry: Entry): CardModel['preview'] {

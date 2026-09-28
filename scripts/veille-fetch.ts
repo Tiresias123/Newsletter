@@ -8,9 +8,8 @@ import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { getConfig } from '../src/lib/config/index.ts';
 import { veilleCacheSchema, type VeilleCache } from '../src/lib/content/veille.ts';
-import { applyOutcome, emptyCache, matchesKeywords, prune, serializeCache, sourceState, type FetchOutcome } from '../src/lib/veille/merge.ts';
-import { parseFeed, UnreadableFeedError } from '../src/lib/veille/parse.ts';
-import { robotsAllows } from '../src/lib/veille/robots.ts';
+import { createCollector, ROBOT } from '../src/lib/veille/collect.ts';
+import { applyOutcome, emptyCache, matchesKeywords, prune, serializeCache, sourceState } from '../src/lib/veille/merge.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 process.chdir(root);
@@ -23,48 +22,8 @@ const only = args.includes('--source') ? args[args.indexOf('--source') + 1] : un
 const config = getConfig();
 const { timezone } = config.site;
 // Robot identifié, avec une adresse de contact (bonne conduite, ARCHITECTURE section 14).
-const AGENT = `VeilleReglementaireBot/1.0 (+${config.site.url.replace(/\/$/, '')}/a-propos/${config.site.contactEmail ? `; ${config.site.contactEmail}` : ''})`;
-const ACCEPT = 'application/atom+xml, application/rss+xml, application/feed+json, application/xml;q=0.9, text/xml;q=0.9, application/json;q=0.8, */*;q=0.5';
-
-const request = (url: string) => fetch(url, { headers: { 'user-agent': AGENT, accept: ACCEPT }, redirect: 'follow', signal: AbortSignal.timeout(TIMEOUT_MS) });
-const reason = (error: unknown) => (error instanceof Error ? (error.name === 'TimeoutError' ? `délai de ${TIMEOUT_MS / 1000} s dépassé` : error.message) : String(error));
-
-const robotsCache = new Map<string, Promise<string | Error>>();
-function robotsOf(origin: string): Promise<string | Error> {
-  let pending = robotsCache.get(origin);
-  if (!pending) {
-    pending = request(`${origin}/robots.txt`).then(
-      async (response) => {
-        if (response.status >= 500) return new Error(`robots.txt : HTTP ${response.status}`);
-        return response.ok ? response.text() : '';
-      },
-      (error: unknown) => new Error(`robots.txt : ${reason(error)}`),
-    );
-    robotsCache.set(origin, pending);
-  }
-  return pending;
-}
-
-async function collect(url: string): Promise<FetchOutcome & { http?: number; type?: string }> {
-  const target = new URL(url);
-  const robots = await robotsOf(target.origin);
-  if (robots instanceof Error) return { status: 'erreur', detail: robots.message };
-  if (!robotsAllows(robots, AGENT, `${target.pathname}${target.search}`)) return { status: 'bloque', detail: 'interdit par le robots.txt du site' };
-  let response: Response;
-  try {
-    response = await request(url);
-  } catch (error) {
-    return { status: 'erreur', detail: reason(error) };
-  }
-  const type = response.headers.get('content-type') ?? '';
-  if (!response.ok) return { status: 'erreur', detail: `HTTP ${response.status}`, http: response.status, type };
-  try {
-    return { status: 'ok', entries: parseFeed(await response.text(), response.url || url, timezone), http: response.status, type };
-  } catch (error) {
-    if (error instanceof UnreadableFeedError) return { status: 'illisible', detail: error.message, http: response.status, type };
-    return { status: 'erreur', detail: reason(error), http: response.status, type };
-  }
-}
+const AGENT = `${ROBOT}/1.0 (+${config.site.url.replace(/\/$/, '')}/a-propos/${config.site.contactEmail ? `; ${config.site.contactEmail}` : ''})`;
+const collect = createCollector({ agent: AGENT, timeoutMs: TIMEOUT_MS, timeZone: timezone });
 
 function readCache(): VeilleCache {
   try {
@@ -91,7 +50,7 @@ for (const source of sources) {
     const latest = outcome.status === 'ok' ? outcome.entries.map((e) => e.published?.toISOString() ?? '').sort().at(-1) : '';
     const count = outcome.status === 'ok' ? `${outcome.entries.length} entrée(s), la plus récente : ${latest || 'sans date'}` : outcome.detail;
     const state = sourceState(source, outcome, now, timezone);
-    const status = state.status === outcome.status ? state.status : `${outcome.status}, ${state.status} (${state.detail})`;
+    const status = state.status !== outcome.status ? `${outcome.status}, ${state.status} (${state.detail})` : state.detail && outcome.status === 'ok' ? `ok (${state.detail})` : state.status;
     console.log(`${source.enabled ? '●' : '○'} ${source.id} : ${status}${outcome.http ? ` (HTTP ${outcome.http}, ${outcome.type || 'type inconnu'})` : ''} : ${count}`);
     if (outcome.status === 'ok') {
       // Avec des mots-clés : les entrées qu'ils retiennent (toutes dates confondues), pour les ajuster.

@@ -2,6 +2,7 @@
 // Frise de veille officielle : les dernières publications des autorités (toutes, ou celles d'un organisme),
 // chacune avec un lien sortant vers la source officielle.
 import { getGraph } from '../../lib/content/astro.ts';
+import { veilleOrigin } from '../../lib/content/cards.ts';
 import type { VeilleItem } from '../../lib/content/veille.ts';
 import { t } from '../../lib/i18n.ts';
 import Timeline from '../editorial/Timeline.astro';
@@ -16,10 +17,7 @@ interface Props {
 
 const { items, count = 6, id = 'barre-veille', showEmpty = false } = Astro.props;
 const graph = await getGraph();
-const shown = items.slice(0, count).map((item) => {
-  const organisme = graph.get('organismes', item.organisme);
-  return { date: item.publishedAt, title: item.title, url: item.url, meta: organisme?.data.acronym || organisme?.data.name };
-});
+const shown = items.slice(0, count).map((item) => ({ date: item.publishedAt, title: item.title, url: item.url, meta: veilleOrigin(graph, item).label || undefined }));
 ---
 
 {
