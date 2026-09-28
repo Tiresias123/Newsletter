@@ -3,6 +3,7 @@
 // (Worker) avec double consentement. Preuve de consentement : page, emplacement et version du texte affiché.
 // Turnstile se charge à la première interaction; champ piège contre les robots.
 import { getConfig } from '../../lib/config/index.ts';
+import { turnstileSiteKey } from '../../lib/forms/site-key.ts';
 import { t } from '../../lib/i18n.ts';
 import { displayedConsent } from '../../lib/newsletter/consent.ts';
 import { frenchTypography } from '../../lib/typo.ts';
@@ -23,7 +24,7 @@ interface Props {
 const PLACEMENTS: Record<NonNullable<Props['variant']>, Placement> = { band: 'accueil', compact: 'barre-laterale', inline: 'article', page: 'page' };
 const { id, variant = 'inline', inverse = false } = Astro.props;
 const placement = Astro.props.placement ?? PLACEMENTS[variant];
-const { newsletter, site, services } = getConfig();
+const { newsletter, site } = getConfig();
 // Sans liste précisée : la première liste active (le Worker refuse une liste désactivée).
 const list = Astro.props.list ?? newsletter.lists.find((l) => l.enabled)?.id ?? '';
 const texts = newsletter.texts;
@@ -49,7 +50,7 @@ const stacked = variant === 'compact';
   data-action="newsletter"
   data-event="newsletterSignup"
   data-placement={placement}
-  data-sitekey={services.turnstile.siteKey}
+  data-sitekey={turnstileSiteKey()}
   data-messages={JSON.stringify(messages)}
 >
   <input type="hidden" name="list" value={list} />

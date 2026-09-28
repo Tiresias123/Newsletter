@@ -5,7 +5,7 @@
 // toujours générique : on ne révèle jamais si une adresse est déjà inscrite.
 import newsletterConfig from '../config/newsletter.json' with { type: 'json' };
 import type { NewsletterProvider } from '../src/lib/newsletter/provider.ts';
-import { backToForm, clientIp, fail, formFailure, ok, readForm, sameOrigin, type Env } from './http.ts';
+import { backToForm, clientIp, fail, formFailure, ok, readForm, saltOf, sameOrigin, type Env } from './http.ts';
 import { emailRateKey, fingerprint, ipRateKey, underLimits, verifyTurnstile } from './security.ts';
 import { email, oneOf, text, validate } from './validate.ts';
 
@@ -36,7 +36,7 @@ export async function handleNewsletter(request: Request, env: Env, provider: New
   if (form.fields.site_web) return ok();
   const fields = validate(form.fields, RULES);
   if (!fields) return fail(400, 'invalide');
-  const salt = env.IP_HASH_SALT;
+  const salt = saltOf(env);
   if (!provider || !salt) {
     console.error('infolettre : fournisseur ou sel absent de la configuration du Worker');
     return fail(503, 'indisponible');

@@ -2,13 +2,14 @@
 import { getCollection, getEntry, render } from 'astro:content';
 import { getConfig } from '../config/index.ts';
 import { ContentValidationError } from '../errors.ts';
+import { previewBuild } from '../site-mode.ts';
 import type { VisibilityContext } from '../visibility.ts';
 import { COLLECTION_NAMES, type CollectionName } from './collections.ts';
 import { buildGraph, type Graph, type RawCollections } from './graph.ts';
 
-// Aperçu (développement ou build de branche avec SITE_MODE=preview) : brouillons visibles, pages en noindex.
+// Aperçu (développement, build d'aperçu ou de branche : src/lib/site-mode.ts) : brouillons visibles, noindex.
 export function isPreview(): boolean {
-  return import.meta.env.DEV || process.env.SITE_MODE === 'preview';
+  return import.meta.env.DEV || previewBuild();
 }
 
 export function visibilityContext(): VisibilityContext {

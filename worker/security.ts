@@ -1,11 +1,12 @@
 // Protection des formulaires : vérification Turnstile côté serveur, limitation de débit, empreintes salées
 // (adresse IP de la preuve de consentement, clés de débit) qui ne conservent ni l'IP ni l'adresse courriel.
-import type { Env, RateLimiter } from './http.ts';
+import { trialMode, type Env, type RateLimiter } from './http.ts';
 
 export const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
 // Clés secrètes d'essai de Cloudflare (réussite, échec, jeton déjà utilisé) : elles n'acceptent que le jeton
-// factice, qui ne porte ni le nom d'hôte ni l'action du site. Admises seulement pour un essai sans envoi réel.
+// factice, qui ne porte ni le nom d'hôte ni l'action du site. Admises seulement en mode d'essai, où elles sont
+// simulées sans appel à Cloudflare.
 const TEST_SECRET = /^[123]x0{31}AA$/;
 
 type Siteverify = { success?: boolean; hostname?: string; action?: string; 'error-codes'?: string[] };
@@ -26,11 +27,14 @@ async function siteverify(secret: string, token: string, ip: string, attempt: st
 export async function verifyTurnstile(env: Pick<Env, 'TURNSTILE_SECRET_KEY' | 'MEMORY_SERVICES'>, token: string, expected: { ip: string; hostname: string; action: string }): Promise<boolean> {
   const secret = env.TURNSTILE_SECRET_KEY;
   const testing = secret !== undefined && TEST_SECRET.test(secret);
-  if (!secret || (testing && env.MEMORY_SERVICES !== 'true')) {
-    console.error('turnstile : clé secrète absente, ou clé d’essai hors essai local');
+  if (!token || token.length > 2048) return false;
+  // Mode d'essai (local, aperçus) : sans clé secrète ou avec une clé d'essai, réponse simulée, comme Cloudflare
+  // la donnerait (1x : réussite; 2x : échec; 3x : jeton déjà utilisé). Rien n'est envoyé dans ce mode.
+  if (trialMode(env) && (!secret || testing)) return !secret || secret.startsWith('1x');
+  if (!secret || testing) {
+    console.error('turnstile : clé secrète absente, ou clé d’essai hors du mode d’essai');
     return false;
   }
-  if (!token || token.length > 2048) return false;
   const attempt = crypto.randomUUID();
   let result = await siteverify(secret, token, expected.ip, attempt);
   if (!result || result['error-codes']?.includes('internal-error')) result = await siteverify(secret, token, expected.ip, attempt);
@@ -39,7 +43,7 @@ export async function verifyTurnstile(env: Pick<Env, 'TURNSTILE_SECRET_KEY' | 'M
     console.warn(`turnstile : refus (${result?.['error-codes']?.join(', ') || 'sans réponse'})`);
     return false;
   }
-  if (testing || (result.hostname === expected.hostname && result.action === expected.action)) return true;
+  if (result.hostname === expected.hostname && result.action === expected.action) return true;
   console.warn(`turnstile : nom d’hôte ou action inattendus (${result.hostname ?? '?'}, ${result.action ?? '?'})`);
   return false;
 }

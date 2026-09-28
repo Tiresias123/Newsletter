@@ -284,25 +284,41 @@ describe('protections communes', () => {
     expect(ipPrefix('::ffff:192.0.2.1')).toBe('192.0.2.1');
   });
 
-  it('n’admet la clé d’essai de Turnstile qu’en essai local, et retente une fois avec la même clé d’idempotence', async () => {
+  it('simule les clés d’essai de Turnstile en mode d’essai seulement, et retente une fois avec la même clé d’idempotence', async () => {
     const calls: Array<Record<string, string>> = [];
     vi.stubGlobal('fetch', async (_input: RequestInfo | URL, init?: RequestInit) => {
       calls.push(verifyForm(init));
-      return calls.length === 1 ? new Response('panne', { status: 503 }) : Response.json({ success: true, hostname: 'example.com', action: 'test' });
+      return calls.length === 1 ? new Response('panne', { status: 503 }) : Response.json({ success: true, hostname: 'site.test', action: 'newsletter' });
     });
-    const warn = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const expected = { ip: '203.0.113.7', hostname: 'site.test', action: 'newsletter' };
-    const test = '1x0000000000000000000000000000000AA';
-    expect(await verifyTurnstile({ TURNSTILE_SECRET_KEY: test }, 'XXXX.DUMMY.TOKEN.XXXX', expected)).toBe(false);
+    const key = (prefix: string) => `${prefix}x0000000000000000000000000000000AA`;
+    const dummy = 'XXXX.DUMMY.TOKEN.XXXX';
+    // Hors du mode d'essai : clé d'essai refusée, sans appel.
+    expect(await verifyTurnstile({ TURNSTILE_SECRET_KEY: key('1') }, dummy, expected)).toBe(false);
+    // En mode d'essai : réponse simulée, sans appel à Cloudflare; sans clé secrète, réussite; sans jeton, échec.
+    const trial = (secret?: string) => ({ TURNSTILE_SECRET_KEY: secret, MEMORY_SERVICES: 'true' });
+    expect(await verifyTurnstile(trial(key('1')), dummy, expected)).toBe(true);
+    expect(await verifyTurnstile(trial(key('2')), dummy, expected)).toBe(false);
+    expect(await verifyTurnstile(trial(key('3')), dummy, expected)).toBe(false);
+    expect(await verifyTurnstile(trial(), dummy, expected)).toBe(true);
+    expect(await verifyTurnstile(trial(), '', expected)).toBe(false);
     expect(calls).toHaveLength(0);
-    warn.mockRestore();
-    expect(await verifyTurnstile({ TURNSTILE_SECRET_KEY: test, MEMORY_SERVICES: 'true' }, 'XXXX.DUMMY.TOKEN.XXXX', expected)).toBe(true);
+    errors.mockRestore();
+    // Clé de production : relance unique après une panne, avec la même clé d'idempotence.
+    expect(await verifyTurnstile({ TURNSTILE_SECRET_KEY: 'secret' }, 'jeton', expected)).toBe(true);
     expect(calls).toHaveLength(2);
     expect(calls[0]?.idempotency_key).toMatch(/^[0-9a-f-]{36}$/);
     expect(calls[1]?.idempotency_key).toBe(calls[0]?.idempotency_key);
-    // Clé de production : le nom d'hôte et l'action doivent correspondre.
-    calls.length = 1;
-    expect(await verifyTurnstile({ TURNSTILE_SECRET_KEY: 'secret' }, 'jeton', expected)).toBe(false);
+    // Le nom d'hôte et l'action doivent correspondre.
+    expect(await verifyTurnstile({ TURNSTILE_SECRET_KEY: 'secret' }, 'jeton', { ...expected, hostname: 'autre.test' })).toBe(false);
+  });
+
+  it('marche sans aucun secret en mode d’essai (aperçus de branche)', async () => {
+    const provider = new MemoryProvider();
+    const response = await handleNewsletter(post('/api/newsletter', { ...subscription(), 'cf-turnstile-response': 'XXXX.DUMMY.TOKEN.XXXX' }), { ASSETS: baseEnv().ASSETS, MEMORY_SERVICES: 'true' }, provider);
+    expect(response.status).toBe(200);
+    expect(provider.subscribers.size).toBe(1);
   });
 });
 

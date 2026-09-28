@@ -17,9 +17,16 @@ export interface Env {
   CONTACT_TO?: string;
   // Deploy Hook de Workers Builds (publication programmée, reconstruction nocturne).
   DEPLOY_HOOK_URL?: string;
-  // Essai local seulement (.dev.vars) : « true » garde inscriptions et messages en mémoire, sans rien envoyer.
+  // Mode d'essai (« true » : .dev.vars en local, bloc previews des aperçus de branche) : inscriptions et messages
+  // restent en mémoire, rien n'est envoyé ni conservé.
   MEMORY_SERVICES?: string;
 }
+
+export const trialMode = (env: Pick<Env, 'MEMORY_SERVICES'>) => env.MEMORY_SERVICES === 'true';
+
+// Sel des empreintes; en essai, un sel fixe suffit, puisqu'aucune empreinte n'y est conservée : un aperçu de
+// branche marche sans aucun secret.
+export const saltOf = (env: Pick<Env, 'IP_HASH_SALT' | 'MEMORY_SERVICES'>) => env.IP_HASH_SALT || (trialMode(env) ? 'essai' : undefined);
 
 export interface RateLimiter {
   limit(options: { key: string }): Promise<{ success: boolean }>;

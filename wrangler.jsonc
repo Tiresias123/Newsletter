@@ -5,6 +5,10 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   // Doit être identique au nom du Worker dans le tableau de bord de Cloudflare.
   "name": "media-cryptoactifs",
+  // Domaine du site, à ajouter à la mise en ligne (guide, section 41), avec "workers_dev": false pour que
+  // l'adresse workers.dev ne double pas le site : "routes": [{ "pattern": "exemple.ca", "custom_domain": true }].
+  // Les adresses des aperçus de branche restent actives.
+  "preview_urls": true,
   "main": "worker/index.ts",
   "compatibility_date": "2026-09-28",
   "send_metrics": false,

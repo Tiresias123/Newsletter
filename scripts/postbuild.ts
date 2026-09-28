@@ -10,6 +10,7 @@ import { getConfig } from '../src/lib/config/index.ts';
 import { COLLECTION_NAMES } from '../src/lib/content/collections.ts';
 import { buildGraph } from '../src/lib/content/graph.ts';
 import { headersFile, inlineScriptHashes } from '../src/lib/security/headers.ts';
+import { previewBuild } from '../src/lib/site-mode.ts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const dist = `${root}dist/`;
@@ -28,7 +29,7 @@ const pages = `${report.indexedPages} ${report.indexedPages > 1 ? 'pages indexé
 console.log(`Site construit : ${report.files} fichiers, ${pages} pour la recherche.`);
 
 const { site } = getConfig();
-if (process.env.SITE_MODE !== 'preview' && site.url !== PLACEHOLDER_URL) {
+if (!previewBuild() && site.url !== PLACEHOLDER_URL) {
   const online = await fetchOnlineUrls(site.url);
   if (!online) {
     report.warnings.push(`plan du site en ligne injoignable (${site.url}) : contrôle des adresses disparues sauté.`);

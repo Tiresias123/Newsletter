@@ -9,20 +9,20 @@ import { MemoryProvider } from '../src/lib/newsletter/memory.ts';
 import type { NewsletterProvider } from '../src/lib/newsletter/provider.ts';
 import { BrevoMailer, BrevoProvider } from '../src/lib/providers/brevo.ts';
 import { handleContact } from './contact.ts';
-import { fail, type Env } from './http.ts';
+import { fail, trialMode, type Env } from './http.ts';
 import { handleNewsletter } from './newsletter.ts';
 import { runScheduled, type ScheduledEvent } from './scheduled.ts';
 
 type NewsletterSettings = { provider: string; doubleOptInTemplateId?: number; confirmationUrl?: string; lists: Array<{ id: string; providerId?: number }> };
 type ContactSettings = { enabled: boolean; senderEmail?: string; senderName?: string };
 
-// Essai local (MEMORY_SERVICES=true dans .dev.vars) ou fournisseur « Test (aucun envoi) » : inscriptions et
-// messages gardés en mémoire le temps de l'essai, rien n'est envoyé.
+// Mode d'essai (MEMORY_SERVICES=true : .dev.vars en local, aperçus de branche) ou fournisseur « Test (aucun
+// envoi) » : inscriptions et messages gardés en mémoire le temps de l'essai, rien n'est envoyé.
 const memory = { provider: new MemoryProvider(), mailer: new MemoryMailer() };
 
 export function newsletterProvider(env: Env, request: Request): NewsletterProvider | undefined {
   const settings = newsletterConfig as NewsletterSettings;
-  if (env.MEMORY_SERVICES === 'true' || settings.provider === 'test') return memory.provider;
+  if (trialMode(env) || settings.provider === 'test') return memory.provider;
   if (settings.provider !== 'brevo' || !env.NEWSLETTER_API_KEY || !settings.doubleOptInTemplateId) return undefined;
   const listIds = Object.fromEntries(settings.lists.filter((l) => l.providerId).map((l) => [l.id, l.providerId as number]));
   return new BrevoProvider({
@@ -35,7 +35,7 @@ export function newsletterProvider(env: Env, request: Request): NewsletterProvid
 
 export function contactMailer(env: Env): Mailer | undefined {
   const contact = servicesConfig.contact as ContactSettings;
-  if (contact.enabled && env.MEMORY_SERVICES === 'true') return memory.mailer;
+  if (contact.enabled && trialMode(env)) return memory.mailer;
   if (!contact.enabled || !contact.senderEmail || !env.NEWSLETTER_API_KEY) return undefined;
   return new BrevoMailer(env.NEWSLETTER_API_KEY, { email: contact.senderEmail, name: contact.senderName || siteConfig.name });
 }

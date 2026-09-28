@@ -2,7 +2,7 @@
 // champs, débit, Turnstile) puis transmis par courriel à l'auteur. Rien n'est conservé par le site.
 import siteJson from '../config/site.json' with { type: 'json' };
 import { CONTACT_TOPICS, contactMail, type Mailer } from '../src/lib/contact/mailer.ts';
-import { backToForm, clientIp, fail, formFailure, ok, readForm, sameOrigin, type Env } from './http.ts';
+import { backToForm, clientIp, fail, formFailure, ok, readForm, saltOf, sameOrigin, trialMode, type Env } from './http.ts';
 import { ipRateKey, underLimits, verifyTurnstile } from './security.ts';
 import { email, oneOf, optional, text, validate } from './validate.ts';
 
@@ -33,8 +33,8 @@ export async function handleContact(request: Request, env: Env, mailer: Mailer |
   const fields = validate(form.fields, RULES);
   if (!fields) return fail(400, 'invalide');
   // En mémoire (essai local, aperçus), rien ne part : l'adresse de réception n'est pas exigée (domaine réservé).
-  const to = env.CONTACT_TO || site.contactEmail || (env.MEMORY_SERVICES === 'true' ? 'essai@exemple.invalid' : undefined);
-  const salt = env.IP_HASH_SALT;
+  const to = env.CONTACT_TO || site.contactEmail || (trialMode(env) ? 'essai@exemple.invalid' : undefined);
+  const salt = saltOf(env);
   if (!mailer || !to || !salt) {
     console.error('contact : service d’envoi, adresse de réception ou sel absents de la configuration du Worker');
     return fail(503, 'indisponible');

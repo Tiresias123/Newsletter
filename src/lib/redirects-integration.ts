@@ -7,6 +7,7 @@ import { loadContent } from './check/load.ts';
 import { getConfig } from './config/index.ts';
 import { buildGraph } from './content/graph.ts';
 import { collectRedirects, renderRedirects, resolveRedirects } from './redirects.ts';
+import { previewBuild } from './site-mode.ts';
 
 export function redirects(): AstroIntegration {
   let root = '';
@@ -20,7 +21,7 @@ export function redirects(): AstroIntegration {
         const config = getConfig();
         const graph = buildGraph(loadContent(root).raw, config, {
           now: new Date(),
-          includeDrafts: process.env.SITE_MODE === 'preview',
+          includeDrafts: previewBuild(),
           timezone: config.site.timezone,
         });
         const live = new Set(pages.map((page) => `/${page.pathname}`));
