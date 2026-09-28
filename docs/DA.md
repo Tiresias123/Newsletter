@@ -257,8 +257,10 @@ En phase 1, le script `check` recalculera ces paires à partir de `theme.json` 
 | success-strong / success-50 | 4,71:1 | titre d'encadré « Mise à jour » |
 | gold-700 / gold-100 | 4,84:1 | libellé de la puce d'échéance |
 | ink / gold-100 | 16,61:1 | total d'un exemple chiffré |
-| success-strong / canvas | 5,06:1 | hausse du ticker |
-| danger-strong / canvas | 6,15:1 | baisse du ticker |
+| success-strong / slate-100 | 4,84:1 | hausse des cours sur le bandeau (fond de section) |
+| danger-strong / slate-100 | 5,88:1 | baisse des cours sur le bandeau |
+| success-strong / surface | 5,37:1 | hausse des cours sur une carte |
+| danger-strong / surface | 6,53:1 | baisse des cours sur une carte |
 | danger / surface | 4,79:1 | message d'erreur |
 | danger-strong / danger-50 | 5,50:1 | erreur sur fond teinté |
 | slate-400 / surface | 3,27:1 | bordure de champ |
@@ -269,8 +271,8 @@ En phase 1, le script `check` recalculera ces paires à partir de `theme.json` 
 | Sombre : `#9DB0FF` / brand-900 | 7,00:1 | liens dans une section de marque |
 | Sombre : `#0A0E27` / brand-400 | 5,16:1 | bouton primaire |
 | Sombre : `#0A0E27` / brand-300 | 8,20:1 | bouton primaire en survol |
-| Sombre : `#3DBE7E` / `#0A0E27` | 8,02:1 | hausse du ticker |
-| Sombre : `#F2777E` / `#0A0E27` | 6,98:1 | baisse du ticker |
+| Sombre : `#3DBE7E` / `#181E44` | 6,78:1 | hausse des cours (la plus basse, sur surface 2; 7,46:1 sur surface 1) |
+| Sombre : `#F2777E` / `#181E44` | 5,90:1 | baisse des cours (la plus basse, sur surface 2; 6,49:1 sur surface 1) |
 | Sombre : `#F59E0B` / `#2A1D06` | 7,66:1 | titre d'encadré « Attention » |
 | Sombre : `#F2777E` / `#2E1216` | 6,35:1 | erreur de formulaire |
 

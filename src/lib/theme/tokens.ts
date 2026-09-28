@@ -209,8 +209,15 @@ export function contrastChecks(theme: Theme): ContrastCheck[] {
     ['Liens sombres', 'dark.link', 'dark.surface2', 4.5],
     ['Bouton primaire sombre', 'dark.bg', 'brand.400', 4.5],
     ['Bordure de champ sombre', 'dark.borderStrong', 'dark.surface2', 3],
-    ['Hausse du ticker (clair)', 'semantic.successStrong', 'neutral.canvas', 4.5],
-    ['Baisse du ticker (clair)', 'semantic.dangerStrong', 'neutral.canvas', 4.5],
+    // Cours : bandeau sur fond de section (slate-100), cartes sur la surface; en sombre, surfaces 1 et 2.
+    ['Hausse des cours sur le bandeau (clair)', 'semantic.successStrong', 'neutral.slate100', 4.5],
+    ['Baisse des cours sur le bandeau (clair)', 'semantic.dangerStrong', 'neutral.slate100', 4.5],
+    ['Hausse des cours sur carte (clair)', 'semantic.successStrong', 'neutral.surface', 4.5],
+    ['Baisse des cours sur carte (clair)', 'semantic.dangerStrong', 'neutral.surface', 4.5],
+    ['Hausse des cours (sombre)', 'dark.success', 'dark.surface1', 4.5],
+    ['Baisse des cours (sombre)', 'dark.danger', 'dark.surface1', 4.5],
+    ['Hausse des cours sur carte en section (sombre)', 'dark.success', 'dark.surface2', 4.5],
+    ['Baisse des cours sur carte en section (sombre)', 'dark.danger', 'dark.surface2', 4.5],
   ];
   if (theme.accentGold) pairs.push(['Puce d’échéance (clair)', 'gold.700', 'gold.100', 4.5], ['Puce d’échéance (sombre)', 'gold.dark', 'dark.warningBg', 4.5]);
   const checks = pairs.map(([label, fg, bg, minimum]) => ({ label, fg: c(fg), bg: c(bg), minimum, ratio: contrastRatio(c(fg), c(bg)) }));

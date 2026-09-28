@@ -1,7 +1,7 @@
 ---
 // Carte d'un cryptoactif (sections « market-brief » et « trending-assets », DA section 8.2) : cours en $ CA,
 // variation sur 24 heures, courbe des sept derniers jours (décorative), heure des données.
-import { formatMoney } from '../../lib/format.ts';
+import { formatPrice } from '../../lib/format.ts';
 import { t } from '../../lib/i18n.ts';
 import { sparklinePath, type Quote } from '../../lib/market/coingecko.ts';
 import QuoteChange from './QuoteChange.astro';
@@ -24,10 +24,10 @@ const rising = quote.sparkline.length > 1 && (quote.sparkline.at(-1) ?? 0) >= (q
     </h3>
     <QuoteChange change={quote.change24h} />
   </div>
-  <p class:list={['mt-2 font-bold tabular-nums', size === 'large' ? 'text-2xl' : 'text-xl']}>{formatMoney(quote.price, { decimals: quote.price >= 100 ? 0 : 2 })}</p>
+  <p class:list={['mt-2 font-bold tabular-nums', size === 'large' ? 'text-2xl' : 'text-xl']}>{formatPrice(quote.price)}</p>
   {
     path && (
-      <svg viewBox="0 0 200 48" preserveAspectRatio="none" class:list={['mt-3 w-full', size === 'large' ? 'h-16' : 'h-10', rising ? 'text-success' : 'text-danger']} role="img" aria-label={t('market.sparkline')}>
+      <svg viewBox="0 0 200 48" preserveAspectRatio="none" class:list={['mt-3 w-full', size === 'large' ? 'h-16' : 'h-10', rising ? 'text-rise' : 'text-fall']} role="img" aria-label={t('market.sparkline')}>
         <path d={path} fill="none" stroke="currentColor" stroke-width="2" vector-effect="non-scaling-stroke" />
       </svg>
     )

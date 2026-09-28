@@ -21,6 +21,7 @@ describe('données de marché', () => {
     expect(calls[0]?.url.startsWith(`${COINGECKO_API}/coins/markets?`)).toBe(true);
     expect(new URL(calls[0]?.url ?? '').searchParams.get('vs_currency')).toBe('cad');
     expect(new URL(calls[0]?.url ?? '').searchParams.get('ids')).toBe('bitcoin,ethereum,inconnu');
+    expect(new URL(calls[0]?.url ?? '').searchParams.get('precision')).toBe('full');
     expect(calls[0]?.headers.get('x-cg-demo-api-key')).toBe('cle-demo');
     expect(data.quotes.map((q) => [q.symbol, q.price, q.change24h])).toEqual([
       ['BTC', 84146, 1.2],

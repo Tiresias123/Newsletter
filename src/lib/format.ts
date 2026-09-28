@@ -57,6 +57,16 @@ export function formatMoney(amount: number, options: { currency?: string; decima
   return `${formatNumber(amount, decimals, locale)}${NBSP}${currency}`;
 }
 
+// Cours d'un actif : sans décimales dès 100 $, deux décimales dès 1 $, sinon quatre chiffres significatifs, sans
+// zéro final (« 0,00002345 $ CA », « 0,004 $ CA » plutôt que « 0,00 $ CA »).
+export function formatPrice(price: number, locale = DEFAULT_LOCALE): string {
+  if (price >= 100) return formatMoney(price, { decimals: 0 }, locale);
+  if (price >= 1 || price <= 0) return formatMoney(price, { decimals: 2 }, locale);
+  const fixed = price.toFixed(Math.min(12, 3 - Math.floor(Math.log10(price))));
+  const decimals = Math.max(2, fixed.replace(/0+$/, '').split('.')[1]?.length ?? 0);
+  return formatMoney(Number(fixed), { decimals }, locale);
+}
+
 // « 5 % », « +1,2 % », « −0,4 % » (valeur exprimée en points de pourcentage).
 export function formatPercent(value: number, options: { decimals?: number; signed?: boolean } = {}, locale = DEFAULT_LOCALE): string {
   const decimals = options.decimals ?? (Number.isInteger(value) ? 0 : 1);

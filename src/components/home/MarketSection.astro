@@ -31,7 +31,7 @@ const quotes = market ? market.quotes.slice(0, variant === 'brief' ? 2 : count) 
         ))}
       </div>
       <p class="mt-3 text-sm text-meta">
-        <a href={ticker.sourceUrl} rel="noopener" class="hover:underline">{t('market.source')}</a>,{' '}
+        <a href={ticker.sourceUrl} rel="noopener" class="text-link">{t('market.source')}</a>,{' '}
         {formatDateTime(market.fetchedAt, t('market.asOf', { date: '{date}', time: '{time}' }), site.timezone)}
       </p>
     </HomeSection>

@@ -4,7 +4,7 @@
 // Le conteneur défilant est positionné (relative) : sans cela, les textes pour lecteurs d'écran (sr-only, en
 // position absolue) échapperaient au défilement et élargiraient toute la page sur mobile.
 import { getConfig } from '../../lib/config/index.ts';
-import { formatDateTime, formatMoney } from '../../lib/format.ts';
+import { formatDateTime, formatPrice } from '../../lib/format.ts';
 import { t } from '../../lib/i18n.ts';
 import { getMarket } from '../../lib/market/index.ts';
 import QuoteChange from './QuoteChange.astro';
@@ -21,13 +21,13 @@ const market = ticker.enabled ? await getMarket() : undefined;
           {market.quotes.map((quote) => (
             <li class="flex items-center gap-2">
               <abbr title={quote.label} class="font-semibold no-underline">{quote.symbol}</abbr>
-              <span class="tabular-nums">{formatMoney(quote.price, { decimals: quote.price >= 100 ? 0 : 2 })}</span>
+              <span class="tabular-nums">{formatPrice(quote.price)}</span>
               <QuoteChange change={quote.change24h} />
             </li>
           ))}
         </ul>
         <p class="ml-auto text-meta">
-          <a href={ticker.sourceUrl} rel="noopener" class="hover:underline">{t('market.source')}</a>,{' '}
+          <a href={ticker.sourceUrl} rel="noopener" class="text-link">{t('market.source')}</a>,{' '}
           {formatDateTime(market.fetchedAt, t('market.time', { time: '{time}' }), site.timezone)}
         </p>
       </div>

@@ -21,8 +21,9 @@ export type MarketAsset = { id: string; symbol: string; label: string };
 type MarketRow = { id?: unknown; current_price?: unknown; price_change_percentage_24h?: unknown; sparkline_in_7d?: { price?: unknown } };
 
 export async function fetchMarket(assets: readonly MarketAsset[], apiKey: string, now = new Date(), fetchImpl: typeof fetch = fetch): Promise<MarketData> {
-  // price_change_percentage_24h figure toujours dans la réponse : aucun paramètre de plus.
-  const params = new URLSearchParams({ vs_currency: 'cad', ids: assets.map((a) => a.id).join(','), sparkline: 'true', precision: '2' });
+  // price_change_percentage_24h figure toujours dans la réponse : aucun paramètre de plus. Précision complète : un
+  // actif sous le cent ne vaut pas « 0,00 $ » (arrondi à l'affichage, src/lib/format.ts).
+  const params = new URLSearchParams({ vs_currency: 'cad', ids: assets.map((a) => a.id).join(','), sparkline: 'true', precision: 'full' });
   const response = await fetchImpl(`${COINGECKO_API}/coins/markets?${params}`, {
     headers: { accept: 'application/json', 'x-cg-demo-api-key': apiKey },
     signal: AbortSignal.timeout(10_000),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatChipDate, formatDate, formatDateTime, formatHost, formatMoney, formatNumber, formatPercent, formatRegion, formatRelative, formatTime } from '../src/lib/format.ts';
+import { formatChipDate, formatDate, formatDateTime, formatHost, formatMoney, formatNumber, formatPercent, formatPrice, formatRegion, formatRelative, formatTime } from '../src/lib/format.ts';
 import { relativeDateMessages } from '../src/lib/i18n.ts';
 
 const NB = ' ';
@@ -52,6 +52,13 @@ describe('nombres, montants, pourcentages', () => {
     expect(formatMoney(84146)).toBe(`84${NB}146${NB}$${NB}CA`);
     expect(formatMoney(10000, { currency: '$' })).toBe(`10${NB}000${NB}$`);
     expect(formatMoney(1250.5)).toBe(`1${NB}250,50${NB}$${NB}CA`);
+    // Cours : arrondi selon le montant, jamais « 0,00 $ » pour un actif sous le cent.
+    expect(formatPrice(84146.37)).toBe(`84${NB}146${NB}$${NB}CA`);
+    expect(formatPrice(3.456)).toBe(`3,46${NB}$${NB}CA`);
+    expect(formatPrice(0.5)).toBe(`0,50${NB}$${NB}CA`);
+    expect(formatPrice(0.12345)).toBe(`0,1235${NB}$${NB}CA`);
+    expect(formatPrice(0.004)).toBe(`0,004${NB}$${NB}CA`);
+    expect(formatPrice(0.0000234512)).toBe(`0,00002345${NB}$${NB}CA`);
   });
   it('écrit « 5 % », « +1,2 % » et « −0,4 % »', () => {
     expect(formatPercent(5)).toBe(`5${NB}%`);
