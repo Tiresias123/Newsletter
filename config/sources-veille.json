@@ -90,9 +90,9 @@
       "label": "LEGISinfo (projets de loi fédéraux)",
       "organisme": "",
       "jurisdiction": "canada",
-      "url": "https://www.parl.ca/legisinfo/en/bills/rss",
+      "url": "https://www.parl.ca/legisinfo/fr/projets-de-loi/rss",
       "format": "rss",
-      "language": "en",
+      "language": "fr",
       "keywords": [
         "crypto",
         "stablecoin",
@@ -100,7 +100,7 @@
         "digital asset"
       ],
       "enabled": false,
-      "note": "Adresse anglaise relevée ; chercher la version française en phase 4. [À VÉRIFIER]"
+      "note": "Adresse française à l'essai (l'anglaise, https://www.parl.ca/legisinfo/en/bills/rss, a été lue le 28 septembre 2026). [À VÉRIFIER]"
     },
     {
       "id": "amf",
