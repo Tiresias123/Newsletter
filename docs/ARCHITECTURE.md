@@ -1045,7 +1045,7 @@ Marge confortable. Si la durée de build grandit avec le contenu : builds incr�
 ### 16.1 Sécurité
 
 - **Surface d'attaque minimale** : pas de base de données, pas de serveur d'application permanent, deux routes serveur (`/api/newsletter`, `/api/contact`).
-- **Worker** (`worker/`, 86 Kio, 26 Kio compressé) :
+- **Worker** (`worker/`, 89 Kio, 26 Kio compressé) :
   - origine vérifiée (le formulaire vient du site), corps plafonné pendant la lecture même sans `Content-Length` (8 Kio pour l'infolettre, 24 Kio pour le contact), seuls les formulaires encodés acceptés;
   - validation stricte de chaque champ par des règles sans dépendance (`worker/validate.ts`) : Zod et ses traductions portaient le Worker à 879 Kio;
   - vérification de Turnstile côté serveur, limitation de débit (section 12.1);
@@ -1454,7 +1454,7 @@ Prises pendant la construction des gabarits, dans le cadre fixé par l'auteur (�
 
 **Sources.** Étude du 28 septembre 2026, menée par cinq instances automatisées, chacune sur un service : spécification OpenAPI de Brevo (copie du 18 septembre 2026) et trousse officielle; dépôt `cloudflare/cloudflare-docs` (commit `fd9671e7`) et code publié de `wrangler` 4.143.0, `miniflare` et `workers-shared`; Turnstile (même dépôt, démonstration officielle, `cloudflare/skills`); code et documentation d'Umami (v3.4.0, branche d'Umami Cloud); spécification OpenAPI de CoinGecko, `github/docs`, `actions/checkout`, `actions/setup-node`, spécification OpenAPI de Resend. Les flux de la veille ont été lus depuis GitHub Actions. Les sites des fournisseurs et les sites gouvernementaux restaient inaccessibles : les extraits de recherche sont marqués « (s) » ou « extrait ». Essais locaux : Worker sous `wrangler dev` (routes, en-têtes, débit, tâche planifiée), pages sous la CSP réelle dans Chromium, clair et sombre, 1 280 et 360 pixels de large.
 
-- **Worker sans adaptateur ni Zod** : `worker/index.ts` route `/api/newsletter`, `/api/contact` (404 JSON pour le reste de `/api/*`) et `scheduled()`; tout autre chemin est servi en fichier statique sans exécuter le Worker (`run_worker_first: ["/api/*"]`, indispensable pour qu'un envoi sans JavaScript atteigne le Worker). Validation par règles sans dépendance : 86 Kio au lieu de 879 Kio avec Zod. Les règles de `schedule.json` sont dans un module sans dépendance (`src/lib/schedule-rules.ts`), partagé avec le build.
+- **Worker sans adaptateur ni Zod** : `worker/index.ts` route `/api/newsletter`, `/api/contact` (404 JSON pour le reste de `/api/*`) et `scheduled()`; tout autre chemin est servi en fichier statique sans exécuter le Worker (`run_worker_first: ["/api/*"]`, indispensable pour qu'un envoi sans JavaScript atteigne le Worker). Validation par règles sans dépendance : 89 Kio au lieu de 879 Kio avec Zod. Les règles de `schedule.json` sont dans un module sans dépendance (`src/lib/schedule-rules.ts`), partagé avec le build.
 - **Une seule tâche planifiée** (`7,22,37,52 * * * *`), reconstruction nocturne à partir de 5 h 07 UTC, relancée pendant deux heures en cas d'échec (section 15.3).
 - **Contenus programmés contrôlés comme publiés** par `check`, dès leur mise en ligne : un marqueur ou une autre erreur bloquante apparaît au moment où l'auteur programme, et non à l'échéance, où le build échouerait sans témoin et figerait le site.
 - **Limitation de débit** par la liaison `ratelimits`, clés salées par préfixe d'IP et par adresse courriel (section 12.1); à confirmer au premier déploiement en forfait gratuit. Seuils (5 par minute) [À VALIDER PAR L'AUTEUR].
