@@ -3,11 +3,13 @@
 import { existsSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { CONFIG_FILES } from '../config/index.ts';
+import { COLLECTIONS } from '../content/collections.ts';
 import type { CitedSource } from '../content/fields.ts';
 import type { Severity } from '../content/graph.ts';
 import { describePath } from '../errors.ts';
 import { formatNumber } from '../format.ts';
 import { checkBlocks } from './blocks.ts';
+import { editorImageProblems, editorProblems } from './editor-compat.ts';
 import type { Context } from './context.ts';
 import { bodyLinks, fieldLinks, resolveInternalPath } from './links.ts';
 
@@ -64,6 +66,9 @@ export function checkBodiesAndLinks({ graph, config, entries, shown, add, root }
       if (!p.warning) add(entry.file, line(p.line), p.message, 'bloc', blocking);
       else if (isShown) add(entry.file, line(p.line), p.message, 'bloc', 'avertissement');
     }
+    for (const p of editorProblems(entry.body)) add(entry.file, line(p.line), p.message, 'editeur', 'avertissement');
+    const folder = (COLLECTIONS[entry.collection] as { images?: string }).images;
+    if (folder) for (const p of editorImageProblems(folder, entry.id, entry.data, entry.body)) add(entry.file, describePath(p.field), p.message, 'editeur', 'avertissement');
     for (const link of fieldLinks(entry.data)) checkLink(entry.file, describePath(link.path ?? []), link.href, isShown);
     const { links, images } = bodyLinks(entry.body);
     for (const link of links) checkLink(entry.file, line(link.line ?? 1), link.href, isShown);

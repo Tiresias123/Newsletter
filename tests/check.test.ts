@@ -81,6 +81,7 @@ describe('check sur des jeux d’essai', () => {
     );
     const lines = problems.filter((p) => p.file === 'content/articles/essai.mdx').map((p) => `${p.severity} ${p.rule} ${p.message}`);
     expect(lines).toEqual([
+      expect.stringMatching(/^avertissement editeur éditeur : image Markdown/),
       expect.stringMatching(/^avertissement lien-interne Lien « \/dossiers\/absent\/ » : « absent » n'existe pas/),
       expect.stringMatching(/^avertissement lien-interne Adresse relative/),
       expect.stringMatching(/^bloquant image Image introuvable/),
