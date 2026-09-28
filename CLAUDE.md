@@ -1,11 +1,11 @@
 # Consignes pour les agents de code
 
-Site média sur la réglementation et la fiscalité des cryptoactifs au Canada et au Québec. Astro 7 (site statique), contenu en fichiers (`content/`), réglages en JSON (`config/`). Références : `docs/BRIEF.md`, `docs/ARCHITECTURE.md`, `docs/DA.md`, `docs/GUIDE-AUTEUR.md`.
+Site média sur la réglementation et la fiscalité des cryptoactifs au Canada et au Québec. Astro 7 (site statique), contenu en fichiers (`content/`), réglages en JSON (`config/`), Worker Cloudflare pour les formulaires et la tâche planifiée (`worker/`). Références : `docs/BRIEF.md`, `docs/ARCHITECTURE.md`, `docs/DA.md`, `docs/GUIDE-AUTEUR.md`.
 
 ## Règles absolues
 
 - **Ne jamais inventer de contenu juridique ou fiscal** (règle, taux, seuil, date, référence d'article de loi, position d'une autorité). Écrire `[À COMPLÉTER PAR L'AUTEUR]`, `[À VÉRIFIER]` ou `[À VALIDER PAR L'AUTEUR]`. Ces marqueurs bloquent la publication (`npm run check`).
-- Aucun service payant sans l'accord de l'auteur. Aucune clé d'API ni aucun secret dans le dépôt.
+- Aucun service payant sans l'accord de l'auteur. Aucune clé d'API ni aucun secret dans le dépôt : secrets du Worker chez Cloudflare (`.dev.vars` en local, non versionné), clés de build en variables de construction.
 - Une fois le site en production, ne jamais pousser directement sur `main` sans l'accord de l'auteur.
 - Ne jamais modifier `docs/BRIEF.md` ni `docs/references/`.
 
@@ -16,6 +16,8 @@ Site média sur la réglementation et la fiscalité des cryptoactifs au Canada e
 - `npm run build` : `check`, build de production, index Pagefind, puis contrôles de `dist/` (`scripts/postbuild.ts`). `SITE_MODE=preview` pour un build d'aperçu.
 - `npm test` (Vitest), `npm run typecheck` (`astro check`).
 - `npm run new:article -- "Titre"` (options après `--`), `npm run newsletter:draft` (`-- --html` pour le courriel), `npm run content:format` (remet `content/` et `config/` au format de l'éditeur).
+- `npm run veille:fetch` (`-- --diagnostic` : essai des sources sans écrire), `npm run surveillance` (fraîcheur du site en ligne).
+- `npx wrangler dev` après `npm run build` : Worker local (formulaires, `/cdn-cgi/local/scheduled`), secrets dans `.dev.vars` (modèle `.dev.vars.example`, `MEMORY_SERVICES=true` : rien n'est envoyé). Jamais `--ip 0.0.0.0` ni `--tunnel`.
 
 Avant tout commit : `npm test`, `npm run typecheck` et `npm run build` passent sans avertissement.
 
@@ -30,6 +32,8 @@ Avant tout commit : `npm test`, `npm run typecheck` et `npm run build` passent 
 - Dates, nombres et montants : `src/lib/format.ts`. Typographie québécoise : `src/lib/typo.ts` (appliquée par `t()`).
 - Dépendances minimales, versions exactes (pas de `^`).
 - Tests dans `tests/` pour les schémas, le formatage, le graphe et `check`.
+- Worker (`worker/`) léger : ni Zod ni dépendance lourde (règles de `worker/validate.ts`); de `src/`, seulement des modules sans dépendance (`schedule-rules.ts`, fournisseurs). Taille à contrôler par `npx wrangler deploy --dry-run --outdir <dossier temporaire>` (moins de 100 Kio). Réponses par `worker/http.ts` (en-têtes de sécurité, JSON sans cache). Aucune donnée personnelle dans les journaux (ni IP, ni courriel, ni message).
+- Services derrière un contrat : infolettre (`src/lib/newsletter/provider.ts`), envoi de courriel (`src/lib/contact/mailer.ts`), mesure d'audience (`src/lib/analytics/events.ts`); un adaptateur par fournisseur (`src/lib/providers/`).
 
 ## Éditeur (Keystatic, mode local)
 
@@ -43,7 +47,7 @@ Avant tout commit : `npm test`, `npm run typecheck` et `npm run build` passent 
 
 ## Rédaction
 
-Français du Québec, typographie québécoise (point 8.10 du brief) : espace insécable avant le deux-points et à l'intérieur des guillemets « », aucune espace avant le point-virgule, le point d'exclamation et le point d'interrogation. Vocabulaire : « courriel », « infolettre ».
+Français du Québec, typographie québécoise (point 8.10 du brief) : espace insécable avant le deux-points et à l'intérieur des guillemets « », aucune espace avant le point-virgule, le point d'exclamation et le point d'interrogation. Vocabulaire : « courriel », « infolettre ».
 
 ## Commits
 

@@ -34,6 +34,16 @@ Ce guide explique comment faire vivre le site sans toucher au code. Il grandit �
 28. L'infolettre : préparer et envoyer un numéro
 29. Corriger, dépublier, restaurer une version
 30. Ce qu'il faut savoir sur l'éditeur
+31. Les services en un coup d'œil
+32. L'infolettre : ouvrir le compte Brevo et brancher l'inscription
+33. Sauvegarder les abonnés : l'export mensuel
+34. Le formulaire de contact
+35. La protection contre les robots : Turnstile
+36. La mesure d'audience : Umami
+37. La veille officielle
+38. Reconstruction nocturne, surveillance et alertes
+39. Les cours des cryptoactifs
+40. Les pages légales et de confiance
 
 ---
 
@@ -58,10 +68,18 @@ Ce guide explique comment faire vivre le site sans toucher au code. Il grandit �
 | créer ou renommer une catégorie, un thème ou un format | Classements (section 14) |
 | ajouter une juridiction ou un organisme | Fiches › Juridictions, Fiches › Organismes (section 22) |
 | remplir un traitement fiscal | Fiches › Traitements fiscaux (section 22) |
-| ajouter un actif au bandeau des cours | Réglages › Bandeau des cours |
-| ajouter une source à la veille | Réglages › Sources de la veille |
+| ajouter un actif au bandeau des cours | Réglages › Bandeau des cours (section 39) |
+| ajouter une source à la veille | Réglages › Sources de la veille (section 37) |
 | ajouter une redirection | Réglages › Redirections (section 26) |
 | préparer et envoyer un numéro de l'infolettre | `npm run newsletter:draft` (section 28) |
+| brancher l'inscription à l'infolettre (Brevo) | section 32 |
+| sauvegarder la liste des abonnés | export mensuel (section 33) |
+| activer le formulaire de contact | Réglages › Services › Formulaire de contact (section 34) |
+| régler la protection contre les robots | Réglages › Services › Protection contre les robots (section 35) |
+| activer la mesure d'audience | Réglages › Services › Mesure d'audience (section 36) |
+| savoir où ranger une clé secrète | section 31 |
+| compléter la politique de confidentialité, les mentions légales, la page À propos | Contenus › Pages (section 40) |
+| savoir si le site en ligne est à jour | section 38 |
 | corriger une coquille, ajouter une note de correction, dépublier, restaurer une version | section 29 |
 | savoir ce qui reste à vérifier | http://127.0.0.1:4321/a-verifier/, ou `npm run check` puis `docs/A-VERIFIER.md` (section 16) |
 | voir tous les blocs d'écriture et leur rendu | `npm run dev`, puis http://127.0.0.1:4321/exemple/ (section 20) |
@@ -84,6 +102,9 @@ Ce guide explique comment faire vivre le site sans toucher au code. Il grandit �
 | `npm run preview` | sert le dossier `dist/` en local, pour voir le site tel qu'il sera publié |
 | `npm test` | lance les tests automatiques |
 | `npm run typecheck` | vérifie le code (utile après une modification technique) |
+| `npm run veille:fetch` | relève les publications des sources de la veille; `-- --diagnostic` essaie les sources sans rien enregistrer (section 37) |
+| `npm run surveillance` | vérifie que le site en ligne est à jour (section 38) |
+| `npx wrangler dev` | après `npm run build`, sert le site avec ses formulaires, pour un essai (section 31) |
 
 **Deux modes d'affichage.**
 
@@ -104,7 +125,7 @@ L'éditeur est un ensemble de formulaires, en français, au-dessus des fichiers 
 - **Fiches** : juridictions, organismes, textes, traitements fiscaux, lexique, agenda;
 - **Références** : sources réutilisables et auteurs;
 - **Classements** : catégories, thèmes, formats, activités fiscales, types de contribuables;
-- **Réglages** : un formulaire par fichier de `config/` (identité du site, menus, page d'accueil, thème, infolettre, mentions juridiques, sources de la veille, partenaires, redirections, bandeau des cours, textes de l'interface).
+- **Réglages** : un formulaire par fichier de `config/` (identité du site, menus, page d'accueil, thème, infolettre, services, mentions juridiques, sources de la veille, partenaires, redirections, bandeau des cours, textes de l'interface).
 
 **La liste d'une collection** montre l'identifiant, le titre, le statut et la date. Le champ de recherche de la liste ne cherche que dans les identifiants (« impot », pas « Impôt »). Le bouton « Ajouter » crée une entrée.
 
@@ -154,7 +175,7 @@ Chaque contenu porte un statut (« Statut de publication », champ `status`) 
 
 ## 6. Images
 
-Les champs d'image (couverture, image de partage, photo d'un auteur) ont un bouton « Choose file » pour choisir le fichier et « Remove » pour le retirer. Le site produit lui-même les tailles et les formats utiles : envoyez une image assez grande (1 600 pixels de large pour une couverture), en JPEG, PNG ou WebP. Le rapport « À vérifier » signale une image de plus de 500 Ko.
+Les champs d'image (couverture, image de partage, photo d'un auteur) ont un bouton « Choose file » pour choisir le fichier et « Remove » pour le retirer. Le site produit lui-même les tailles et les formats utiles : envoyez une image assez grande (1 600 pixels de large pour une couverture), en JPEG, PNG ou WebP. Le rapport « À vérifier » signale une image de plus de 500 Ko.
 
 - **Où vont les fichiers** : chaque contenu range ses images dans son propre dossier, `content/images/<collection>/<identifiant>/`. L'éditeur les nomme d'après le champ : la couverture d'un article devient `cover/src.webp`, son image de partage `seo/socialImage.png`. Une image ajoutée à la main doit porter ce nom, sinon le rapport le signale.
 - **Une image n'appartient qu'à un contenu.** Une image citée depuis le dossier d'un autre contenu serait effacée au prochain enregistrement : le rapport le signale (« Contenus que l'éditeur ne pourrait pas ouvrir »). Pour réutiliser une image, choisissez de nouveau le fichier.
@@ -279,7 +300,8 @@ Dans l'éditeur : **Réglages › Mentions juridiques**.
 
 - `disclaimers` : les avertissements affichés sous les contenus (`general`, `fiscal`, `reglementaire`, `opinion`, `exemple-chiffre`, `mise-en-garde`). Une catégorie choisit son avertissement par défaut (`defaultDisclaimer`), qu'un contenu peut remplacer (`disclaimerVariant`). Dans ces deux listes, « Par défaut » reprend l'avertissement de la catégorie (sinon le général; pour un dossier, le réglementaire), « Aucun » n'en affiche pas.
 - `officialSourceTypes` : les types de sources réputés officiels (loi, règlement, décision…). Les contenus de réglementation et de fiscalité doivent citer au moins une source de ces types. **Cette liste est à valider** : passer ensuite `officialSourceTypesValidated` à `true` pour faire disparaître le rappel du rapport.
-- `privacyOfficer` : la personne responsable de la protection des renseignements personnels (Loi 25).
+- `privacyOfficer` : la personne responsable de la protection des renseignements personnels (Loi 25), affichée sur la page Confidentialité (section 40).
+- `dataInventory` : le tableau des renseignements recueillis (traitement, renseignements, où, lieu d'hébergement, conservation), affiché lui aussi sur la page Confidentialité.
 - `newsletterSender` : identification et adresse postale de l'expéditeur de l'infolettre (Loi canadienne anti-pourriel).
 
 Ces textes ont une portée juridique : ils portent des marqueurs tant que vous ne les avez pas validés.
@@ -335,7 +357,7 @@ Chaque ligne donne le fichier, le champ (ou la ligne du texte) et ce qu'il faut 
 - **Source sans copie archivée** : ouvrez l'adresse proposée (`https://web.archive.org/save/…`) pour créer une copie, puis collez l'adresse obtenue dans le champ `archivedUrl`.
 - **Lien vers un contenu non publié** : publiez le contenu visé, ou retirez le lien.
 
-La vérification des liens externes interroge chaque site cité : elle est lente et demande un accès réseau. Elle se lance à part, avec `npm run check -- --liens-externes`, et sera faite chaque semaine par le rapport automatique (phase 5).
+La vérification des liens externes interroge chaque site cité : elle est lente et demande un accès réseau. Elle se lance à part, avec `npm run check -- --liens-externes`, et le rapport hebdomadaire la fait chaque lundi (section 38).
 
 ## 17. Si la construction du site échoue
 
@@ -505,7 +527,7 @@ Une adresse publiée ne doit jamais mourir : d'autres sites, des courriels ou d
 2. **Rédiger** : dans l'éditeur, **Numéros de l'infolettre**, remplissez l'objet, le pré-en-tête (texte d'aperçu affiché dans la boîte de réception) et le mot d'introduction; retirez ou réordonnez les articles. Le mot d'introduction accepte paragraphes, intertitres, listes à puces ou numérotées, gras, italique et liens; une citation y devient un paragraphe, et les blocs n'y passent pas.
 3. **Archiver** : passez le statut à « Envoyé », indiquez la date d'envoi (aujourd'hui), sauvegardez et mettez en ligne. Le numéro rejoint l'archive `/newsletter/` : le lien « Lire ce numéro dans votre navigateur » du courriel y mène, il faut donc qu'elle existe avant l'envoi.
 4. **Produire le courriel** : `npm run newsletter:draft -- --html` crée `exports/infolettre/<numéro>.html` et sa version texte `.txt` (pour un numéro précis : `npm run newsletter:draft -- --html 2026-002`). La commande avertit si le courriel contient encore un marqueur, un article non publié, un partenaire désactivé, ou si le numéro n'est pas encore archivé.
-5. **Envoyer** : chez le fournisseur (Brevo), créez une campagne, choisissez l'éditeur « code HTML » et collez le contenu du fichier `.html`. Le lien de désabonnement est la balise que le fournisseur remplace à l'envoi : réglages de l'infolettre, « Lien de désabonnement » (`{{ unsubscribe }}` chez Brevo, à vérifier lors de l'ouverture du compte, phase 4). Envoyez-vous d'abord un essai. Vous pouvez ensuite noter l'identifiant de la campagne dans le numéro.
+5. **Envoyer** : chez le fournisseur (Brevo), créez une campagne, choisissez l'éditeur « code HTML » et collez le contenu du fichier `.html`. Le lien de désabonnement est la balise que le fournisseur remplace à l'envoi : réglages de l'infolettre, « Lien de désabonnement » (`{{ unsubscribe }}` chez Brevo, à vérifier au premier envoi d'essai). Envoyez-vous d'abord un essai. Vous pouvez ensuite noter l'identifiant de la campagne dans le numéro.
 
 Chaque courriel porte l'identification et l'adresse postale de l'expéditeur (mentions juridiques, « Expéditeur de l'infolettre ») et la phrase qui rappelle pourquoi le lecteur le reçoit (textes de l'interface, section `newsletterEmail`, à valider). L'envoi reste toujours un geste humain.
 
@@ -543,6 +565,155 @@ Chaque courriel porte l'identification et l'adresse postale de l'expéditeur (me
 
 **Sécurité** : l'éditeur écrit dans les fichiers du site sans demander de mot de passe. Il ne fonctionne que sur votre ordinateur : lancé avec l'option `--host`, qui ouvre le site au réseau, ou `--allowedHosts`, qui le rend joignable par un tunnel, `npm run dev` le désactive.
 
-**Réseau** : l'éditeur charge sa police (Inter) depuis Google Fonts; le site public, lui, ne fait aucun appel extérieur.
+**Réseau** : l'éditeur charge sa police (Inter) depuis Google Fonts. Le site public, lui, n'appelle un service extérieur que pour la protection contre les robots, au premier contact avec un formulaire (section 35), et pour la mesure d'audience si elle est activée (section 36).
 
 **Mise en forme des fichiers** : au premier enregistrement, l'éditeur écrit le texte à sa façon (puces `*`, `\[` devant un marqueur, blocs indentés). Tout le contenu du site est déjà dans ce format. Après une modification faite à la main ou par Claude Code, `npm run content:format` le rétablit, sans rien changer aux données : un fichier dont l'enregistrement changerait une donnée, une image ou le rendu (image mal nommée, notes collées…) est laissé tel quel et signalé, avec la raison.
+
+## 31. Les services en un coup d'œil
+
+Le site se construit seul, sans aucun service. Pour l'infolettre, le formulaire de contact, la mesure d'audience et les cours de marché, il s'appuie sur des services extérieurs, tous gratuits au lancement. Chacun a son compte (à protéger par la double authentification) et, pour certains, une clé secrète.
+
+| Service | Rôle | Réglage dans l'éditeur | Secret (jamais dans un fichier du site) |
+|---|---|---|---|
+| Brevo | inscriptions à l'infolettre (double consentement), envoi des numéros, messages du formulaire de contact | Réglages › Infolettre (section 32); Réglages › Services › Formulaire de contact (section 34) | `NEWSLETTER_API_KEY` |
+| Cloudflare Turnstile | protection des formulaires contre les robots | Réglages › Services › Protection contre les robots (section 35) | `TURNSTILE_SECRET_KEY` |
+| Umami Cloud | mesure d'audience, sans témoin | Réglages › Services › Mesure d'audience (section 36) | aucun |
+| CoinGecko | cours du bandeau et des sections de marché | Réglages › Bandeau des cours (section 39) | `COINGECKO_API_KEY` |
+| Cloudflare Workers | hébergement, envoi des formulaires, publication programmée | aucun (fichier `wrangler.jsonc`) | `IP_HASH_SALT`, `DEPLOY_HOOK_URL`, `CONTACT_TO` (facultatif) |
+| GitHub Actions | veille officielle, surveillance, rapport hebdomadaire | aucun (dossier `.github/workflows/`) | aucun |
+
+**Où vont les secrets.** Dans le tableau de bord de Cloudflare, sur la page du Worker du site, « Settings », puis « Variables and Secrets » : chaque secret y est ajouté en type « Secret », jamais « Text ». `COINGECKO_API_KEY` est une variable de construction : elle se déclare dans les réglages de construction (« Build »), puisque les cours sont lus pendant la construction. Le branchement de l'hébergement se fait en phase 5 : d'ici là, les formulaires affichent leurs messages mais n'envoient rien.
+
+| Secret | Ce que c'est | Si vous le perdez |
+|---|---|---|
+| `NEWSLETTER_API_KEY` | clé d'API de Brevo (section 32) | en créer une nouvelle dans Brevo, puis la remplacer |
+| `TURNSTILE_SECRET_KEY` | clé secrète du widget Turnstile (section 35) | la régénérer dans Cloudflare |
+| `IP_HASH_SALT` | suite de caractères aléatoires qui rend l'empreinte des adresses IP impossible à remonter : au moins 32 caractères, tirés au hasard par un gestionnaire de mots de passe | en créer un nouveau; les empreintes déjà enregistrées restent des preuves valables. Ne le changez jamais sans raison |
+| `DEPLOY_HOOK_URL` | adresse qui déclenche une construction du site (publication programmée) | la régénérer dans Workers Builds si elle a été divulguée |
+| `CONTACT_TO` | facultatif : adresse qui reçoit les messages du formulaire, si elle diffère du courriel de contact de l'identité du site | aucun risque |
+| `COINGECKO_API_KEY` | clé « Demo » de CoinGecko (section 39) | en créer une nouvelle chez CoinGecko |
+
+**Comment un envoi est protégé.** Chaque envoi de formulaire passe, dans l'ordre : origine (le formulaire doit venir du site), taille maximale, champ piège invisible (un robot qui le remplit reçoit un faux succès), validation des champs, limitation de débit, puis vérification anti-robot (section 35). La limitation accepte 5 envois par minute depuis un même appareil, et 5 par minute pour une même adresse courriel; au-delà, le lecteur lit « Trop d'envois en peu de temps ». Elle se règle dans `wrangler.jsonc` (`ratelimits`) et reste approximative, chaque centre de données de Cloudflare comptant de son côté. Cloudflare ne dit pas si elle est offerte en forfait gratuit : si le premier déploiement la refuse, on la retire, et Turnstile, le champ piège et le double consentement suffisent \[À VÉRIFIER au premier déploiement]. Rien de ce qui est envoyé n'est conservé par le site, et ses journaux ne contiennent ni adresse IP ni adresse courriel.
+
+**Essayer les formulaires sur votre ordinateur** (utile après une modification technique) :
+
+1. Copiez `.dev.vars.example` en `.dev.vars`, à côté de `wrangler.jsonc` : ce fichier porte les secrets de l'essai et n'est jamais envoyé sur GitHub. Sa ligne `MEMORY_SERVICES=true` garde les inscriptions et les messages en mémoire : Brevo n'est pas appelé.
+2. Le temps de l'essai, saisissez la clé de site d'essai de Cloudflare `1x00000000000000000000AA` dans **Réglages › Services › Protection contre les robots** (la clé secrète d'essai est déjà dans le modèle). Le rapport « À vérifier » la signale, et la bloque une fois le site en ligne : remettez la vraie clé ensuite.
+3. `npm run build`, puis `npx wrangler dev`, et ouvrez http://localhost:8787. La vérification anti-robot a besoin d'Internet.
+
+La tâche planifiée se déclenche à la main avec `curl "http://localhost:8787/cdn-cgi/local/scheduled?cron=7,22,37,52+*+*+*+*"`. N'ajoutez jamais les options `--ip 0.0.0.0` ni `--tunnel`, qui ouvriraient l'essai à d'autres ordinateurs.
+
+**Aperçus de branche** (phase 5) : les formulaires y restent en mémoire, sans vraie inscription ni message envoyé, et la tâche planifiée n'y tourne pas.
+
+## 32. L'infolettre : ouvrir le compte Brevo et brancher l'inscription
+
+À faire une fois, dans l'ordre. Les libellés de Brevo peuvent varier légèrement.
+
+1. **Compte.** Créez le compte Brevo (forfait gratuit), puis passez l'interface en français : menu du compte, « Mon profil », « Langue ».
+2. **Domaine d'envoi.** Dans « Expéditeurs, domaines et IP dédiées », onglet « Domaines », ajoutez le domaine du site et suivez les consignes : Brevo donne trois ou quatre enregistrements DNS (code Brevo, DKIM, DMARC) à créer chez Cloudflare, dans la zone DNS du domaine. Sans domaine authentifié, Brevo remplace votre adresse d'expédition par une des siennes, et les grandes messageries classent vos envois en indésirables. Une adresse Gmail ou Hotmail ne peut pas servir d'expéditeur.
+3. **Liste.** Dans « Contacts », « Listes », créez la liste « Infolettre hebdomadaire ». Son numéro s'affiche dans la liste des listes : saisissez-le dans **Réglages › Infolettre › Listes d'inscription › Identifiant chez le fournisseur**.
+4. **Attributs de la preuve de consentement.** Dans les réglages des contacts, « Attributs », créez ces six attributs de type **Texte**, en majuscules, exactement ainsi : `CONSENT_AT`, `CONSENT_SOURCE`, `CONSENT_TEXT_VERSION`, `CONSENT_IP_HASH`, `NL_LIST`, `NL_TAGS`. Brevo ignore sans prévenir un attribut qui n'existe pas : un nom mal écrit, et la preuve n'est pas enregistrée.
+5. **Courriel de confirmation.** Dans « Modèles », créez un modèle en français (« Confirmez votre inscription à l'infolettre… ») :
+   - un bouton dont le lien est de type « Double opt-in link » (dans le code, `{{ doubleoptin }}`);
+   - l'étiquette (« Tag ») `optin`, dans les réglages avancés du modèle;
+   - l'expéditeur sur votre domaine authentifié;
+   - aucun champ de personnalisation (prénom, etc.) : Brevo ne les remplit pas dans ce courriel.
+
+   Activez le modèle, puis saisissez son numéro dans **Réglages › Infolettre › Modèle du courriel de confirmation**. Le lien du courriel mène à la page `/newsletter/confirmation/` du site, dont le titre et le texte se règlent dans **Réglages › Infolettre › Textes**.
+6. **Clé d'API.** Dans « SMTP et API », « Clés API », créez une clé nommée « Site » et copiez-la aussitôt dans le secret `NEWSLETTER_API_KEY` de Cloudflare (section 31). Ne la collez nulle part ailleurs.
+7. **Blocage des adresses IP.** Dans « Sécurité », « IP autorisées », désactivez le blocage des adresses IP inconnues. Les adresses de Cloudflare changent sans cesse : sans ce réglage, Brevo refuse toutes les inscriptions après trente jours (« unrecognised IP address »).
+8. **Essai.** Sur le site en ligne, inscrivez-vous avec votre propre adresse, cliquez sur le lien du courriel, puis ouvrez le contact dans Brevo : les six attributs doivent être remplis. Réessayez avec la même adresse : le message de succès est le même, mais aucun nouveau courriel n'est envoyé.
+
+**Ce que voit le lecteur.** Il saisit son adresse, coche la case de consentement (jamais cochée d'avance) et envoie. Un message neutre s'affiche (« si votre adresse n'est pas déjà inscrite… ») : le site ne révèle jamais si une adresse est inscrite. Il reçoit le courriel de confirmation, clique, et arrive sur la page de confirmation. Il n'est ajouté à la liste qu'à ce moment.
+
+**La preuve de consentement**, conservée chez Brevo avec chaque abonné confirmé : la date et l'heure de la demande (`CONSENT_AT`), la page et l'emplacement du formulaire (`CONSENT_SOURCE`), la version du texte de consentement affiché (`CONSENT_TEXT_VERSION`, empreinte courte : le texte exact de chaque version se retrouve dans l'historique de `config/newsletter.json`), l'empreinte de l'adresse IP (`CONSENT_IP_HASH`, jamais l'adresse elle-même), la liste et l'emplacement (`NL_LIST`, `NL_TAGS`). La date de confirmation est la date d'ajout à la liste, qui figure dans l'export (section 33).
+
+**Plafond du forfait gratuit** : 300 envois par jour, courriels de confirmation, messages du formulaire de contact et chaque destinataire d'un numéro compris; la mention « Sent with Brevo » est imposée. Au-delà de 300 abonnés, un numéro ne part qu'en plusieurs jours. Prévoyez le forfait Starter (de l'ordre de 9 $ US par mois, prix à revérifier le jour du choix) quand la liste approche 250 abonnés.
+
+## 33. Sauvegarder les abonnés : l'export mensuel
+
+Les abonnés et leurs preuves de consentement n'existent que chez Brevo. Chaque mois :
+
+1. Dans Brevo, « Contacts », ouvrez la liste « Infolettre hebdomadaire », puis « Exporter ».
+2. Cochez l'adresse courriel, les six attributs de la section 32 et la date d'ajout, format CSV.
+3. Récupérez le fichier (cloche des notifications, ou courriel), puis rangez-le dans l'emplacement chiffré de votre choix \[À COMPLÉTER PAR L'AUTEUR].
+
+Ce fichier contient des renseignements personnels : **jamais dans le dossier du site**, jamais sur GitHub. Il permettrait, en cas de changement de fournisseur, de réimporter la liste avec ses preuves.
+
+## 34. Le formulaire de contact
+
+- **Activer** : **Réglages › Services › Formulaire de contact** : « Activé », l'adresse d'expédition (une adresse de votre domaine authentifié chez Brevo, section 32, par exemple `contact@votre-domaine.ca`) et le nom d'expéditeur. Les messages arrivent au **courriel de contact** de **Réglages › Identité du site** (ou à l'adresse du secret `CONTACT_TO`).
+- **Où il apparaît** : sur la page Contact, par le bloc « Formulaire de contact » (section 20). Les liens « Signaler une erreur » et « Suggérer un sujet » des articles y mènent, avec le sujet choisi et l'adresse de la page déjà remplis. Désactivé, le formulaire laisse place à votre courriel de contact.
+- **Répondre** : répondez simplement au courriel reçu : la réponse part au lecteur.
+- **Ne cliquez jamais « Se désabonner »** dans ces courriels : Brevo bloquerait votre propre adresse. Si c'est fait, retirez-la de la liste de blocage des courriels transactionnels, dans Brevo.
+- Le site ne conserve rien : le message est transmis, puis oublié.
+
+## 35. La protection contre les robots : Turnstile
+
+Turnstile, le service anti-robots de Cloudflare, vérifie chaque envoi de formulaire. La plupart du temps, il reste invisible; il n'affiche un défi que s'il doute, et le formulaire l'annonce alors (« Une vérification anti-robot est nécessaire… »). Son script n'est chargé qu'au premier contact avec un formulaire (clic ou saisie) : aucune connexion à Cloudflare avant. Cloudflare conseille plutôt de le charger dès l'ouverture de la page, pour une vérification un peu plus rapide; le site a choisi la discrétion. Le widget s'affiche en français et suit le thème, clair ou sombre, du site.
+
+1. Dans le tableau de bord de Cloudflare, « Turnstile », ajoutez un widget : nom du site, nom d'hôte = domaine du site (ses sous-domaines sont couverts d'office), mode « Géré » (« Managed »), préautorisation (« Pre-clearance ») désactivée.
+2. Copiez la **clé de site** dans **Réglages › Services › Protection contre les robots › Clé de site**, et la **clé secrète** dans le secret `TURNSTILE_SECRET_KEY` (section 31).
+3. **Changer la clé secrète** (si elle a fuité) : « Rotate secret key » dans Cloudflare; l'ancienne reste valable deux heures, le temps de remplacer le secret.
+
+Sans ces deux clés, les formulaires refusent tout envoi : le rapport « À vérifier » le rappelle (section 16). Les clés d'essai de Cloudflare (celles qui commencent par `1x0000`, `2x0000` ou `3x0000`) ne servent qu'aux essais sur votre ordinateur (section 31) : le rapport les bloque sur le site en ligne, et le Worker refuse la clé secrète d'essai hors essai local.
+
+## 36. La mesure d'audience : Umami
+
+1. Créez un compte Umami Cloud. Le forfait gratuit (« Hobby ») couvre un seul site, 100 000 événements par mois et six mois d'historique. La région des données (États-Unis ou Union européenne) se choisit à la création du compte : prenez l'Union européenne.
+2. Ajoutez le site (« Add website », avec son domaine) et copiez son identifiant (« Website ID »).
+3. Dans **Réglages › Services › Mesure d'audience** : « Activé », l'identifiant, et le domaine du site dans « Domaines mesurés », écrit exactement comme dans la barre d'adresse (`www` compris s'il y a lieu).
+4. Une fois le site en ligne, vérifiez que les mesures partent : sur une page du site, ouvrez les outils de développement du navigateur, onglet « Réseau ». Un envoi vers `gateway.umami.is/api/send` doit répondre 200. S'il est bloqué par la politique de sécurité (« CSP »), Umami a changé d'adresse de collecte, comme en juin 2026 : saisissez la nouvelle dans « Adresses de collecte ».
+5. Pour ne pas compter vos propres visites, tapez une fois `localStorage.setItem('umami.disabled', 1)` dans la console du navigateur, sur le site en ligne (à refaire sur chaque navigateur).
+
+**Ce qui est mesuré** : les pages vues; les inscriptions à l'infolettre, avec l'emplacement du formulaire; les messages de contact; les recherches (le terme tapé, 50 caractères au plus, et le nombre de résultats; un terme qui ressemble à une adresse courriel ou à un numéro n'est pas transmis) \[À VALIDER PAR L'AUTEUR : conserver les termes de recherche]; les clics vers d'autres sites (l'adresse visitée, sans ses paramètres). Les adresses des pages perdent leurs paramètres, sauf ceux des campagnes (`utm_…`, utiles pour les liens de l'infolettre). Rien ne part d'un navigateur qui demande à ne pas être suivi (« Do Not Track » ou « Global Privacy Control »). Le script n'est chargé que sur le site en ligne : ni en développement, ni dans un aperçu.
+
+**Ce qu'Umami fait des données**, selon sa documentation : aucun témoin; l'adresse IP sert à situer le visiteur (pays, région, ville) et à reconnaître une visite, sans être conservée; serveurs aux États-Unis et dans l'Union européenne. Umami ne dit rien de la Loi 25 : ces éléments sont à reporter dans la politique de confidentialité \[À VALIDER PAR L'AUTEUR].
+
+**Budget** : une page vue compte pour un événement, une inscription pour deux, un clic sortant pour deux, une recherche pour trois. Ce qu'Umami fait au-delà de 100 000 événements par mois n'est pas documenté \[À VÉRIFIER]. « Les plus lus » (feuille de route, version 2) demandera le forfait Pro (20 $ US par mois selon Umami, à revérifier), seul à ouvrir l'accès programmatique aux statistiques.
+
+**Consentement.** Aucun bandeau n'est nécessaire tant qu'aucun service ne dépose de témoin. Si cela changeait un jour, **Réglages › Services › Consentement aux témoins** fait demander l'accord du lecteur avant tout chargement du script, avec un bouton en pied de page pour changer d'avis. Les textes du bandeau sont dans **Réglages › Textes de l'interface**, section `consentBanner`.
+
+## 37. La veille officielle
+
+La page `/veille/` et la section d'accueil « veille » listent les publications récentes des autorités : titre, organisme, date et lien vers la source officielle, jamais le texte lui-même.
+
+- **Les sources** : **Réglages › Sources de la veille**. Pour chaque source : adresse du fil (RSS ou Atom), organisme, juridiction, langue, mots-clés facultatifs (seules les publications dont le titre ou le résumé en contient un sont gardées; « actif numérique » trouve aussi « actifs numériques », sans égard aux accents ni aux majuscules), « Alerte après (jours sans publication) », et « Activé ».
+- **Les sources actives**, lues avec succès le 28 septembre 2026 : ministère des Finances, Agence du revenu du Canada, Banque du Canada et LEGISinfo (projets de loi fédéraux). Leurs mots-clés sont des propositions, à ajuster \[À VALIDER PAR L'AUTEUR] : sans eux, le ministère des Finances, par exemple, publierait chaque annonce ministérielle. Désactivées, avec la raison en note : CANAFE (rien publié dans le fil depuis 2023), Revenu Québec (refus du robot) et la Gazette du Canada. Pour la Gazette, chaque élément est un numéro entier, avec un résumé générique : aucun mot-clé ne peut isoler un règlement. Activée sans mots-clés, elle annoncerait chaque numéro (Partie I chaque semaine, Partie II toutes les deux semaines) : à vous de choisir.
+- **La collecte** : la tâche GitHub « veille » passe à 8 h 07 et à 14 h 07 (heure de Montréal) les jours ouvrables, sur la branche de production. Elle n'enregistre `data/veille/cache.json` que s'il y a du nouveau, ce qui reconstruit le site. Les publications restent douze mois (« Rétention »). Sur votre ordinateur : `npm run veille:fetch`.
+- **Essayer une source** avant de l'activer : `npm run veille:fetch -- --diagnostic` essaie toutes les sources qui ont une adresse, même désactivées, et affiche le résultat sans rien enregistrer : état du fil, nombre d'entrées, date de la plus récente, et, pour une source filtrée, les entrées que ses mots-clés retiennent (de quoi les ajuster). Sur GitHub : onglet « Actions », « veille », « Run workflow », case « diagnostic ». Au premier essai, le 28 septembre 2026, les mots-clés ne retenaient aucune publication des douze derniers mois : la veille restera vide tant qu'aucune publication récente ne touche les sujets du site.
+- **La santé des sources** : le rapport « À vérifier » (section « Veille officielle ») signale une source en erreur, illisible (page de pare-feu ou adresse périmée), interdite au robot par le site, ou silencieuse : son fil n'a rien publié, tous sujets confondus, depuis plus longtemps que son seuil d'alerte. Les mots-clés n'y entrent pas : une source filtrée peut rester des mois sans publication retenue sans être en défaut. Un fil mort ne passe ainsi jamais pour une semaine calme. En cas de panne, les publications déjà relevées restent affichées.
+- **Bonne conduite** : le robot s'identifie, respecte le fichier `robots.txt` de chaque site et ne passe que deux fois par jour.
+- **Branche protégée** : si vous protégez un jour la branche `main` dans les réglages de GitHub, autorisez la tâche « veille » à y écrire, sinon la collecte échouera à l'enregistrement.
+- **Sans fil** : plusieurs autorités (ACVM, OCRI, BSIF, Gazette officielle du Québec…) ne publient aucun fil. Abonnez-vous à leurs avis par courriel.
+
+## 38. Reconstruction nocturne, surveillance et alertes
+
+- **Reconstruction nocturne** : la tâche planifiée de Cloudflare reconstruit le site chaque nuit à 5 h 07 UTC (1 h 07 à Montréal en été, 0 h 07 en hiver), pour les sections qui dépendent du jour (« À surveiller », statuts de l'agenda) et les cours de marché. La même tâche passe toutes les 15 minutes pour les publications programmées (section 5). Elle se règle dans `wrangler.jsonc` (`triggers`) : l'expression doit continuer de passer à 5 h 07 UTC, faute de quoi la reconstruction nocturne n'a plus lieu.
+- **Surveillance du site en ligne** (deux fois par jour ouvrable, dans la tâche « veille ») : si le site en ligne n'a pas été reconstruit depuis plus de 30 heures (reconstruction nocturne manquée), ou si votre dernier envoi n'est toujours pas en ligne une heure plus tard, la tâche échoue et **GitHub vous écrit**. Cherchez alors la cause dans Cloudflare, Workers Builds, journal du dernier build (section 17). Cloudflare n'envoie en effet aucun courriel quand un build échoue. Sur votre ordinateur : `npm run surveillance`.
+- **Rapport hebdomadaire** (chaque lundi, 8 h 13) : un ticket GitHub « Rapport « À vérifier » du… », avec l'étiquette « rapport », reprend le rapport complet, liens externes compris; celui de la semaine précédente est fermé. Pour être avisé par courriel, surveillez le dépôt sur GitHub (« Watch », puis « Custom », « Issues »).
+- **Tâches en échec** : GitHub envoie un courriel pour chaque tâche planifiée qui échoue.
+- **Sonde de disponibilité** (le site répond-il?) : branchée avec l'hébergement, en phase 5.
+
+## 39. Les cours des cryptoactifs
+
+Le bandeau des cours (au-dessus de l'en-tête) et les sections d'accueil « Les cryptoactifs en bref » (`market-brief`) et « Cryptoactifs à suivre » (`trending-assets`) sont désactivés au lancement.
+
+1. Créez un compte gratuit chez CoinGecko et une clé d'API « Demo ».
+2. Déclarez-la comme variable de construction `COINGECKO_API_KEY` (section 31).
+3. Dans **Réglages › Bandeau des cours** : « Activé », puis les actifs (identifiant CoinGecko, par exemple `bitcoin`, symbole et nom). Les sections d'accueil s'activent dans **Réglages › Page d'accueil**.
+
+Les cours sont ceux du dernier build (l'heure est affichée), rafraîchis à chaque construction et chaque nuit, en dollars canadiens : un seul appel à CoinGecko par construction, loin du plafond gratuit (10 000 par mois selon CoinGecko). Sans clé, ou si CoinGecko ne répond pas, le bandeau et les sections disparaissent simplement; une clé refusée est nommée dans le journal du build.
+
+**Conditions de CoinGecko** (lues dans des extraits de ses pages, inaccessibles ici \[À VÉRIFIER]) :
+- **Attribution** : la mention « Données fournies par CoinGecko » accompagne les cours et mène à la page de l'API de CoinGecko (**Réglages › Bandeau des cours › Lien de la source**). CoinGecko demanderait la formule anglaise « Powered by CoinGecko » : demandez-lui si la traduction lui convient.
+- **Usage commercial** : le forfait gratuit porterait la mention « attribution requise », les forfaits payants la mention « usage commercial ». Si le site est un jour monétisé (publicité, commandites, services), prévoyez le forfait payant (environ 35 $ US par mois) ou retirez le module; au besoin, demandez à CoinGecko par écrit si un média d'information non monétisé peut utiliser le forfait gratuit.
+
+## 40. Les pages légales et de confiance
+
+Les pages À propos, Méthodologie, Politique éditoriale, Politique de correction, Transparence, Déclaration d'intérêts, Mentions légales, Confidentialité, Avertissement, Contact et Questions fréquentes existent en **brouillon** (**Contenus › Pages**), avec des marqueurs à la place de ce qui vous revient. Complétez-les, faites valider les textes juridiques, puis publiez chacune (statut « Publié ») : le pied de page y mène déjà.
+
+- **Confidentialité** : deux blocs se tiennent à jour seuls. « Responsable de la protection des renseignements » affiche le nom, le titre et le courriel saisis dans **Réglages › Mentions juridiques**; « Renseignements recueillis » affiche le tableau des traitements de ces mêmes réglages (« Renseignements recueillis » : traitement, renseignements, où, lieu d'hébergement, conservation). Mettez ce tableau à jour à chaque nouveau service.
+- **Témoins** : le site n'en dépose aucun, d'où l'absence de bandeau (section 36). Turnstile fonctionne dans son propre cadre, hébergé par Cloudflare, dont les témoins et le stockage ne sont pas documentés \[À VÉRIFIER]. Lisez l'addendum de confidentialité de Turnstile (https://www.cloudflare.com/turnstile-privacy-policy/) avant de rédiger la politique : Cloudflare y décrit les signaux qu'il traite (adresse IP, navigateur), possiblement aux États-Unis.
+- **Contact** : bloc « Formulaire de contact » (section 34).
+- Les textes proposés sont des gabarits : ils portent `[À VALIDER PAR L'AUTEUR]` et bloquent la mise en ligne tant qu'ils ne sont pas validés (section 15).

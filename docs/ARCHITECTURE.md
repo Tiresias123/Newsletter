@@ -73,7 +73,7 @@
 - **Le contenu** vit dans le dépôt, en MDX et JSON, sous `content/` et `config/`. Des schémas Zod le valident au build, avec des messages d'erreur en français.
 - **Keystatic** sert de formulaire d'édition, en mode local (sur l'ordinateur de l'auteur) au lancement. Le mode en ligne sur `/keystatic` prévu par le brief est documenté et prêt à activer (question A2). C'est un outil remplaçable : il écrit les mêmes fichiers que ceux qu'on éditerait à la main.
 - **L'hébergement** se fait sur Cloudflare Workers, forfait gratuit : fichiers statiques gratuits et illimités, aperçus par branche, tâches planifiées.
-- **La publication programmée** est déclenchée par Cloudflare toutes les 15 minutes quand une échéance est atteinte. La latence visée est d'une dizaine de minutes en moyenne et d'une vingtaine au pire, sans garantie écrite de Cloudflare; elle sera mesurée en phase 4. **La veille officielle** et le rapport hebdomadaire passent par GitHub Actions, dont les retards sont ici sans conséquence.
+- **La publication programmée** est déclenchée par Cloudflare toutes les 15 minutes quand une échéance est atteinte. La latence visée est d'une dizaine de minutes en moyenne et d'une vingtaine au pire, sans garantie écrite de Cloudflare; elle sera mesurée après la mise en ligne (phase 5). **La veille officielle** et le rapport hebdomadaire passent par GitHub Actions, dont les retards sont ici sans conséquence.
 - **La recherche** repose sur Pagefind, un index statique sans serveur.
 - **La newsletter** passe par un fournisseur derrière une interface unique, avec double opt-in natif et preuve de consentement enregistrée chez le fournisseur.
 
@@ -306,11 +306,11 @@ L'arborescence du point 4.2 du brief est conservée, avec des ajustements signal
 │       └── …
 ├── config/
 │   ├── site.json  navigation.json  homepage.json  theme.json  ticker.json
-│   ├── newsletter.json  legal.json  sources-veille.json  ads.json  redirects.json
+│   ├── newsletter.json  legal.json  sources-veille.json  ads.json  redirects.json  services.json
 │   └── i18n/fr.json
 ├── data/                      ★ données produites par des scripts, jamais éditées à la main
 │   └── veille/cache.json          cache de la veille officielle (point 8.4 du brief)
-├── public/                    fichiers servis tels quels : favicon, logo SVG, robots.txt, _headers
+├── public/                    fichiers servis tels quels : favicon, logo SVG (_headers est écrit dans dist/ après le build)
 ├── src/
 │   ├── components/            composants .astro (aucune chaîne en dur, aucun contenu)
 │   ├── layouts/
@@ -320,11 +320,11 @@ L'arborescence du point 4.2 du brief est conservée, avec des ajustements signal
 │   ├── styles/                jetons → variables CSS, Tailwind
 │   └── content.config.ts      schémas Zod des collections (source de vérité)
 ├── worker/                    ★ le Worker : formulaires et tâche planifiée (section 15.1)
-├── scripts/                   check, postbuild, new-article, newsletter-draft, content-format; puis veille-fetch, og-generate, social-export
+├── scripts/                   check, postbuild, new-article, newsletter-draft, content-format, veille-fetch, surveillance; plus tard social-export
 ├── exports/                   ★ courriels de l'infolettre produits par newsletter-draft, non versionnés
 ├── tests/                     ★ tests unitaires et de fumée
 ├── docs/                      ARCHITECTURE, DA, QUESTIONS, GUIDE-AUTEUR, CHANGELOG; A-VERIFIER est produit par check et non versionné
-├── .github/workflows/         veille, rapport hebdomadaire, vérifications
+├── .github/workflows/         veille (et surveillance du site en ligne), rapport hebdomadaire; vérifications en phase 5
 ├── keystatic.config.ts        point d'entrée de l'éditeur; configuration dans src/lib/editor/
 ├── astro.config.mjs
 ├── wrangler.jsonc             ★ configuration Cloudflare (fichiers statiques, Worker, tâche planifiée)
@@ -724,26 +724,23 @@ sequenceDiagram
 
 **Preuve de consentement sans base de données.** Chaque abonné porte, **chez le fournisseur**, des attributs personnalisés :
 
-| Attribut | Contenu |
+| Attribut (Brevo) | Contenu |
 |---|---|
-| `consent_at` | horodatage ISO de la demande |
-| `consent_source` | URL de la page d'origine et emplacement du formulaire |
-| `consent_text_version` | empreinte courte du texte de consentement affiché |
-| `consent_ip_hash` | SHA-256 de l'IP concaténée à un sel secret, jamais l'IP elle-même |
-| `list`, `tags`, `preferences` | liste, étiquettes, préférences |
+| `CONSENT_AT` | horodatage ISO de la demande |
+| `CONSENT_SOURCE` | URL de la page d'origine et emplacement du formulaire |
+| `CONSENT_TEXT_VERSION` | empreinte courte du texte de consentement affiché |
+| `CONSENT_IP_HASH` | HMAC-SHA-256 de l'IP avec un sel secret (`IP_HASH_SALT`), jamais l'IP elle-même |
+| `NL_LIST`, `NL_TAGS` | liste et emplacement du formulaire (étiquette) |
 
-**Date de confirmation du double opt-in.** Selon le fournisseur, elle est enregistrée nativement, ou reste à relever :
-- Buttondown : l'historique `transitions` la donne (par déduction);
-- Brevo : la requête de double opt-in ne transporte ni IP ni horodatage;
-- MailerLite : le champ `opted_in_at` est rempli par l'intégrateur.
+Brevo ne connaît que des attributs en majuscules, de type texte, créés d'avance : il ignore sans erreur un attribut inconnu (vérifié dans sa spécification OpenAPI, phase 4). Les préférences prévues au brief attendront plusieurs listes actives.
 
-Point à confirmer en phase 4. À défaut, la date de confirmation est relevée par l'API de liste du fournisseur ou par un webhook.
+**Date de confirmation du double opt-in** (phase 4). La requête de double opt-in de Brevo (`POST /v3/contacts/doubleOptinConfirmation`) ne transporte ni IP ni horodatage, et Brevo n'enregistre, de façon documentée, aucune date de confirmation. Les attributs envoyés avec la demande ne sont écrits qu'au clic (extrait du centre d'aide) : la date d'ajout à la liste (`ADDED_TIME` de l'export mensuel) date donc la confirmation. Un webhook `listAddition` vers le Worker pourrait l'écrire dans un attribut dédié; il n'est pas retenu en v1 (une route et un secret de plus), et reste possible si l'export ne suffit pas. Le protocole d'essai de la section 25.6 le confirmera.
 
 **Texte affiché.** Le texte exact du consentement est dans `newsletter.json`, versionné par Git. Son empreinte est calculée au build et envoyée avec le formulaire. Le Worker l'enregistre telle quelle, sans refuser l'inscription si elle diffère du texte courant (cas d'une page ouverte avant une modification). Le texte correspondant à chaque empreinte se retrouve mot pour mot dans l'historique Git.
 
-**Préalable, une fois pour toutes** : créer les attributs `consent_at`, `consent_source`, `consent_text_version` et `consent_ip_hash` dans l'interface du fournisseur (étape décrite dans le guide de l'auteur).
+**Préalable, une fois pour toutes** : créer les six attributs dans Brevo, puis le modèle du courriel de confirmation (étiquette `optin`, lien `{{ doubleoptin }}`, modèle actif), dont le numéro va dans `config/newsletter.json` (`doubleOptInTemplateId`), avec le numéro de chaque liste (`providerId`). Étapes dans le guide de l'auteur, section 32.
 
-**Si le fournisseur retenu ne sait pas déclencher un double opt-in par API**, le Worker envoie lui-même un lien de confirmation signé (code d'authentification HMAC, valable 48 heures), puis inscrit l'abonné confirmé. C'est plus de code : à éviter si le fournisseur le fait nativement.
+**Réponses de Brevo** : 201 ou 204 sans corps pour une demande acceptée; 400 `duplicate_parameter` pour une adresse déjà dans la liste (observé par des intégrateurs, non documenté), tenu pour un succès afin de ne rien révéler; 401 si la clé est invalide ou si le blocage des IP inconnues est actif (à désactiver : les IP de Cloudflare changent); 429 et 5xx signalés comme passagers. Le Worker ne journalise que le code HTTP et le code d'erreur de Brevo, jamais son message, qui peut citer l'adresse.
 
 ### 11.3 Choix du fournisseur
 
@@ -767,12 +764,12 @@ Point à confirmer en phase 4. À défaut, la date de confirmation est relevée 
 
 n. d. : non disponible.
 
-**Recommandation par défaut : Brevo**, sous réserve de confirmer, depuis un accès web complet, trois points non recoupés : la localisation des données, le plafond du forfait gratuit et l'interface française.
+**Retenu : Brevo**, forfait gratuit (décision de l'auteur, phase 0). La localisation des données, le plafond du forfait gratuit et l'interface française restent des extraits, faute d'accès aux pages de Brevo en phase 4 aussi.
 - Son double opt-in est natif par API, avec des attributs de consentement.
 - Le coût est nul tant que la liste compte moins de 300 abonnés, puis d'environ 9 $ US par mois au forfait d'entrée (s).
-- Brevo **pourrait** aussi envoyer les courriels du formulaire de contact, ce qui éviterait un fournisseur de plus. Ce point n'a pas été vérifié, ni le partage éventuel du plafond de 300 envois par jour. À défaut, Resend, comme le prévoit le brief.
+- Brevo envoie aussi les courriels du formulaire de contact (`POST /v3/smtp/email`, vérifié dans sa spécification en phase 4) : pas de fournisseur de plus, et Resend n'est pas utilisé. Le plafond de 300 envois par jour est partagé entre confirmations, messages de contact et destinataires de l'infolettre (extrait); le forfait Starter (environ 9 $ US par mois (s)) le lève.
 
-**Alternative « conformité maximale » : Cyberimpact.** C'est le seul candidat annoncé comme hébergeant les données au Québec et gérant nativement les notions de la LCAP (consentement exprès ou tacite, expiration, preuve automatique). C'est donc le seul qui éviterait toute communication hors du Québec des renseignements personnels de la liste d'abonnés. Coût : environ 39 $ CA par mois dès le premier jour, puisque l'API n'est incluse qu'à partir du forfait Plus (s). Sa documentation d'API, non consultable, reste à lire avant de s'engager (phase 4).
+**Alternative « conformité maximale » : Cyberimpact.** C'est le seul candidat annoncé comme hébergeant les données au Québec et gérant nativement les notions de la LCAP (consentement exprès ou tacite, expiration, preuve automatique). C'est donc le seul qui éviterait toute communication hors du Québec des renseignements personnels de la liste d'abonnés. Coût : environ 39 $ CA par mois dès le premier jour, puisque l'API n'est incluse qu'à partir du forfait Plus (s). Sa documentation d'API, non consultable, serait à lire avant tout changement de fournisseur.
 
 Le choix entre les deux relève de l'analyse de la Loi 25 et de la LCAP par l'auteur : ce document ne qualifie pas juridiquement les transferts. L'abstraction `NewsletterProvider` rend un changement ultérieur possible : export CSV avec les attributs de consentement, import chez le nouveau fournisseur, un seul fichier d'adaptateur à réécrire.
 
@@ -800,36 +797,40 @@ Vérifié le 25 septembre 2026. Les prix marqués « (s) » viennent d'extrait
 
 ### 12.1 Formulaires et anti-pourriel
 
-- **Cloudflare Turnstile**, forfait gratuit : défis illimités, 20 widgets, interface en français, rendu invisible possible.
-  - La validation **côté serveur** est obligatoire : le jeton vaut 5 minutes et ne sert qu'une fois.
+- **Cloudflare Turnstile**, forfait gratuit : défis illimités, 20 widgets, 10 noms d'hôte par widget, interface en français (`fr` seulement : `fr-ca` basculerait vers l'anglais).
+  - La validation **côté serveur** est obligatoire : le jeton vaut 5 minutes et ne sert qu'une fois. Le Worker exige `success`, puis le nom d'hôte et l'action du formulaire (`newsletter`, `contact`); une seconde tentative, avec la même clé d'idempotence, suit une erreur réseau, un 5xx ou `internal-error`.
   - La préautorisation reste désactivée, ce qui évite le témoin `cf_clearance`.
-  - Le script n'est chargé que lorsque le lecteur entre dans un champ du formulaire.
-- **Champ piège** (invisible pour un humain, rempli par les robots).
-- **Limitation de débit** : le mécanisme de limitation de Cloudflare Workers, s'il est disponible en forfait gratuit (à tester en phase 4; sa documentation le dit « permissif » et approximatif). À défaut, pas de compteur maison, qui serait inopérant sur des Workers répartis : Turnstile, le champ piège et le double opt-in tiennent lieu de protection, et l'écart avec les points 8.5 et 8.8 du brief sera signalé à l'auteur avec les options disponibles.
-- **Contact** : fonction `/api/contact` du Worker, qui valide, vérifie Turnstile et transmet le message par courriel transactionnel à l'adresse de l'auteur, sans rien stocker. Service d'envoi : Brevo si ce point est confirmé, sinon Resend (3 000 courriels par mois, 100 par jour en gratuit, données stockées aux États-Unis (s)).
-- **« Suggérer un sujet » et « Signaler une erreur »** : liens `mailto` préremplis avec le titre et l'URL de l'article. Aucune infrastructure.
+  - Le script n'est chargé qu'au premier contact avec le formulaire (focus d'un champ, ou pression sur le bouton après un remplissage automatique). Cloudflare recommande au contraire un chargement précoce : le site préfère qu'aucune connexion vers Cloudflare ne précède l'interaction.
+  - Widget en mode `interaction-only`, taille `flexible` (compacte sous 300 pixels de large), thème du site, formulaire de rétroaction vers Cloudflare désactivé; un défi interactif est annoncé dans la zone de statut du formulaire.
+  - Clés d'essai de Cloudflare : acceptées par le Worker seulement en essai local (`MEMORY_SERVICES=true`); une clé de site d'essai est signalée par `check`, et bloquante une fois le site en ligne.
+- **Champ piège** (invisible pour un humain, rempli par les robots) : réponse de succès, rien n'est enregistré.
+- **Limitation de débit** : liaison `ratelimits` de Cloudflare (`FORM_LIMITER`, `wrangler.jsonc`), 5 envois par 60 secondes et par clé. Clés : la route et une empreinte salée du préfixe de l'IP (adresse IPv4 entière, /64 en IPv6); pour l'infolettre, aussi une empreinte de l'adresse courriel, contre l'envoi répété de confirmations. Le mécanisme est approximatif et propre à chaque centre de données, sans quota horaire possible (périodes de 10 ou 60 secondes seulement) : c'est un frein, pas un plafond. Sa disponibilité en forfait gratuit n'est pas documentée (seules des sources tierces l'affirment) : à constater au premier déploiement, sinon retirer la liaison. Turnstile, le champ piège et le double opt-in restent la protection principale; l'écart avec les points 8.5 et 8.8 du brief est signalé à l'auteur.
+- **Contact** : fonction `/api/contact` du Worker, qui valide, vérifie Turnstile et transmet le message par courriel transactionnel de Brevo (`POST /v3/smtp/email`) à l'adresse de l'auteur, avec le lecteur en adresse de réponse, sans rien stocker. Le formulaire s'active dans les réglages (`config/services.json`); désactivé, la page Contact affiche le courriel de contact.
+- **« Suggérer un sujet » et « Signaler une erreur »** : liens vers la page Contact, sujet et adresse de l'article préremplis, quand le formulaire est actif; sinon, liens `mailto` préremplis.
 
 ### 12.2 Analytique
 
-Contrat `Analytics` : `pageview`, `newsletterSignup`, `search`, `outboundClick`. Une implémentation par outil, chargée seulement en production, avec domaine et identifiant dans la configuration.
+Contrat `Analytics` (`src/lib/analytics/events.ts`) : le site émet `newsletterSignup`, `contactMessage`, `search` et `outboundClick`; la page vue est comptée par l'outil. Une implémentation par outil (un « pont », `src/lib/analytics/umami.ts`), chargée seulement en production, avec domaine et identifiant dans la configuration (`config/services.json`).
 
 | Outil | Coût | Témoins | Données | Événements personnalisés | API (« les plus lus » en v2) |
 |---|---|---|---|---|---|
-| **Umami Cloud** | forfait gratuit : environ 100 000 événements par mois, rétention de 6 mois (s); Pro à 20 $ US par mois (s) | aucun | États-Unis ou UE | oui | oui (accès en forfait gratuit à confirmer) |
+| **Umami Cloud** | forfait gratuit (Hobby) : 100 000 événements par mois (s), **un seul site** depuis le 9 juin 2026 et rétention de 6 mois (vérifiés dans le code d'Umami Cloud); Pro à 20 $ US par mois (s) | aucun | États-Unis ou UE | oui | **forfait Pro seulement** (s) |
 | Cloudflare Web Analytics | gratuit, sans limite | aucun, selon Cloudflare | non précisé | **non** | GraphQL, données échantillonnées |
 | Plausible | 9 $ US par mois au premier palier (s); l'API exige le forfait Business, environ 19 $ US (s) | aucun | UE (Allemagne) | oui | forfait Business seulement |
 | Auto-hébergement (Plausible CE, Umami) | serveur + base | aucun | au choix | oui | oui |
 
-**Recommandation : Umami Cloud**, région UE, forfait gratuit. C'est le seul outil gratuit qui mesure les événements exigés par le brief (inscription, recherche, clic sortant) et qui offre une API pour « les plus lus ».
-- **Quota.** Chaque page vue et chaque propriété d'événement compte pour un événement. Le quota gratuit couvre donc environ 1 000 visiteurs par jour au plus, selon les hypothèses de la section 18.
+**Retenu : Umami Cloud**, région UE, forfait gratuit (décision de l'auteur, phase 0). C'est le seul outil gratuit qui mesure les événements exigés par le brief (inscription, recherche, clic sortant). « Les plus lus » (v2) demandera le forfait Pro, seul à ouvrir l'API (s).
+- **Quota.** Chaque page vue et chaque propriété d'événement compte pour un événement : une page vue coûte 1, une inscription 2, un clic sortant 2, une recherche 3. Le quota gratuit couvre donc environ 1 000 visiteurs par jour au plus, selon les hypothèses de la section 18.
+- **Collecte** (phase 4) : depuis le 6 juin 2026, le script `https://cloud.umami.is/script.js` envoie ses mesures à `https://gateway.umami.is` (journal d'Umami Cloud). La CSP autorise donc, en `connect-src`, les « adresses de collecte » de la configuration (`collectOrigins`), et non l'origine du script seule; Umami ne publie aucune liste officielle et a déjà changé cet hôte sans préavis. Pas d'intégrité SRI : le script change sans préavis.
+- **Réglages du script** : `data-domains` (domaine de production), `data-do-not-track`, `data-exclude-hash` et `data-before-send`. Avant chaque envoi, le pont retire des adresses (page et référent) tous les paramètres sauf `utm_*`, ce qui exclut les termes de recherche que la page `/recherche/` inscrit dans l'adresse, et n'envoie rien si le navigateur signale Global Privacy Control. Un terme de recherche qui ressemble à une adresse courriel ou à un numéro n'est pas transmis. Pas de mesures de performance, d'enregistrement de sessions ni d'identification.
 - **Au-delà**, deux voies : Umami Pro (20 $ US par mois) ou Cloudflare Web Analytics (gratuit, mais sans événements).
 - **L'auto-hébergement est exclu** : serveur et base à maintenir.
 
 ### 12.3 Données de marché (ticker et « Les cryptos en bref »)
 
-- **CoinGecko**, API « Demo » gratuite : clé obligatoire, dollars canadiens pris en charge (`vs_currency=cad`, vérifié dans la spécification officielle), environ 10 000 appels par mois (s).
-  - **Point à confirmer : le forfait gratuit n'autoriserait pas l'usage commercial (s).** Si le site est un jour monétisé, il faudra le forfait payant (environ 35 $ US par mois (s)) ou retirer le module.
-  - Attribution « CoinGecko » obligatoire, avec lien (s).
+- **CoinGecko**, API « Demo » gratuite : clé obligatoire (en-tête `x-cg-demo-api-key`), dollars canadiens pris en charge (`vs_currency=cad`, vérifié dans la spécification officielle), environ 10 000 appels par mois (s); la limite par minute diverge selon les sources (30 ou 100), sans effet pour un appel par build. Le code (`src/lib/market/coingecko.ts`, un appel à `/coins/markets` par build) est conforme à la spécification OpenAPI du 24 septembre 2026 (vérifié en phase 4).
+  - **Point à confirmer : le forfait gratuit n'autoriserait pas l'usage commercial (s)** : « attribution requise » pour le forfait Demo, « commercial » pour les forfaits payants. Si le site est un jour monétisé, il faudra le forfait payant (environ 35 $ US par mois (s)) ou retirer le module; une réponse écrite de CoinGecko trancherait.
+  - Attribution obligatoire (s) : « Powered by CoinGecko » en police lisible, ou « Data provided by CoinGecko » avec un lien vers `https://www.coingecko.com/en/api`. Le site affiche « Données fournies par CoinGecko » avec ce lien (`config/ticker.json`, `sourceUrl`); la traduction reste à faire accepter par CoinGecko [À VÉRIFIER].
 - **Alternatives gratuites** : en recul en 2025-2026 (s). CoinCap v2 a fermé et CryptoCompare est devenu payant. Binance est techniquement possible, mais c'est une source délicate pour un média réglementaire canadien.
 - **Architecture v1** : les valeurs sont récupérées **au build**.
   - Un appel à CoinGecko pendant le build inscrit les cours et leur heure dans le HTML (« au 25 septembre à 14 h 10 »), soit quelques centaines d'appels par mois.
@@ -880,21 +881,27 @@ Contrat `Analytics` : `pageview`, `newsletterSignup`, `search`, `outboundClick`
 
 ## 14. Veille officielle
 
-- **Script `veille:fetch`**, en cinq étapes :
-  1. lit `config/sources-veille.json` : URL, organisme, juridiction, langue, filtre de mots-clés facultatif, actif ou non;
-  2. télécharge chaque flux, avec un délai d'attente;
-  3. normalise : titre, lien, date au fuseau America/Toronto, résumé tronqué;
-  4. dédoublonne sur l'URL canonique et une empreinte du titre;
-  5. fusionne avec `data/veille/cache.json`.
+- **Script `veille:fetch`** (`scripts/veille-fetch.ts`, livré en phase 4), en cinq étapes :
+  1. lit `config/sources-veille.json` : URL, organisme, juridiction, langue, filtre de mots-clés facultatif (préfixes de mots, sans accents ni casse : « actif numérique » trouve « actifs numériques »), seuil d'alerte en jours sans publication (`staleDays`), actif ou non;
+  2. télécharge chaque flux avec un délai d'attente de 20 secondes, après avoir lu le `robots.txt` du site; l'agent utilisateur `VeilleReglementaireBot/1.0` porte l'adresse de la page À propos;
+  3. normalise (RSS 2.0, RSS 1.0, Atom, JSON Feed; analyseur XML `@xmldom/xmldom`, sans dépendance) : titre, lien absolu, date (ISO, RFC 822 ou date française; sans fuseau, America/Toronto), résumé en texte brut tronqué;
+  4. dédoublonne sur l'URL canonique (sans paramètres de suivi) et une empreinte du titre;
+  5. fusionne avec `data/veille/cache.json`, avec l'état de chaque source (`ok`, `erreur`, `illisible` pour une page de pare-feu ou un contenu qui n'est pas un flux, `bloque` si le `robots.txt` l'interdit) et la date depuis laquelle il dure.
 
-  Une source en panne n'efface jamais ce qui est en cache, et les erreurs sont listées dans le rapport `check`.
-- **Exécution** : par une tâche GitHub Actions, deux fois par jour ouvrable (8 h et 14 h, heure de Montréal), qui ne crée un commit du cache **que s'il a changé** (« chore(veille): 3 nouvelles publications »). Ce commit déclenche le déploiement. Le build lit le cache et ne télécharge rien : **un build ne dépend jamais de la disponibilité d'un site gouvernemental** (écart avec le point 8.4, signalé en section 25).
+  Une source en panne n'efface jamais ce qui est en cache, et son état est listé dans le rapport `check` (règle « Veille officielle »), comme une source silencieuse au-delà de son seuil. Le fichier n'est réécrit que si une publication ou un état change. `-- --diagnostic` essaie toutes les sources qui ont une adresse, même désactivées, sans rien écrire; `-- --source <id>` n'en traite qu'une.
+- **Exécution** : par une tâche GitHub Actions (`.github/workflows/veille.yml`), deux fois par jour ouvrable (8 h 07 et 14 h 07, heure de Montréal, fuseau déclaré dans la tâche), sur la branche de production seulement, qui ne crée un commit du cache **que s'il a changé** (« chore(veille): 3 nouvelles publications »). Ce commit déclenche le déploiement. Un lancement manuel (« Run workflow ») offre le mode diagnostic. Le build lit le cache et ne télécharge rien : **un build ne dépend jamais de la disponibilité d'un site gouvernemental** (écart avec le point 8.4, signalé en section 25).
 - **Affichage** : `/veille/` (filtres par source, date et juridiction), frise dans les barres latérales, section d'accueil `veille-latest`, veille propre à chaque organisme. Chaque élément est étiqueté comme publication officielle externe (titre, organisme, date, lien sortant). Le texte intégral n'est jamais republié.
 - **Rétention** : 12 mois dans le cache (paramétrable). Au-delà, les éléments sont retirés.
 
 ### 14.1 État des sources (relevé préliminaire du 25 septembre 2026)
 
-**Aucun site officiel n'a pu être ouvert directement** depuis l'environnement de travail. Les URL ci-dessous viennent d'extraits de recherche, de copies de pages officielles et de code tiers qui interroge ces flux en 2026. Cette partie n'a pas été contre-vérifiée. **Chaque URL sera testée en accès direct en phase 4** avant d'entrer dans `sources-veille.json`, comme le demande le brief.
+**Aucun site officiel n'a pu être ouvert directement** depuis l'environnement de travail, en phase 0 comme en phase 4. Les URL ci-dessous viennent d'extraits de recherche, de copies de pages officielles et de code tiers qui interroge ces flux en 2026. Chaque source n'est activée qu'après une lecture réussie par le mode diagnostic, lancé depuis GitHub Actions (accès direct).
+
+**Diagnostic du 28 septembre 2026** (depuis GitHub Actions) :
+- lus et activés, avec des mots-clés proposés à l'auteur : ministère des Finances (50 entrées, Centre des nouvelles), ARC (50 entrées; publications espacées, seuil d'alerte de 90 jours), Banque du Canada (communiqués), LEGISinfo (fil français `legisinfo/fr/projets-de-loi/rss` : titres en français, liens vers les pages anglaises; seuil de 90 jours pour la pause parlementaire);
+- lu, mais désactivé : CANAFE, dont le Centre des nouvelles s'est figé en janvier 2023 (le site propre de CANAFE reste à suivre par courriel);
+- lus, mais laissés à l'auteur : Gazette du Canada, Parties I et II (431 et 233 entrées) : un élément par numéro, au résumé générique, impossible à filtrer par sujet;
+- refusé : Revenu Québec (HTTP 403 au robot), qui a de toute façon annoncé l'abandon de ses fils.
 
 | Source | Statut | Voie retenue | Remarque |
 |---|---|---|---|
@@ -984,17 +991,17 @@ flowchart LR
 
 ### 15.3 Publication programmée
 
-**Le planificateur est Cloudflare, pas GitHub.** La documentation de GitHub qualifie ses tâches planifiées de « best effort » : elles peuvent être retardées ou abandonnées aux heures chargées. Des retards de 4 à 14 heures, voire des exécutions jamais lancées, sont signalés par la communauté en 2026, sur des dépôts privés comme publics, sans réponse de GitHub.
+**Le planificateur est Cloudflare, pas GitHub.** La documentation de GitHub prévient que l'événement planifié peut être retardé aux heures chargées, surtout au début de chaque heure, et que des exécutions en file peuvent être abandonnées. Des retards de 4 à 14 heures, voire des exécutions jamais lancées, sont signalés par la communauté en 2026, sur des dépôts privés comme publics, sans réponse de GitHub.
 
 Fonctionnement :
 
 1. À chaque build, le site publie un petit fichier `/schedule.json` : l'heure du build et les instants des publications programmées à venir (calculés dans le fuseau America/Toronto, puis écrits en UTC). Il ne contient ni titre ni adresse, pour que rien ne transpire avant l'heure. Livré en phase 3, avec la logique de décision (`src/lib/schedule.ts`) : une échéance déclenche un build si elle est passée, postérieure au dernier build et vieille de moins de deux heures. Cette fenêtre couvre un build en échec ou un passage manqué, sans relancer de builds indéfiniment; au-delà, la reconstruction quotidienne prend le relais. La tâche Cloudflare elle-même est écrite en phase 4.
-2. La tâche planifiée Cloudflare s'exécute toutes les 15 minutes, à 7, 22, 37 et 52 minutes après l'heure, pour éviter les quarts d'heure ronds où les serveurs sont les plus chargés. Elle lit `schedule.json` et n'appelle le Deploy Hook **que si une échéance est passée**.
+2. La tâche planifiée Cloudflare (`worker/scheduled.ts`, phase 4) s'exécute toutes les 15 minutes, à 7, 22, 37 et 52 minutes après l'heure, pour éviter les quarts d'heure ronds où les serveurs sont les plus chargés. Elle lit `schedule.json` par la liaison des fichiers statiques, sans passer par le réseau, décide d'après l'heure prévue du passage (`scheduledTime`) et n'appelle le Deploy Hook **que si une échéance est passée**. Une seule expression (`7,22,37,52 * * * *`) sert aussi à la reconstruction quotidienne, le forfait gratuit n'offrant que cinq tâches par compte.
 3. Le build suivant rend le contenu visible, puisque sa date est désormais passée.
 
-- **Latence attendue** : 0 à 15 minutes d'attente, plus la durée du build (2 à 5 minutes estimées), soit **au pire une vingtaine de minutes**, en moyenne une dizaine. Cloudflare n'offre pas de garantie écrite de ponctualité : la latence réelle sera mesurée en phase 4.
+- **Latence attendue** : 0 à 15 minutes d'attente, plus la durée du build (2 à 5 minutes estimées), soit **au pire une vingtaine de minutes**, en moyenne une dizaine. Cloudflare n'offre pas de garantie écrite de ponctualité : la latence réelle sera mesurée après la mise en ligne (phase 5).
 - **Coût** : quelques builds par mois. Une reconstruction horaire systématique consommerait 720 builds par mois : on l'évite.
-- **Reconstruction quotidienne** vers minuit, heure de Montréal, par la même tâche. L'heure glisse d'une heure selon l'heure d'été, les tâches Cloudflare étant en UTC. Elle rafraîchit les sections qui dépendent du jour (« À surveiller », statuts d'agenda) et les cours de marché si le module est actif.
+- **Reconstruction quotidienne** au passage de 5 h 07 UTC, soit 1 h 07 à Montréal en heure avancée et 0 h 07 en heure normale : toujours après minuit (4 h 07 UTC tomberait la veille en hiver). Elle rafraîchit les sections qui dépendent du jour (« À surveiller », statuts d'agenda) et les cours de marché si le module est actif. Un appel pendant qu'un build attend encore n'en crée pas un second (`already_exists`, journalisé); la tâche ne fait pas de nouvelle tentative, la fenêtre de deux heures y pourvoyant.
 - **Fréquence** : réglée dans `wrangler.jsonc`, donc par une modification de configuration et non dans `config/` (écart avec le « paramétrable » du point 8.2, signalé en section 25).
 - **Secret** : l'URL du Deploy Hook suffit à déclencher un build. Elle est stockée comme secret Cloudflare, jamais dans le dépôt.
 
@@ -1024,10 +1031,10 @@ Marge confortable. Si la durée de build grandit avec le contenu : builds incr�
 
 ### 15.6 Surveillance
 
-- **Échec de build** : notification par courriel de Cloudflare, si Workers Builds la propose en forfait gratuit [À VÉRIFIER en phase 5]; à défaut, statut du commit visible sur GitHub.
+- **Échec de build** : Workers Builds n'envoie aucun courriel (absent du catalogue des notifications de Cloudflare au 28 septembre 2026). Le build en échec apparaît comme vérification rouge sur le commit, dans GitHub. Surtout, la **surveillance de fraîcheur** (`npm run surveillance`, `src/lib/check/deployment.ts`, livrée en phase 4) lit le `/schedule.json` du site en ligne, deux fois par jour ouvrable, dans la tâche `veille` : si le dernier build a plus de 30 heures (reconstruction nocturne manquée), ou si le dernier commit qui touche le site n'est pas en ligne une heure après, la tâche échoue et GitHub écrit à l'auteur. Une file Cloudflare Queues abonnée à `build.failed` (gratuite depuis février 2026) donnerait une alerte immédiate, au prix d'un secret de plus : écartée en v1.
 - **Échec d'une tâche GitHub** : courriel automatique de GitHub.
 - **Disponibilité** : un service de sonde externe gratuit (choix en phase 5), qui vérifie l'accueil et `/api/newsletter` toutes les 5 minutes.
-- **Rapport hebdomadaire** `check` (section 15.4).
+- **Rapport hebdomadaire** (`.github/workflows/rapport.yml`, livré en phase 4) : chaque lundi à 8 h 13, heure de Montréal, `check` complet avec les liens externes; le rapport est publié dans un ticket GitHub (étiquette « rapport »), qui ferme celui de la semaine précédente. L'auteur en est avisé par courriel s'il surveille les tickets du dépôt.
 
 ---
 
@@ -1036,15 +1043,19 @@ Marge confortable. Si la durée de build grandit avec le contenu : builds incr�
 ### 16.1 Sécurité
 
 - **Surface d'attaque minimale** : pas de base de données, pas de serveur d'application permanent, deux routes serveur (`/api/newsletter`, `/api/contact`).
-- **Worker** :
-  - validation Zod de chaque entrée et taille de requête limitée;
-  - vérification de Turnstile côté serveur;
+- **Worker** (`worker/`, 86 Kio, 26 Kio compressé) :
+  - origine vérifiée (le formulaire vient du site), corps plafonné pendant la lecture même sans `Content-Length` (8 Kio pour l'infolettre, 24 Kio pour le contact), seuls les formulaires encodés acceptés;
+  - validation stricte de chaque champ par des règles sans dépendance (`worker/validate.ts`) : Zod et ses traductions portaient le Worker à 879 Kio;
+  - vérification de Turnstile côté serveur, limitation de débit (section 12.1);
+  - un formulaire envoyé sans JavaScript (requête de navigation) est renvoyé à sa page, qui explique que JavaScript est nécessaire;
   - réponses génériques : on ne révèle jamais si un courriel est déjà inscrit;
-  - journalisation minimale, sans données personnelles.
-- **En-têtes de sécurité** (`public/_headers` pour les fichiers statiques, posés par le Worker pour ses propres réponses) :
-  - `Strict-Transport-Security`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`;
-  - `Permissions-Policy` restrictive, `frame-ancestors 'none'`;
-  - politique de sécurité du contenu (CSP) explicite : scripts du site, Turnstile, analytique, Pagefind; cadres vers `youtube-nocookie.com` et Turnstile.
+  - journalisation minimale, sans données personnelles (ni IP, ni adresse, ni message); journaux d'invocation de Workers Logs désactivés (`observability.logs.invocation_logs: false`).
+- **En-têtes de sécurité** (`dist/_headers`, écrit après le build par `scripts/postbuild.ts`, pour les fichiers statiques; posés par le Worker pour ses propres réponses, que `_headers` ne couvre pas) :
+  - `Strict-Transport-Security: max-age=31536000` (un an, sans `includeSubDomains` ni préchargement, quasi irréversibles), `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Cross-Origin-Opener-Policy: same-origin`;
+  - `Permissions-Policy` restrictive, `frame-ancestors 'none'`; jamais `Cross-Origin-Embedder-Policy: require-corp`, qui casserait Turnstile et YouTube;
+  - politique de sécurité du contenu (CSP) explicite : scripts du site autorisés par l'empreinte SHA-256 de chaque script intégré aux pages construites (aucun `unsafe-inline` pour les scripts), Turnstile, analytique (script et adresses de collecte), `wasm-unsafe-eval` pour Pagefind; cadres vers `youtube-nocookie.com` et Turnstile; styles en ligne permis (attributs posés par Turnstile et Astro);
+  - `/_astro/*` (fichiers à empreinte) : cache d'un an, immuable;
+  - limites de Cloudflare (100 règles, 2 000 caractères par ligne, une étoile par règle) contrôlées après le build, Wrangler ne l'analysant qu'au déploiement. Vérifié en local avec `wrangler dev` : recherche Pagefind, formulaires et pages sans violation de CSP.
 
   La CSP intégrée d'Astro n'est pas activée au lancement : elle ne se teste pas en développement et gère mal certains styles en ligne. Elle sera réévaluée en phase 5.
 - **Section `custom-html` de l'accueil** : contenu échappé à l'affichage, aucun script exécuté.
@@ -1065,7 +1076,7 @@ Marge confortable. Si la durée de build grandit avec le contenu : builds incr�
 - **Abonnés et preuves de consentement** : ils n'existent que chez le fournisseur (section 11.2).
   - Export CSV complet, avec les attributs de consentement, **chaque mois**.
   - L'export est conservé hors du dépôt, car il contient des données personnelles, dans un emplacement chiffré choisi par l'auteur [À COMPLÉTER PAR L'AUTEUR].
-  - La procédure pas à pas figurera dans le guide de l'auteur (phase 4).
+  - La procédure pas à pas est dans le guide de l'auteur (section 33).
 
 ### 16.3 Comptes et secrets à tenir
 
@@ -1079,13 +1090,14 @@ Marge confortable. Si la durée de build grandit avec le contenu : builds incr�
 | Sonde de disponibilité | au choix | alerte en cas de panne | | à recréer |
 | `TURNSTILE_SECRET_KEY` | secret Cloudflare | vérification anti-pourriel | au besoin | régénérer dans Cloudflare |
 | `NEWSLETTER_API_KEY` | secret Cloudflare | inscription | annuel conseillé | régénérer chez le fournisseur |
-| `IP_HASH_SALT` | secret Cloudflare | empreinte des IP | jamais (sinon les empreintes changent) | en créer un nouveau; les anciennes empreintes restent valables comme preuves |
+| `IP_HASH_SALT` | secret Cloudflare | empreinte des IP (preuve de consentement) et clés de débit | jamais (sinon les empreintes changent) | en créer un nouveau; les anciennes empreintes restent valables comme preuves |
+| `CONTACT_TO` (facultatif) | secret Cloudflare | adresse de réception du formulaire de contact, si elle diffère du courriel de contact du site | au besoin | aucun risque |
 | `DEPLOY_HOOK_URL` | secret Cloudflare | publication programmée | si divulguée | régénérer dans Workers Builds |
 | Plus tard, si activés | | | | |
 | `KEYSTATIC_GITHUB_CLIENT_ID`, `KEYSTATIC_GITHUB_CLIENT_SECRET`, `KEYSTATIC_SECRET` + `PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` | secrets Cloudflare, variable de build | éditeur en ligne | au besoin | recréer la GitHub App |
 | `COINGECKO_API_KEY` | variable de build | données de marché | | nouvelle clé CoinGecko |
 
-**Au lancement : 6 comptes et 4 secrets.**
+**Au lancement : 6 comptes et 4 secrets** (5 avec `CONTACT_TO`). `MEMORY_SERVICES=true`, qui garde inscriptions et messages en mémoire, n'est qu'une variable d'essai local (`.dev.vars`, jamais versionné) et des aperçus (`previews.vars` de `wrangler.jsonc`), jamais un réglage de production. Les secrets locaux vont dans `.dev.vars` : sans ce fichier, Wrangler injecterait le `.env` du projet dans le Worker.
 
 ---
 
@@ -1098,15 +1110,16 @@ Ce document ne rédige aucun texte juridique définitif et n'ajoute aucune exige
 | Traitement | Données | Où | Localisation | Conservation |
 |---|---|---|---|---|
 | Newsletter | courriel, attributs de consentement, empreinte d'IP, préférences, statistiques d'envoi | fournisseur de newsletter | selon le fournisseur (question 4) | [À COMPLÉTER PAR L'AUTEUR] |
-| Contact | nom, courriel, message | boîte courriel de l'auteur, via le service de courriel transactionnel (Brevo si confirmé, sinon Resend); rien n'est stocké par le site | selon le service [À VÉRIFIER] | [À COMPLÉTER PAR L'AUTEUR] |
+| Contact | nom, courriel, message, page concernée | boîte courriel de l'auteur, via le courriel transactionnel de Brevo; rien n'est stocké par le site | selon Brevo [À VÉRIFIER] | [À COMPLÉTER PAR L'AUTEUR] |
 | Anti-pourriel | signaux techniques du navigateur | Cloudflare Turnstile | Cloudflare, possiblement aux États-Unis | selon Cloudflare [À VÉRIFIER] |
 | Mesure d'audience | aucune donnée personnelle, sans témoin | selon l'outil (question 13) | selon l'outil | selon l'outil |
 | Journaux techniques | IP et navigateur dans les journaux de l'hébergeur | Cloudflare | centres de données de Cloudflare dans le monde; aucune localisation possible au Canada | [À VÉRIFIER] |
 
 **Mécanismes prévus** :
 
-- `legal.json` : responsable de la protection des renseignements personnels (nom, titre, courriel), variantes d'avertissement, mentions, types de sources réputés officiels.
-- Page de confidentialité générée en partie depuis cet inventaire (tableau), le reste étant rédigé par l'auteur.
+- `legal.json` : responsable de la protection des renseignements personnels (nom, titre, courriel), inventaire des traitements (`dataInventory`), variantes d'avertissement, mentions, types de sources réputés officiels.
+- Page de confidentialité générée en partie depuis cet inventaire (blocs « Responsable de la protection des renseignements » et « Renseignements recueillis », phase 4), le reste étant rédigé par l'auteur.
+- Faits relevés en phase 4 pour la politique, sans qualification juridique [À VALIDER PAR L'AUTEUR] : Turnstile traite des signaux techniques du navigateur (IP, empreinte TLS, agent utilisateur), sans possibilité de régionalisation; ses témoins et son stockage, dans son propre cadre, ne sont pas documentés, et l'addendum de confidentialité de Turnstile n'a pu être lu. Umami ne pose aucun témoin; l'IP sert au hachage de la visite (sel mensuel) et à la localisation (pays, région, ville conservés) sans être conservée; Umami ne mentionne ni la Loi 25 ni le Canada. Brevo conserve les abonnés et leurs attributs; ses sous-traitants et la localisation restent des extraits.
 - Demandes d'accès, de rectification ou de suppression : lien `mailto` vers le responsable. La suppression se fait chez le fournisseur.
 - Aucun bandeau de témoins si l'analytique retenue n'en pose pas. Un composant de consentement minimal est prévu mais désactivé; il ne serait activé que si un service tiers en posait un jour.
 - LCAP (Loi canadienne anti-pourriel) :
@@ -1135,7 +1148,7 @@ Hypothèses d'audience :
 | Recherche (Pagefind), images, flux, Turnstile | 0 | 0 | 0 |
 | Newsletter : Brevo (s) | 0 | ~9 | ~19 à 32 |
 | *ou* Newsletter : Cyberimpact (s) | ~39 $ CA | ~39 $ CA et plus | paliers non publiés |
-| Analytique : Umami Cloud (s) | 0 | 0 à 20 | 20 |
+| Analytique : Umami Cloud (s) (Pro obligatoire pour « les plus lus », v2) | 0 | 0 à 20 | 20 |
 | Données de marché (si activées et site monétisé) (s) | 0 | 0 à 35 | 0 à 35 |
 | Domaine `.ca` (environ 15 à 30 $ CA par an) | ~2 $ CA | ~2 $ CA | ~2 $ CA |
 | **Total (Brevo, Umami, sans ticker)** | **~2 $ CA** | **~9 à 29 $ US + 2 $ CA** | **~39 à 52 $ US + 2 $ CA** |
@@ -1177,7 +1190,7 @@ En famille A, le coût vient presque entièrement de la **newsletter**, qui dép
 | Dérive entre schémas Zod et formulaires Keystatic | moyenne | moyen | Contenu d'amorçage enregistré par l'éditeur et validé à chaque build (section 4.3) |
 | Relation rompue par renommage de slug | moyenne | faible | Le build échoue avec un message clair; `check` propose la correction |
 | Tâches planifiées GitHub en retard ou abandonnées | élevée | faible | Réservées à la veille et au rapport; publication confiée à Cloudflare |
-| Ponctualité des tâches planifiées Cloudflare non garantie par écrit | faible | moyen | Mesure en phase 4; tolérance d'une vingtaine de minutes acceptée à la question 2 |
+| Ponctualité des tâches planifiées Cloudflare non garantie par écrit | faible | moyen | Mesure après la mise en ligne (phase 5); tolérance d'une vingtaine de minutes acceptée à la question 2 |
 | Croissance du dépôt par les images | faible à 3 ans | faible | Compression à l'import, limite de poids dans `check`; au-delà de 1 Go, stockage objet |
 | Durée de build | faible | faible | Environ 6 000 pages en 75 secondes selon les mesures publiées pour Astro 7; builds incrémentaux si nécessaire, une fois stabilisés |
 | Plafond de 20 000 fichiers par déploiement en Workers gratuit (index Pagefind, variantes d'images et images Open Graph de chaque page comptent) | faible à 2 ans, moyenne au-delà | moyen | Trois largeurs d'image au plus; décompte des fichiers dans `check`, alerte à 15 000; au besoin Workers payant (100 000 fichiers, 5 $ US par mois), ou une image Open Graph commune pour les pages de liste, écart à soumettre à l'auteur |
@@ -1435,6 +1448,26 @@ Prises pendant la construction des gabarits, dans le cadre fixé par l'auteur (�
 - **Infolettre** : courriel produit localement, envoi manuel (section 11.4); le nom de la balise de désabonnement de Brevo reste à vérifier.
 - **Réseau** : l'éditeur charge la police Inter depuis Google Fonts, sur l'ordinateur de l'auteur seulement; le site public n'appelle aucun service extérieur.
 
+### 25.6 Décisions de la phase 4
+
+**Sources.** Étude du 28 septembre 2026, menée par cinq instances automatisées, chacune sur un service : spécification OpenAPI de Brevo (copie du 18 septembre 2026) et trousse officielle; dépôt `cloudflare/cloudflare-docs` (commit `fd9671e7`) et code publié de `wrangler` 4.143.0, `miniflare` et `workers-shared`; Turnstile (même dépôt, démonstration officielle, `cloudflare/skills`); code et documentation d'Umami (v3.4.0, branche d'Umami Cloud); spécification OpenAPI de CoinGecko, `github/docs`, `actions/checkout`, `actions/setup-node`, spécification OpenAPI de Resend. Les flux de la veille ont été lus depuis GitHub Actions. Les sites des fournisseurs et les sites gouvernementaux restaient inaccessibles : les extraits de recherche sont marqués « (s) » ou « extrait ». Essais locaux : Worker sous `wrangler dev` (routes, en-têtes, débit, tâche planifiée), pages sous la CSP réelle dans Chromium, clair et sombre, 1 280 et 360 pixels de large.
+
+- **Worker sans adaptateur ni Zod** : `worker/index.ts` route `/api/newsletter`, `/api/contact` (404 JSON pour le reste de `/api/*`) et `scheduled()`; tout autre chemin est servi en fichier statique sans exécuter le Worker (`run_worker_first: ["/api/*"]`, indispensable pour qu'un envoi sans JavaScript atteigne le Worker). Validation par règles sans dépendance : 86 Kio au lieu de 879 Kio avec Zod. Les règles de `schedule.json` sont dans un module sans dépendance (`src/lib/schedule-rules.ts`), partagé avec le build.
+- **Une seule tâche planifiée** (`7,22,37,52 * * * *`), reconstruction nocturne au passage de 5 h 07 UTC (section 15.3).
+- **Limitation de débit** par la liaison `ratelimits`, clés salées par préfixe d'IP et par adresse courriel (section 12.1); à confirmer au premier déploiement en forfait gratuit. Seuils (5 par minute) [À VALIDER PAR L'AUTEUR].
+- **Turnstile** chargé au premier contact avec le formulaire, contre l'avis de Cloudflare, par discrétion; clés d'essai limitées à l'essai local; nom d'hôte et action vérifiés (section 12.1).
+- **Essais sans envoi** : `MEMORY_SERVICES=true` (`.dev.vars` en local, `previews.vars` pour les aperçus de branche) garde inscriptions et messages en mémoire. Les aperçus n'inscrivent donc jamais de vrai courriel. Le fournisseur « Test (aucun envoi) » et la clé de site d'essai de Turnstile sont signalés par `check`, bloquants une fois le site en ligne.
+- **Contact par Brevo** (courriel transactionnel du même compte), le lecteur en adresse de réponse; Resend écarté.
+- **Date de confirmation** : date d'ajout à la liste de l'export mensuel, sans webhook (section 11.2).
+- **Protocole d'essai de Brevo**, à faire par l'auteur à l'ouverture du compte, avec ses propres adresses : nouvelle adresse (201 et courriel reçu); même adresse avant le clic; après le clic (`duplicate_parameter` attendu); contact existant hors liste (204); adresse désabonnée; attributs relus avant et après le clic. Résultats à consigner ici.
+- **Umami** : adresses de collecte réglables, autorisées par la CSP; paramètres d'adresse retirés sauf `utm_*`; Global Privacy Control respecté (section 12.2).
+- **En-têtes** : `dist/_headers` produit après le build, empreintes des scripts intégrés, HSTS d'un an sans préchargement, limites de Cloudflare contrôlées (section 16.1).
+- **Veille** : collecte, santé des sources et diagnostic livrés (section 14). Quatre sources activées après leur lecture réussie depuis GitHub Actions, avec des mots-clés proposés [À VALIDER PAR L'AUTEUR] (section 14.1). Le silence d'une source se juge sur son fil, tous sujets confondus, et non sur les publications retenues : une source filtrée peut rester des mois sans publication pertinente sans être en défaut.
+- **Tâches GitHub** : `actions/checkout@v7` et `actions/setup-node@v7` (Node 24 d'après `.nvmrc`), fuseau `America/Toronto` déclaré dans chaque tâche (pris en charge par GitHub depuis mars 2026), permissions minimales (`contents: write` pour la veille, `issues: write` pour le rapport). La veille se rebase avant de pousser; le rapport est assigné au propriétaire du dépôt. À vérifier en phase 5 : qu'un commit poussé par la tâche (jeton `GITHUB_TOKEN`) déclenche bien Workers Builds; sinon, appeler le Deploy Hook depuis la tâche.
+- **Surveillance** : fraîcheur du site en ligne et rapport hebdomadaire par GitHub (section 15.6); Cloudflare n'alerte pas d'un build en échec.
+- **Pages légales et de confiance** : gabarits en brouillon avec marqueurs; blocs de page `FormulaireContact`, `ResponsableProtection` et `InventaireDonnees` alimentés par la configuration (`services.json`, `legal.json`).
+- **Hors de la phase 4** : branchement de l'hébergement (Workers Builds, domaine, secrets, `SITE_MODE` des aperçus déduit de la branche), sonde de disponibilité et mesure de la ponctualité des tâches, en phase 5.
+
 ---
 
 ## 26. Journal des vérifications
@@ -1486,12 +1519,12 @@ Aucune affirmation n'a été réfutée. Les corrections sont intégrées au text
 
 ### 26.3 À revérifier depuis un accès web complet avant engagement
 
-- **Brevo** : localisation des données, plafond du forfait gratuit, interface française, envoi transactionnel et son quota.
+- **Brevo** : localisation des données, plafond du forfait gratuit et son partage avec l'envoi transactionnel, interface française, réponses exactes du double opt-in (protocole d'essai de la section 25.6).
 - **Cyberimpact** : paliers de prix, documentation de l'API.
 - **MailerLite** : forfait gratuit, double opt-in par API. **Buttondown** : hébergement des données.
-- **Umami Cloud** : quota gratuit et accès à l'API. **Plausible** : tarifs.
+- **Umami Cloud** : quota gratuit, sort des événements au-delà, accès à l'API (Pro selon les extraits), hôte de collecte d'un compte de région UE. **Plausible** : tarifs.
 - **CoinGecko** : usage commercial du forfait gratuit, attribution.
 - **Vercel et Netlify** : conditions des forfaits gratuits (pour mémoire).
-- **Cloudflare** : disponibilité du mécanisme de limitation de débit en forfait gratuit, notification d'échec de build, conditions de Turnstile concernant les témoins.
-- **Veille** : URL exactes de chaque flux (phase 4).
+- **Cloudflare** : disponibilité du mécanisme de limitation de débit en forfait gratuit (à constater au premier déploiement), conditions de Turnstile concernant les témoins (addendum de confidentialité illisible en phase 4). L'absence d'alerte courriel d'échec de build est constatée (section 15.6).
+- **Veille** : URL exactes de chaque flux, lues par le mode diagnostic depuis GitHub Actions (section 25.6).
 - **Cryptoast** : menu, recherche et pages actuels, si l'analyse doit aller plus loin que les captures fournies.

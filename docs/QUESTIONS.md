@@ -202,3 +202,55 @@ Chaque point a une valeur par défaut, appliquée sauf réponse contraire :
 Le brief emploie « newsletter »; l'Office québécois de la langue française recommande « infolettre ».
 
 **Recommandation** : « infolettre » dans les libellés visibles (menu, boutons, formulaires, courriels). Les noms techniques (`newsletter.json`, route `/newsletter/`) restent inchangés, ce qui n'engage rien : une chaîne de `fr.json` à modifier. Les documents de travail gardent « newsletter », le terme du brief. **Oui?**
+
+---
+
+## Questions de fin de phase 4 (28 septembre 2026)
+
+> Chaque point a une valeur par défaut, déjà appliquée dans le code : sans réponse, elle reste. Aucun n'est irréversible ni payant.
+
+### B1. Ce que la phase 4 n'a pas pu vérifier, et ce qui reste à fournir
+
+Les pages de Brevo étaient inaccessibles depuis l'environnement de travail : le lieu des données, le plafond gratuit (300 envois par jour, partagés avec les messages de contact) et l'interface en français restent des extraits de recherche. Ils seront **à constater à l'ouverture du compte** (guide de l'auteur, section 32), avec le protocole d'essai d'ARCHITECTURE, section 25.6. Restent aussi à fournir : le nom et le domaine du site (1), les comptes sociaux (11), le nom et le titre du responsable de la protection des renseignements personnels (15).
+
+### B2. Seuils de la limitation de débit
+
+5 envois par minute depuis un même appareil, et 5 par minute pour une même adresse courriel. Le mécanisme de Cloudflare est approximatif (chaque centre de données compte de son côté) et ne permet aucun quota horaire ou quotidien : c'est l'écart avec les points 8.5 et 8.8 du brief. Sa disponibilité en forfait gratuit sera constatée au premier déploiement; à défaut, Turnstile, le champ piège et le double consentement suffisent.
+
+**Recommandation** : garder ces seuils. **Oui?**
+
+### B3. Termes de recherche dans la mesure d'audience
+
+Le terme tapé (50 caractères au plus) est transmis avec le nombre de résultats, sauf s'il ressemble à une adresse courriel ou à un numéro. Il montre ce que les lecteurs cherchent sans le trouver, mais un lecteur peut y taper un renseignement personnel.
+
+**Recommandation** : garder les termes. **Oui?**
+
+### B4. Veille : mots-clés et Gazette du Canada
+
+Quatre sources actives (ministère des Finances, ARC, Banque du Canada, LEGISinfo), filtrées par des mots-clés proposés : cryptoactifs, actifs et monnaies numériques, monnaies stables, chaîne de blocs, blanchiment, paiements de détail, lois d'exécution du budget. La Gazette du Canada ne peut pas être filtrée : activée, elle annoncerait chaque numéro.
+
+**Recommandation** : mots-clés proposés, Gazette désactivée et suivie par ses avis par courriel. **Oui?**
+
+### B5. Turnstile chargé au premier contact avec un formulaire
+
+Cloudflare conseille de charger Turnstile dès l'ouverture de la page, pour une vérification un peu plus rapide. Le site ne contacte Cloudflare qu'au premier clic ou à la première saisie dans un formulaire.
+
+**Recommandation** : au premier contact, par discrétion. **Oui?**
+
+### B6. Alerte d'échec de build
+
+Cloudflare n'envoie aucun courriel quand un build échoue. La surveillance de fraîcheur (tâche GitHub, deux fois par jour ouvrable) le détecte : un envoi pas en ligne une heure après, ou un site pas reconstruit depuis 30 heures. Une alerte immédiate demanderait une file Cloudflare (gratuite) et un secret de plus.
+
+**Recommandation** : surveillance de fraîcheur seulement. **Oui?**
+
+### B7. Cours de marché : attribution et usage commercial
+
+Module livré, désactivé. CoinGecko exigerait la mention anglaise « Powered by CoinGecko » et réserverait l'usage commercial à ses forfaits payants (extraits de recherche).
+
+**Recommandation** : laisser le module désactivé; si tu l'actives, mention « Données fournies par CoinGecko » (traduction à faire accepter par CoinGecko) et aucun usage commercial sans forfait payant. **Oui?**
+
+### B8. HSTS d'un an
+
+Le site demande aux navigateurs de n'utiliser que HTTPS pendant un an (`Strict-Transport-Security: max-age=31536000`), sans préchargement ni sous-domaines, qui seraient quasi irréversibles.
+
+**Recommandation** : oui. **Oui?**
