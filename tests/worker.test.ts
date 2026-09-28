@@ -195,6 +195,7 @@ describe('formulaire de contact', () => {
     expect(await status(message({ message: 'court' }))).toBe(400);
     expect(await status(message({ topic: 'publicite' }))).toBe(400);
     expect(await status(message({ page: 'https://ailleurs.test/' }))).toBe(400);
+    expect(await status(message({ name: 'Camille\nBcc: autre@exemple.ca' }))).toBe(400);
     expect(await status(message({ 'cf-turnstile-response': 'faux' }))).toBe(403);
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     expect(await status(message(), baseEnv())).toBe(503);

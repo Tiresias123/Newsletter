@@ -13,7 +13,8 @@ const site = siteJson as typeof siteJson & { contactEmail?: string };
 export const MESSAGE_MAX = 5000;
 
 const RULES = {
-  name: text(1, 100),
+  // Une seule ligne : le nom entre dans l'objet du courriel.
+  name: text(1, 100, /^[^\r\n]*$/),
   email,
   topic: oneOf(CONTACT_TOPICS),
   message: text(10, MESSAGE_MAX),
