@@ -76,7 +76,7 @@ Ce guide explique comment faire vivre le site sans toucher au code. Il grandit �
 | Commande | Effet |
 |---|---|
 | `npm run dev` | ouvre le site en local sur http://127.0.0.1:4321, brouillons compris, et l'éditeur sur http://127.0.0.1:4321/keystatic (section 3); la page se recharge à chaque enregistrement d'un fichier |
-| `npm run new:article "Titre"` | crée un article en brouillon, prérempli; `--guide` pour un guide (section 4) |
+| `npm run new:article -- "Titre"` | crée un article en brouillon, prérempli; `npm run new:article -- "Titre" --guide` pour un guide (section 4). Les options se placent après `--` |
 | `npm run newsletter:draft` | prépare le prochain numéro de l'infolettre; avec `-- --html`, produit son courriel (section 28) |
 | `npm run content:format` | remet les fichiers au format de l'éditeur après une modification faite à la main (section 30) |
 | `npm run check` | vérifie tout le contenu et écrit le rapport `docs/A-VERIFIER.md` (section 16) |
@@ -124,11 +124,11 @@ L'éditeur est un ensemble de formulaires, en français, au-dessus des fichiers 
 
 ## 4. Publier un article en cinq minutes
 
-1. Lancez `npm run dev`, ouvrez l'éditeur, puis **Articles › Ajouter**. Vous pouvez aussi lancer `npm run new:article "Titre de l'article"` : l'article est créé en brouillon, prérempli, et la commande affiche l'adresse où l'ouvrir dans l'éditeur.
+1. Lancez `npm run dev`, ouvrez l'éditeur, puis **Articles › Ajouter**. Vous pouvez aussi lancer `npm run new:article -- "Titre de l'article"` : l'article est créé en brouillon, prérempli, et la commande affiche l'adresse où l'ouvrir dans l'éditeur.
 2. **Contenu** : le titre (20 à 120 caractères), l'identifiant proposé, le chapô (160 à 300 caractères), puis le texte au centre. Le bouton « + » de la barre d'outils insère un bloc (encadré, texte de loi, chronologie…, section 20). Pour une note de bas de page ou une définition du lexique, sélectionnez les mots, puis cliquez sur « Note numérotée » ou « Définition du lexique ».
 3. **Classement** : catégorie, format, thèmes (1 à 5), juridictions.
 4. **Couverture**, facultative : image, texte alternatif et crédit (section 6).
-5. **Réglementation et fiscalité** : « Vérifié le », « L'essentiel » (3 à 5 points) et au moins une source officielle sont exigés pour publier.
+5. **Réglementation et fiscalité** : « Vérifié le », « L'essentiel » (3 à 5 points) et au moins une source officielle sont exigés pour publier. Le type d'une source ponctuelle reste « À choisir » tant que vous ne l'avez pas choisi : le rapport bloque alors la publication.
 6. **Publication** : statut « Publié », date du jour (ou « Programmé » et une date future, section 5). Sauvegardez.
 7. Vérifiez la page (icône « Preview »), puis la page http://127.0.0.1:4321/a-verifier/ : aucune erreur bloquante ne doit concerner l'article.
 8. Mettez en ligne avec GitHub Desktop (section 3).
@@ -156,7 +156,7 @@ Chaque contenu porte un statut (« Statut de publication », champ `status`) 
 
 Les champs d'image (couverture, image de partage, photo d'un auteur) ont un bouton « Choose file » pour choisir le fichier et « Remove » pour le retirer. Le site produit lui-même les tailles et les formats utiles : envoyez une image assez grande (1 600 pixels de large pour une couverture), en JPEG, PNG ou WebP. Le rapport « À vérifier » signale une image de plus de 500 Ko.
 
-- **Où vont les fichiers** : chaque contenu range ses images dans son propre dossier, `content/images/<collection>/<identifiant>/`. L'éditeur les nomme d'après le champ : la couverture d'un article devient `cover/src.webp`, son image de partage `seo/socialImage.png`.
+- **Où vont les fichiers** : chaque contenu range ses images dans son propre dossier, `content/images/<collection>/<identifiant>/`. L'éditeur les nomme d'après le champ : la couverture d'un article devient `cover/src.webp`, son image de partage `seo/socialImage.png`. Une image ajoutée à la main doit porter ce nom, sinon le rapport le signale.
 - **Une image n'appartient qu'à un contenu.** Une image citée depuis le dossier d'un autre contenu serait effacée au prochain enregistrement : le rapport le signale (« Contenus que l'éditeur ne pourrait pas ouvrir »). Pour réutiliser une image, choisissez de nouveau le fichier.
 - **Renommer, supprimer** : renommer un contenu déplace ses images dans le nouveau dossier; supprimer un contenu supprime ses images; « Remove » suivi d'un enregistrement supprime le fichier.
 - **Image dans le texte** : bloc « Image » du menu « + ». Le nom du fichier est mis en minuscules, sans accents ni espaces. Texte alternatif et crédit sont obligatoires, la légende facultative.
@@ -277,7 +277,7 @@ Tous les textes fixes du site (boutons, mentions, messages, libellés des champs
 
 Dans l'éditeur : **Réglages › Mentions juridiques**.
 
-- `disclaimers` : les avertissements affichés sous les contenus (`general`, `fiscal`, `reglementaire`, `opinion`, `exemple-chiffre`, `mise-en-garde`). Une catégorie choisit son avertissement par défaut (`defaultDisclaimer`), qu'un contenu peut remplacer (`disclaimerVariant`).
+- `disclaimers` : les avertissements affichés sous les contenus (`general`, `fiscal`, `reglementaire`, `opinion`, `exemple-chiffre`, `mise-en-garde`). Une catégorie choisit son avertissement par défaut (`defaultDisclaimer`), qu'un contenu peut remplacer (`disclaimerVariant`). Dans ces deux listes, « Par défaut » reprend l'avertissement de la catégorie (sinon le général; pour un dossier, le réglementaire), « Aucun » n'en affiche pas.
 - `officialSourceTypes` : les types de sources réputés officiels (loi, règlement, décision…). Les contenus de réglementation et de fiscalité doivent citer au moins une source de ces types. **Cette liste est à valider** : passer ensuite `officialSourceTypesValidated` à `true` pour faire disparaître le rappel du rapport.
 - `privacyOfficer` : la personne responsable de la protection des renseignements personnels (Loi 25).
 - `newsletterSender` : identification et adresse postale de l'expéditeur de l'infolettre (Loi canadienne anti-pourriel).
@@ -400,6 +400,7 @@ Tapez des espaces ordinaires : le site applique la typographie québécoise à 
 | Statut réglementaire | `<StatutReglementaire dossier="stablecoins-canada" />` | puce de statut et lien vers le dossier, dans une phrase ou seul sur sa ligne |
 | Bloc partenaire | `<BlocPartenaire id="partenaire" />` | affiché seulement si le partenaire est actif dans `config/ads.json`, toujours signalé « Publicité » |
 | Note | `…une phrase.<Note>Texte de la note.</Note>` | collée au mot qu'elle commente; numérotée seule, regroupée en fin de page avec un lien de retour |
+| FAQ | `<FAQ items={[{ question: "…", answer: "…" }]} />` | questions en accordéon, reprises en données FAQPage pour les moteurs |
 | Image | `<Image src="articles/mon-article/schema.webp" alt="…" credit="…" caption="…" />` | `src` : `<collection>/<identifiant>/<fichier>`, dans `content/images/`, nom en minuscules (section 6); texte alternatif et crédit obligatoires; `creditUrl="https://…"`, facultatif, fait du crédit un lien |
 
 **Blocs de page**, réservés aux pages de `content/pages/` :
@@ -408,15 +409,16 @@ Tapez des espaces ordinaires : le site applique la typographie québécoise à 
 - `<ListeArticles category="…" theme="…" jurisdiction="…" format="…" tag="…" count="6" layout="grid" />` : liste d'articles (filtres facultatifs; `layout` : `grid` ou `list`);
 - `<CarteAuteur id="auteur" />` et `<Newsletter />` (`list="…"` pour une autre liste de `config/newsletter.json` que la liste générale);
 - `<ListeSources jurisdiction="…" type="…" />`, ou `ids={["source-1", "source-2"]}` : sources réutilisables;
-- `<FAQ items={[{ question: "…", answer: "…" }]} />` : questions reprises en données FAQPage pour les moteurs;
 - `<Tableau caption="…" columns={[…]} rows={[…]} />`.
 
 **Ce que l'éditeur ne sait pas relire.** Écrit à la main, un corps doit rester dans ce que l'éditeur comprend, faute de quoi il refuse d'ouvrir le contenu :
 
 - un bloc qui entoure du texte (encadré, texte de loi, citation, bandeau) s'écrit sur trois lignes au moins : balise ouvrante, texte, balise fermante;
-- entre accolades, seulement des textes entre guillemets, des nombres positifs, `true`, `false`, des listes et des objets : un montant négatif s'écrit entre guillemets;
+- les autres blocs (exemple chiffré, chronologie, mise en garde, image…) occupent une ligne à eux, hors d'un paragraphe; seuls la note, la définition et le statut réglementaire se placent dans une phrase;
+- entre accolades, seulement des textes entre guillemets, `null`, des listes et des objets : tout nombre s'écrit entre guillemets (`"-2500"`, `"6"`), et chaque attribut a une valeur (`title="…"`);
 - ni HTML, ni commentaire, ni image Markdown (`![…](…)`), ni accolade dans le texte;
-- ni note dans une définition, ni deux notes accolées (l'éditeur les fusionnerait).
+- ni note de bas de page Markdown (`[^1]`, que l'éditeur détruirait : utilisez le bloc Note), ni colonnes de tableau alignées (`| :--- |`, alignement retiré);
+- ni note dans une définition, ni deux notes collées l'une à l'autre (l'éditeur les fusionnerait).
 
 Le rapport « À vérifier » signale chacune de ces constructions. Un bloc écrit dans du code (entre accents graves) n'est ni interprété ni vérifié : c'est ainsi que ce guide peut les montrer.
 
@@ -486,7 +488,7 @@ Chaque contenu accepte un bloc `seo`, entièrement facultatif :
 Une adresse publiée ne doit jamais mourir : d'autres sites, des courriels ou des mémoires la citent.
 
 - **Renommer un contenu** (article, guide, dossier) : dans l'éditeur, changez son identifiant et enregistrez (le fichier est renommé, ses images déplacées), puis ajoutez l'ancien identifiant dans « Anciennes adresses » (`previousSlugs`). Le site redirige alors l'ancienne adresse vers la nouvelle (redirection permanente 301). Les contenus qui citent l'ancien identifiant ne sont pas mis à jour : le rapport les signale, corrigez-les.
-- **Toute autre adresse** (ancien site, page supprimée) : **Réglages › Redirections**, « Add » : ancienne adresse, nouvelle adresse et code (301 pour un déplacement définitif, le cas normal; 302 pour un déplacement temporaire). Dans le fichier `config/redirects.json` : `{ "from": "/ancienne-adresse/", "to": "/nouvelle-adresse/", "status": 301 }`.
+- **Toute autre adresse** (ancien site, page supprimée) : **Réglages › Redirections**, « Ajouter » : ancienne adresse, nouvelle adresse et « Code de redirection » (301 pour un déplacement définitif, le cas normal; 302 pour un déplacement temporaire). Dans le fichier `config/redirects.json` : `{ "from": "/ancienne-adresse/", "to": "/nouvelle-adresse/", "status": 301 }`.
 - **Contrôles** : `npm run check` refuse une ancienne adresse déjà redirigée, une redirection qui masquerait une page existante, une boucle, et plus de 2 000 redirections; il signale une destination qui n'existe pas. Une chaîne (A vers B, puis B vers C) est raccourcie seule (A vers C).
 - **Filet de sécurité**, une fois le site en ligne : chaque construction compare les adresses du plan du site en ligne à celles du nouveau site, et signale toute adresse disparue sans redirection. Un contenu repassé en brouillon est une dépublication voulue : simple information.
 
@@ -500,10 +502,10 @@ Une adresse publiée ne doit jamais mourir : d'autres sites, des courriels ou d
 ## 28. L'infolettre : préparer et envoyer un numéro
 
 1. **Préparer** : `npm run newsletter:draft` crée le prochain numéro en brouillon (`content/newsletters/AAAA-NNN.mdx`). Il reprend les articles publiés depuis la date d'envoi du dernier numéro envoyé (ce jour compris), cochés « Proposer dans l'infolettre », moins ceux qu'un numéro envoyé contient déjà. Sans numéro envoyé, il remonte une semaine.
-2. **Rédiger** : dans l'éditeur, **Numéros de l'infolettre**, remplissez l'objet, le pré-en-tête (texte d'aperçu affiché dans la boîte de réception) et le mot d'introduction; retirez ou réordonnez les articles. Le mot d'introduction accepte paragraphes, intertitres, listes, gras, italique et liens; les blocs n'y passent pas.
-3. **Produire le courriel** : `npm run newsletter:draft -- --html` crée `exports/infolettre/<numéro>.html` et sa version texte `.txt` (pour un numéro précis : `npm run newsletter:draft -- --html 2026-002`). La commande avertit si le courriel contient encore un marqueur, un article non publié ou un partenaire désactivé.
-4. **Envoyer** : chez le fournisseur (Brevo), créez une campagne, choisissez l'éditeur « code HTML » et collez le contenu du fichier `.html`. Le lien de désabonnement est la balise que le fournisseur remplace à l'envoi : réglages de l'infolettre, « Lien de désabonnement » (`{{ unsubscribe }}` chez Brevo, à vérifier lors de l'ouverture du compte, phase 4). Envoyez-vous d'abord un essai.
-5. **Archiver** : une fois le numéro envoyé, passez son statut à « Envoyé », indiquez la date d'envoi (et, si vous le souhaitez, l'identifiant de la campagne chez le fournisseur), sauvegardez et mettez en ligne : le numéro rejoint l'archive `/newsletter/`.
+2. **Rédiger** : dans l'éditeur, **Numéros de l'infolettre**, remplissez l'objet, le pré-en-tête (texte d'aperçu affiché dans la boîte de réception) et le mot d'introduction; retirez ou réordonnez les articles. Le mot d'introduction accepte paragraphes, intertitres, listes à puces ou numérotées, gras, italique et liens; une citation y devient un paragraphe, et les blocs n'y passent pas.
+3. **Archiver** : passez le statut à « Envoyé », indiquez la date d'envoi (aujourd'hui), sauvegardez et mettez en ligne. Le numéro rejoint l'archive `/newsletter/` : le lien « Lire ce numéro dans votre navigateur » du courriel y mène, il faut donc qu'elle existe avant l'envoi.
+4. **Produire le courriel** : `npm run newsletter:draft -- --html` crée `exports/infolettre/<numéro>.html` et sa version texte `.txt` (pour un numéro précis : `npm run newsletter:draft -- --html 2026-002`). La commande avertit si le courriel contient encore un marqueur, un article non publié, un partenaire désactivé, ou si le numéro n'est pas encore archivé.
+5. **Envoyer** : chez le fournisseur (Brevo), créez une campagne, choisissez l'éditeur « code HTML » et collez le contenu du fichier `.html`. Le lien de désabonnement est la balise que le fournisseur remplace à l'envoi : réglages de l'infolettre, « Lien de désabonnement » (`{{ unsubscribe }}` chez Brevo, à vérifier lors de l'ouverture du compte, phase 4). Envoyez-vous d'abord un essai. Vous pouvez ensuite noter l'identifiant de la campagne dans le numéro.
 
 Chaque courriel porte l'identification et l'adresse postale de l'expéditeur (mentions juridiques, « Expéditeur de l'infolettre ») et la phrase qui rappelle pourquoi le lecteur le reçoit (textes de l'interface, section `newsletterEmail`, à valider). L'envoi reste toujours un geste humain.
 
@@ -530,6 +532,7 @@ Chaque courriel porte l'identification et l'adresse postale de l'expéditeur (me
 | Delete entry, Duplicate entry, Copy entry, Paste entry | supprimer, dupliquer, copier, coller une entrée |
 | Preview | voir la page sur le site local |
 | Save, Create | enregistrer ou créer, dans les réglages |
+| Add item, Empty list | ajouter un élément à une liste; liste encore vide |
 | N entries | nombre d'entrées d'une collection |
 | Light, Dark, System | thème de l'éditeur : clair, sombre, celui de l'appareil |
 | « … must not be empty » | champ obligatoire resté vide |
@@ -538,8 +541,8 @@ Chaque courriel porte l'identification et l'adresse postale de l'expéditeur (me
 
 **Renommer un contenu** : changez son identifiant (ou « Regenerate »), puis enregistrez. Le fichier est renommé et ses images déplacées, mais les autres contenus qui le citent ne sont pas mis à jour : ajoutez l'ancien identifiant dans « Anciennes adresses » (section 26), puis corrigez les relations que signale le rapport.
 
-**Sécurité** : l'éditeur écrit dans les fichiers du site sans demander de mot de passe. Il ne fonctionne que sur votre ordinateur : lancé avec l'option `--host`, qui ouvre le site au réseau, `npm run dev` le désactive.
+**Sécurité** : l'éditeur écrit dans les fichiers du site sans demander de mot de passe. Il ne fonctionne que sur votre ordinateur : lancé avec l'option `--host`, qui ouvre le site au réseau, ou `--allowedHosts`, qui le rend joignable par un tunnel, `npm run dev` le désactive.
 
 **Réseau** : l'éditeur charge sa police (Inter) depuis Google Fonts; le site public, lui, ne fait aucun appel extérieur.
 
-**Mise en forme des fichiers** : au premier enregistrement, l'éditeur écrit le texte à sa façon (puces `*`, `\[` devant un marqueur, blocs indentés). Tout le contenu du site est déjà dans ce format. Après une modification faite à la main ou par Claude Code, `npm run content:format` le rétablit, sans rien changer aux données.
+**Mise en forme des fichiers** : au premier enregistrement, l'éditeur écrit le texte à sa façon (puces `*`, `\[` devant un marqueur, blocs indentés). Tout le contenu du site est déjà dans ce format. Après une modification faite à la main ou par Claude Code, `npm run content:format` le rétablit, sans rien changer aux données : un fichier dont l'enregistrement changerait une donnée, une image ou le rendu (image mal nommée, notes collées…) est laissé tel quel et signalé, avec la raison.

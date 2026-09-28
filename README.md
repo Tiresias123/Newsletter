@@ -21,7 +21,7 @@ npm run dev      # site local sur http://127.0.0.1:4321, brouillons visibles
 | `npm run check` | vérifications et rapport `docs/A-VERIFIER.md` |
 | `npm run build` | vérifications, site de production dans `dist/`, index de recherche (Pagefind), puis contrôles du résultat |
 | `npm run preview` | sert `dist/` en local |
-| `npm run new:article "Titre"` | crée un article en brouillon, prérempli (`--guide` pour un guide) |
+| `npm run new:article -- "Titre"` | crée un article en brouillon, prérempli (`-- "Titre" --guide` pour un guide : options après `--`) |
 | `npm run newsletter:draft` | prépare le prochain numéro de l'infolettre; avec `-- --html`, produit le courriel dans `exports/infolettre/` |
 | `npm run content:format` | remet les fichiers de `content/` et `config/` au format de l'éditeur (`-- --verifier` : contrôle sans écrire) |
 | `npm test` | tests unitaires |

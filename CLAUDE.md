@@ -15,7 +15,7 @@ Site média sur la réglementation et la fiscalité des cryptoactifs au Canada e
 - `npm run check` : validations et rapport `docs/A-VERIFIER.md` (non versionné).
 - `npm run build` : `check`, build de production, index Pagefind, puis contrôles de `dist/` (`scripts/postbuild.ts`). `SITE_MODE=preview` pour un build d'aperçu.
 - `npm test` (Vitest), `npm run typecheck` (`astro check`).
-- `npm run new:article "Titre"`, `npm run newsletter:draft` (`-- --html` pour le courriel), `npm run content:format` (remet `content/` et `config/` au format de l'éditeur).
+- `npm run new:article -- "Titre"` (options après `--`), `npm run newsletter:draft` (`-- --html` pour le courriel), `npm run content:format` (remet `content/` et `config/` au format de l'éditeur).
 
 Avant tout commit : `npm test`, `npm run typecheck` et `npm run build` passent sans avertissement.
 
@@ -34,11 +34,11 @@ Avant tout commit : `npm test`, `npm run typecheck` et `npm run build` passent 
 ## Éditeur (Keystatic, mode local)
 
 - Configuration dans `src/lib/editor/`, miroir des schémas Zod : une clé Zod ajoutée, retirée ou renommée l'est aussi dans le formulaire (`fields.ignored()` pour une clé que l'auteur ne doit pas modifier). Libellés et aides dans `config/i18n/fr.json` (`champs`, `editeur`). `tests/editor.test.ts` vérifie que chaque fichier s'ouvre et s'enregistre sans perte.
-- Tout fichier de `content/` ou `config/` écrit ou modifié à la main : lancer ensuite `npm run content:format`.
-- Corps MDX : bloc qui entoure du texte (Callout, TexteDeLoi, Citation, Hero) sur des lignes à part; valeurs entre accolades littérales seulement (montant négatif entre guillemets); ni HTML, ni commentaire, ni image Markdown, ni `{…}`; pas de `Note` dans une `Definition`. Le rapport `check` le signale.
-- Images d'une entrée dans `content/images/<collection>/<identifiant>/` seulement (dossier par collection : `COLLECTIONS` de `src/lib/content/collections.ts`).
+- Tout fichier de `content/` ou `config/` écrit ou modifié à la main : lancer ensuite `npm run content:format`. Il refuse (et explique) un fichier dont l'enregistrement changerait les données, le rendu ou les images : corriger alors la source.
+- Corps MDX : bloc qui entoure du texte (Callout, TexteDeLoi, Citation, Hero) sur des lignes à part; autres blocs seuls sur leur ligne (sauf Note, Definition, StatutReglementaire); entre accolades, seulement textes, `null`, listes et objets (tout nombre entre guillemets, aucun attribut sans valeur); ni HTML, ni commentaire, ni image Markdown, ni `{…}`, ni note `[^1]`, ni colonnes de tableau alignées; pas de `Note` dans une `Definition` ni deux `Note` collées. Le rapport `check` le signale.
+- Images d'une entrée dans `content/images/<collection>/<identifiant>/` seulement (dossier par collection : `COLLECTIONS` de `src/lib/content/collections.ts`); image d'un champ nommée d'après lui (`cover/src.webp`, `seo/socialImage.png`).
 - L'éditeur conserve les modifications non enregistrées de l'auteur et écraserait une modification faite entre-temps : prévenir l'auteur avant de modifier un contenu qu'il est en train d'éditer.
-- Jamais `astro dev --host` : l'éditeur écrit sans authentification (il se désactive alors).
+- Jamais `astro dev --host` ni `--allowedHosts` (tunnel) : l'éditeur écrit sans authentification (il se désactive alors).
 - Keystatic est épinglé : `src/lib/editor/roundtrip.ts` s'appuie sur ses fonctions internes. Toute mise à jour sur une branche, tests compris.
 
 ## Rédaction
