@@ -1,11 +1,12 @@
 // POST /api/newsletter : inscription à l'infolettre avec double consentement (brief 8.5, ARCHITECTURE 11.2).
-// Ordre des contrôles : origine, taille, champ piège, champs, configuration, débit, Turnstile; puis abonné « en
-// attente » chez le fournisseur, avec sa preuve de consentement. Réponse toujours générique : on ne révèle
-// jamais si une adresse est déjà inscrite.
+// Ordre des contrôles : origine, taille, champ piège, champs, configuration, débit par IP, Turnstile, débit par
+// adresse (compté seulement après un défi réussi : un tiers ne peut pas épuiser celui d'une autre adresse sans
+// résoudre de défi); puis abonné « en attente » chez le fournisseur, avec sa preuve de consentement. Réponse
+// toujours générique : on ne révèle jamais si une adresse est déjà inscrite.
 import newsletterConfig from '../config/newsletter.json' with { type: 'json' };
 import type { NewsletterProvider } from '../src/lib/newsletter/provider.ts';
-import { backToForm, clientIp, fail, ok, readForm, sameOrigin, type Env } from './http.ts';
-import { fingerprint, rateKeys, underLimits, verifyTurnstile } from './security.ts';
+import { backToForm, clientIp, fail, formFailure, ok, readForm, sameOrigin, type Env } from './http.ts';
+import { emailRateKey, fingerprint, ipRateKey, underLimits, verifyTurnstile } from './security.ts';
 import { email, oneOf, text, validate } from './validate.ts';
 
 export const NEWSLETTER_ACTION = 'newsletter';
@@ -30,10 +31,10 @@ export async function handleNewsletter(request: Request, env: Env, provider: New
   if (noScript) return noScript;
   if (!sameOrigin(request)) return fail(403, 'origine');
   const form = await readForm(request, MAX_BYTES);
-  if (!form) return fail(413, 'taille');
+  if ('error' in form) return formFailure(form.error);
   // Champ piège rempli : un robot. Réponse de succès, sans rien enregistrer.
-  if (form.site_web) return ok();
-  const fields = validate(form, RULES);
+  if (form.fields.site_web) return ok();
+  const fields = validate(form.fields, RULES);
   if (!fields) return fail(400, 'invalide');
   const salt = env.IP_HASH_SALT;
   if (!provider || !salt) {
@@ -42,8 +43,10 @@ export async function handleNewsletter(request: Request, env: Env, provider: New
   }
   const ip = clientIp(request);
   const { origin, hostname } = new URL(request.url);
-  if (!(await underLimits(env.FORM_LIMITER, await rateKeys(salt, 'newsletter', ip, fields.email)))) return fail(429, 'debit', { 'retry-after': '60' });
+  const limited = () => fail(429, 'debit', { 'retry-after': '60' });
+  if (!(await underLimits(env.FORM_LIMITER, [await ipRateKey(salt, 'newsletter', ip)]))) return limited();
   if (!(await verifyTurnstile(env, fields['cf-turnstile-response'], { ip, hostname, action: NEWSLETTER_ACTION }))) return fail(403, 'verification');
+  if (!(await underLimits(env.FORM_LIMITER, [await emailRateKey(salt, 'newsletter', fields.email)]))) return limited();
   try {
     await provider.subscribe({
       email: fields.email.toLowerCase(),

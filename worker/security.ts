@@ -76,10 +76,8 @@ export async function fingerprint(salt: string, value: string): Promise<string> 
   return [...new Uint8Array(signature)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Clés de débit d'un envoi : par route et par préfixe d'IP, et par route et adresse courriel s'il y en a une
-// (contre l'envoi répété de confirmations à une même adresse). Empreintes raccourcies : rien n'est réversible.
-export async function rateKeys(salt: string, route: string, ip: string, email?: string): Promise<string[]> {
-  const keys = [`${route}:ip:${(await fingerprint(salt, `debit:${ipPrefix(ip)}`)).slice(0, 24)}`];
-  if (email) keys.push(`${route}:courriel:${(await fingerprint(salt, `debit:${email.toLowerCase()}`)).slice(0, 24)}`);
-  return keys;
-}
+// Clés de débit, en empreintes raccourcies (rien n'est réversible) : par route et préfixe d'IP, et, pour
+// l'infolettre, par adresse courriel, contre l'envoi répété de confirmations à une même adresse.
+const rateFingerprint = async (salt: string, value: string) => (await fingerprint(salt, `debit:${value}`)).slice(0, 24);
+export const ipRateKey = async (salt: string, route: string, ip: string) => `${route}:ip:${await rateFingerprint(salt, ipPrefix(ip))}`;
+export const emailRateKey = async (salt: string, route: string, email: string) => `${route}:courriel:${await rateFingerprint(salt, email.toLowerCase())}`;

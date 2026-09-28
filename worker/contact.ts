@@ -2,8 +2,8 @@
 // champs, débit, Turnstile) puis transmis par courriel à l'auteur. Rien n'est conservé par le site.
 import siteJson from '../config/site.json' with { type: 'json' };
 import { CONTACT_TOPICS, contactMail, type Mailer } from '../src/lib/contact/mailer.ts';
-import { backToForm, clientIp, fail, ok, readForm, sameOrigin, type Env } from './http.ts';
-import { rateKeys, underLimits, verifyTurnstile } from './security.ts';
+import { backToForm, clientIp, fail, formFailure, ok, readForm, sameOrigin, type Env } from './http.ts';
+import { ipRateKey, underLimits, verifyTurnstile } from './security.ts';
 import { email, oneOf, optional, text, validate } from './validate.ts';
 
 export const CONTACT_ACTION = 'contact';
@@ -28,9 +28,9 @@ export async function handleContact(request: Request, env: Env, mailer: Mailer |
   if (noScript) return noScript;
   if (!sameOrigin(request)) return fail(403, 'origine');
   const form = await readForm(request, MAX_BYTES);
-  if (!form) return fail(413, 'taille');
-  if (form.site_web) return ok();
-  const fields = validate(form, RULES);
+  if ('error' in form) return formFailure(form.error);
+  if (form.fields.site_web) return ok();
+  const fields = validate(form.fields, RULES);
   if (!fields) return fail(400, 'invalide');
   const to = env.CONTACT_TO || site.contactEmail;
   const salt = env.IP_HASH_SALT;
@@ -40,7 +40,7 @@ export async function handleContact(request: Request, env: Env, mailer: Mailer |
   }
   const ip = clientIp(request);
   const { origin, hostname } = new URL(request.url);
-  if (!(await underLimits(env.FORM_LIMITER, await rateKeys(salt, 'contact', ip)))) return fail(429, 'debit', { 'retry-after': '60' });
+  if (!(await underLimits(env.FORM_LIMITER, [await ipRateKey(salt, 'contact', ip)]))) return fail(429, 'debit', { 'retry-after': '60' });
   if (!(await verifyTurnstile(env, fields['cf-turnstile-response'], { ip, hostname, action: CONTACT_ACTION }))) return fail(403, 'verification');
   try {
     await mailer.send(contactMail({ ...fields, page: fields.page ? `${origin}${fields.page}` : '' }, to, site.name));

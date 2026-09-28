@@ -77,6 +77,9 @@ describe('inscription à l’infolettre', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true });
     expect(response.headers.get('cache-control')).toBe('no-store');
+    expect(response.headers.get('strict-transport-security')).toBe('max-age=31536000');
+    expect(response.headers.get('cross-origin-opener-policy')).toBe('same-origin');
+    expect(response.headers.get('permissions-policy')).toContain('camera=()');
     const [subscriber] = [...provider.subscribers.values()];
     expect(subscriber).toMatchObject({ email: 'lecteur@exemple.ca', list: 'generale', status: 'en-attente', tags: ['article'] });
     expect(subscriber?.consent).toEqual({
@@ -98,6 +101,13 @@ describe('inscription à l’infolettre', () => {
     };
     expect(await call(post('/api/newsletter', subscription(), { origin: 'https://ailleurs.test' }))).toEqual([403, 'origine']);
     expect(await call(post('/api/newsletter', subscription({ message: 'x'.repeat(9000) })))).toEqual([413, 'taille']);
+    expect(await call(post('/api/newsletter', subscription(), { 'content-type': 'application/json' }))).toEqual([415, 'invalide']);
+    const truncated = new Request(`${ORIGIN}/api/newsletter`, {
+      method: 'POST',
+      body: '--limite\r\ncontent-disposition: form-data; name="email"\r\n\r\nlecteur',
+      headers: { origin: ORIGIN, accept: 'application/json', 'content-type': 'multipart/form-data; boundary=limite' },
+    });
+    expect(await call(truncated)).toEqual([400, 'invalide']);
     expect(await call(post('/api/newsletter', subscription({ consent: '' })))).toEqual([400, 'invalide']);
     expect(await call(post('/api/newsletter', subscription({ list: 'fiscalite' })))).toEqual([400, 'invalide']);
     expect(await call(post('/api/newsletter', subscription({ source: 'https://ailleurs.test/' })))).toEqual([400, 'invalide']);
@@ -117,12 +127,17 @@ describe('inscription à l’infolettre', () => {
     const limited = await handleNewsletter(post('/api/newsletter', subscription()), baseEnv({ FORM_LIMITER: limiter }), provider);
     expect(limited.status).toBe(429);
     expect(limited.headers.get('retry-after')).toBe('60');
-    // Une clé par préfixe d'IP et une par adresse courriel, en empreintes : ni l'IP ni l'adresse en clair.
+    // Une clé par préfixe d'IP, puis, après le défi réussi, une par adresse courriel, en empreintes : ni l'IP ni
+    // l'adresse en clair.
     expect(keys).toHaveLength(2);
     expect(keys[0]).toMatch(/^newsletter:ip:[a-f0-9]{24}$/);
     expect(keys[1]).toMatch(/^newsletter:courriel:[a-f0-9]{24}$/);
     expect(provider.subscribers.size).toBe(0);
-    expect(siteverify).toHaveLength(0);
+    expect(siteverify).toHaveLength(1);
+    // Sans défi réussi, la clé de l'adresse n'est jamais comptée : un tiers ne peut pas l'épuiser.
+    keys.length = 0;
+    await handleNewsletter(post('/api/newsletter', subscription({ 'cf-turnstile-response': 'faux' })), baseEnv({ FORM_LIMITER: limiter }), provider);
+    expect(keys.every((key) => key.includes(':ip:'))).toBe(true);
   });
 
   it('reste générique quand le fournisseur échoue ou n’est pas configuré, sans journaliser l’adresse', async () => {
@@ -240,6 +255,14 @@ describe('protections communes', () => {
     expect((await handleNewsletter(request, baseEnv(), new MemoryProvider())).status).toBe(413);
   });
 
+  it('compte les sauts de ligne comme le navigateur (CRLF à l’envoi)', () => {
+    const rule = text(10, 20);
+    // 19 caractères pour le navigateur, 21 transmis avec des CRLF.
+    expect(rule('ligne un\r\nligne deux')).toBe('ligne un\nligne deux');
+    expect(rule(' '.repeat(12))).toBeUndefined();
+    expect(rule('123456789 ')).toBe('123456789');
+  });
+
   it('valide les champs sans dépendance', () => {
     const rules = { courriel: email, sujet: oneOf(['a', 'b']), nom: text(1, 5), page: optional(text(1, 10, /^\//), '') };
     expect(validate({ courriel: 'x@exemple.ca', sujet: 'a', nom: ' Lé\u0000a ' }, rules)).toEqual({ courriel: 'x@exemple.ca', sujet: 'a', nom: 'Léa', page: '' });
@@ -308,6 +331,22 @@ describe('routage et tâche planifiée', () => {
     const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     expect(await runScheduled(at('2026-09-29T05:07:00Z'), baseEnv())).toBe('sans-hook');
     errors.mockRestore();
+  });
+
+  it('relance la reconstruction nocturne manquée pendant deux heures, tant que le site date d’avant 5 h 07', async () => {
+    vi.stubGlobal('fetch', async () => Response.json({ success: true, result: {} }));
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const built = (builtAt: string) =>
+      baseEnv({ DEPLOY_HOOK_URL: 'https://hook.test/build', ASSETS: { fetch: async () => Response.json({ version: 1, builtAt, publications: [] }) } });
+    const at = (iso: string) => ({ cron: CRON, scheduledTime: Date.parse(iso) });
+    expect(await runScheduled(at('2026-09-29T05:22:00Z'), built('2026-09-28T05:09:00Z'))).toBe('reconstruction');
+    expect(await runScheduled(at('2026-09-29T05:22:00Z'), built('2026-09-29T05:09:00Z'))).toBe('rien');
+    expect(await runScheduled(at('2026-09-29T07:22:00Z'), built('2026-09-28T05:09:00Z'))).toBe('rien');
+    expect(await runScheduled(at('2026-09-29T04:52:00Z'), built('2026-09-28T05:09:00Z'))).toBe('rien');
+    // Sans /schedule.json lisible : au seul passage de 5 h 07.
+    const missing = baseEnv({ DEPLOY_HOOK_URL: 'https://hook.test/build', ASSETS: { fetch: async () => new Response('', { status: 404 }) } });
+    expect(await runScheduled(at('2026-09-29T05:07:00Z'), missing)).toBe('reconstruction');
+    expect(await runScheduled(at('2026-09-29T05:22:00Z'), missing)).toBe('rien');
   });
 
   it('passe à 5 h 07 UTC avec l’expression de wrangler.jsonc', () => {

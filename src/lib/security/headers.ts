@@ -3,6 +3,7 @@
 // La CSP autorise les scripts intégrés à la page par leur empreinte SHA-256, calculée sur les pages construites :
 // aucun « unsafe-inline » pour les scripts.
 import { createHash } from 'node:crypto';
+import { HSTS, PERMISSIONS_POLICY } from './policy.ts';
 
 // Scripts exécutables écrits dans la page (thème sans clignotement, petits scripts qu'Astro intègre) ; les blocs
 // de données (JSON, JSON-LD) ne s'exécutent pas et n'ont pas besoin d'empreinte.
@@ -53,10 +54,10 @@ export function headersFile(sources: CspSources): string {
   const all = [
     '/*',
     `  Content-Security-Policy: ${contentSecurityPolicy(sources)}`,
-    '  Strict-Transport-Security: max-age=31536000',
+    `  Strict-Transport-Security: ${HSTS}`,
     '  X-Content-Type-Options: nosniff',
     '  Referrer-Policy: strict-origin-when-cross-origin',
-    '  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()',
+    `  Permissions-Policy: ${PERMISSIONS_POLICY}`,
     '  X-Frame-Options: DENY',
     '  Cross-Origin-Opener-Policy: same-origin',
     // Fichiers à empreinte (scripts, styles, polices, images optimisées) : jamais modifiés, gardés un an.

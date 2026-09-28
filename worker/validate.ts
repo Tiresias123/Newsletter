@@ -7,17 +7,20 @@ export type Rule<T> = (value: string | undefined) => T | undefined;
 // doublé, domaine avec une extension d'au moins deux lettres.
 const EMAIL = /^(?:[A-Za-z0-9_'+\-]+\.)*[A-Za-z0-9_'+\-]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$/;
 
-// Retire les caractères de contrôle (sauf la tabulation et les retours à la ligne) et les espaces aux extrémités.
-export const clean = (text: string) => text.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim();
+// Ramène chaque saut de ligne à « \n » (le navigateur en compte un caractère, l'envoi le transmet en CRLF) et
+// retire les caractères de contrôle, sauf la tabulation et les sauts de ligne.
+export const clean = (text: string) => text.replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
 
 export const email: Rule<string> = (value) => (value !== undefined && value.length <= 254 && EMAIL.test(value) ? value : undefined);
 
-// Texte nettoyé, de `min` à `max` caractères, conforme au motif s'il y en a un.
+// Texte de `min` à `max` caractères, comptés comme le navigateur (minlength, maxlength), conforme au motif s'il y en
+// a un; rendu sans les espaces des extrémités, et jamais vide.
 export function text(min: number, max: number, pattern?: RegExp): Rule<string> {
   return (value) => {
     if (value === undefined) return undefined;
     const cleaned = clean(value);
-    return cleaned.length >= min && cleaned.length <= max && (!pattern || pattern.test(cleaned)) ? cleaned : undefined;
+    const trimmed = cleaned.trim();
+    return trimmed && cleaned.length >= min && cleaned.length <= max && (!pattern || pattern.test(trimmed)) ? trimmed : undefined;
   };
 }
 

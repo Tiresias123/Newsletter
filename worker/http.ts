@@ -1,5 +1,6 @@
 // Outils communs aux routes du Worker : environnement, réponses JSON sans cache avec en-têtes de sécurité
 // (le fichier _headers ne s'applique pas aux réponses du Worker), lecture bornée des formulaires.
+import { HSTS, PERMISSIONS_POLICY } from '../src/lib/security/policy.ts';
 
 // Liaisons et secrets du Worker (wrangler.jsonc, secrets Cloudflare; .dev.vars en local).
 export interface Env {
@@ -27,17 +28,20 @@ export interface RateLimiter {
 // Codes d'erreur renvoyés au formulaire, qui affiche le texte correspondant (config/).
 export type ErrorCode = 'invalide' | 'origine' | 'verification' | 'debit' | 'indisponible' | 'methode' | 'introuvable' | 'taille';
 
-const HEADERS: Record<string, string> = {
-  'content-type': 'application/json; charset=utf-8',
+// Mêmes protections que les pages (dist/_headers), plus une CSP qui n'autorise rien : une réponse JSON ne charge rien.
+const SECURITY: Record<string, string> = {
   'cache-control': 'no-store',
+  'strict-transport-security': HSTS,
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'strict-origin-when-cross-origin',
+  'permissions-policy': PERMISSIONS_POLICY,
   'x-frame-options': 'DENY',
+  'cross-origin-opener-policy': 'same-origin',
   'content-security-policy': "default-src 'none'; frame-ancestors 'none'",
 };
 
 export const json = (status: number, body: Record<string, unknown>, extra: Record<string, string> = {}) =>
-  new Response(JSON.stringify(body), { status, headers: { ...HEADERS, ...extra } });
+  new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', ...SECURITY, ...extra } });
 
 export const ok = () => json(200, { ok: true });
 export const fail = (status: number, error: ErrorCode, extra: Record<string, string> = {}) => json(status, { ok: false, error }, extra);
@@ -58,7 +62,7 @@ export function backToForm(request: Request): Response | undefined {
   const { origin } = new URL(request.url);
   const referer = URL.parse(request.headers.get('referer') ?? '');
   const target = referer?.origin === origin ? `${origin}${referer.pathname}` : `${origin}/`;
-  return new Response(null, { status: 303, headers: { location: target, 'cache-control': 'no-store' } });
+  return new Response(null, { status: 303, headers: { location: target, ...SECURITY } });
 }
 
 // Corps lu par morceaux et abandonné au-delà de `maxBytes`, même sans en-tête Content-Length.
@@ -86,19 +90,25 @@ async function readBody(request: Request, maxBytes: number): Promise<Uint8Array<
   return body;
 }
 
+// Échec de lecture : corps trop gros, type autre qu'un formulaire, ou formulaire illisible (multipart tronqué…).
+export type FormError = 'taille' | 'type' | 'illisible';
+
 // Champs d'un formulaire (multipart ou urlencoded), refusé au-delà de `maxBytes`.
-export async function readForm(request: Request, maxBytes: number): Promise<Record<string, string> | undefined> {
-  if (Number(request.headers.get('content-length') ?? '0') > maxBytes) return undefined;
+export async function readForm(request: Request, maxBytes: number): Promise<{ fields: Record<string, string> } | { error: FormError }> {
+  if (Number(request.headers.get('content-length') ?? '0') > maxBytes) return { error: 'taille' };
   const type = request.headers.get('content-type') ?? '';
-  if (!/^(multipart\/form-data|application\/x-www-form-urlencoded)\b/i.test(type)) return undefined;
+  if (!/^(multipart\/form-data|application\/x-www-form-urlencoded)\b/i.test(type)) return { error: 'type' };
   const body = await readBody(request, maxBytes);
-  if (!body) return undefined;
+  if (!body) return { error: 'taille' };
   try {
     const form = await new Response(body, { headers: { 'content-type': type } }).formData();
     const fields: Record<string, string> = {};
     for (const [key, value] of form) if (typeof value === 'string') fields[key] = value;
-    return fields;
+    return { fields };
   } catch {
-    return undefined;
+    return { error: 'illisible' };
   }
 }
+
+// Réponse à un formulaire illisible : 413 pour la taille, 415 pour le type, 400 pour le reste.
+export const formFailure = (error: FormError) => (error === 'taille' ? fail(413, 'taille') : fail(error === 'type' ? 415 : 400, 'invalide'));
