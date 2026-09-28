@@ -17,9 +17,10 @@ Site média sur la réglementation et la fiscalité des cryptoactifs au Canada e
 - `npm test` (Vitest), `npm run typecheck` (`astro check`).
 - `npm run new:article -- "Titre"` (options après `--`), `npm run newsletter:draft` (`-- --html` pour le courriel), `npm run content:format` (remet `content/` et `config/` au format de l'éditeur).
 - `npm run veille:fetch` (`-- --diagnostic` : essai des sources sans écrire), `npm run surveillance` (fraîcheur du site en ligne).
-- `npx wrangler dev` après `npm run build` : Worker local (formulaires, `/cdn-cgi/local/scheduled`), secrets dans `.dev.vars` (modèle `.dev.vars.example`, `MEMORY_SERVICES=true` : rien n'est envoyé). Jamais `--ip 0.0.0.0` ni `--tunnel`.
+- `npm run trial` : construction d'aperçu, puis Worker en mode d'essai sur http://127.0.0.1:8791 (formulaires en mémoire, aucun secret, `/cdn-cgi/local/scheduled` pour la tâche planifiée). À la main, `npx wrangler dev` après `npm run build`, secrets dans `.dev.vars` (modèle `.dev.vars.example`). Jamais `--ip 0.0.0.0` ni `--tunnel`.
+- `npm run test:e2e` : parcours de fumée Playwright (`tests/e2e/`, fichiers `*.e2e.ts`) sur le serveur de `npm run trial`; `PLAYWRIGHT_CHROMIUM` désigne un Chromium local. `npm run worker:size` : taille du Worker.
 
-Avant tout commit : `npm test`, `npm run typecheck` et `npm run build` passent sans avertissement.
+Avant tout commit : `npm test`, `npm run typecheck` et `npm run build` passent sans avertissement; `npm run test:e2e` aussi pour un changement de page, de style ou du Worker. La tâche `ci` de GitHub les refait à chaque envoi.
 
 ## Conventions de code
 
@@ -32,7 +33,7 @@ Avant tout commit : `npm test`, `npm run typecheck` et `npm run build` passent 
 - Dates, nombres et montants : `src/lib/format.ts`. Typographie québécoise : `src/lib/typo.ts` (appliquée par `t()`).
 - Dépendances minimales, versions exactes (pas de `^`).
 - Tests dans `tests/` pour les schémas, le formatage, le graphe et `check`.
-- Worker (`worker/`) léger : ni Zod ni dépendance lourde (règles de `worker/validate.ts`); de `src/`, seulement des modules sans dépendance (`schedule-rules.ts`, fournisseurs). Taille à contrôler par `npx wrangler deploy --dry-run --outdir <dossier temporaire>` (moins de 100 Kio). Réponses par `worker/http.ts` (en-têtes de sécurité, JSON sans cache). Aucune donnée personnelle dans les journaux (ni IP, ni courriel, ni message).
+- Worker (`worker/`) léger : ni Zod ni dépendance lourde (règles de `worker/validate.ts`); de `src/`, seulement des modules sans dépendance (`schedule-rules.ts`, fournisseurs). Taille contrôlée par `npm run worker:size` (moins de 100 Kio, aussi en CI). Réponses par `worker/http.ts` (en-têtes de sécurité, JSON sans cache). Aucune donnée personnelle dans les journaux (ni IP, ni courriel, ni message).
 - Services derrière un contrat : infolettre (`src/lib/newsletter/provider.ts`), envoi de courriel (`src/lib/contact/mailer.ts`), mesure d'audience (`src/lib/analytics/events.ts`); un adaptateur par fournisseur (`src/lib/providers/`).
 
 ## Éditeur (Keystatic, mode local)

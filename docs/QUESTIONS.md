@@ -260,3 +260,37 @@ Le site demande aux navigateurs de n'utiliser que HTTPS pendant un an (`Strict-T
 Le site n'affiche pas de bandeau, puisque la mesure d'audience ne dépose aucun témoin (brief, section 9). Mais Umami se sert de l'adresse IP du visiteur pour le situer (pays, région, ville), sans la conserver. Dire si cette localisation demande un avis ou un consentement préalable relève de la Loi 25 : ce n'est pas à moi de trancher [À VALIDER PAR L'AUTEUR]. Le bandeau existe, désactivé (**Réglages › Services › Consentement aux témoins**).
 
 **Recommandation** : faire valider la question; d'ici là, pas de bandeau, conformément au brief. **Oui?**
+
+---
+
+## Questions de fin de phase 5 (28 septembre 2026)
+
+> C1 attend ta décision. Les autres points ont une valeur par défaut : sans réponse, elle s'applique. Aucun n'engage de coût.
+
+### C1. Le dépôt est public **[urgent, irréversible pour ce qui a déjà été lu]**
+
+Constaté le 28 septembre 2026 : le dépôt `Tiresias123/Newsletter` est public, alors que la question 14 retenait un dépôt privé (il l'était le 25 septembre). Tout l'historique est lisible par n'importe qui : brouillons, documents de travail, brief, PDF de référence de `docs/references/`; une fois la tâche hebdomadaire active, les rapports « À vérifier » le seraient aussi. GitHub Pages, activé le même jour, est depuis désactivé. Ce qui a pu être lu ou copié pendant que le dépôt était public ne se rappelle pas.
+
+**Recommandation** : le repasser en privé dès maintenant : « Settings », « General », « Danger Zone », « Change visibility », « Make private » (guide de l'auteur, section 41, étape 1). Rien dans le site n'en dépend; seules comptent alors les minutes de GitHub Actions (2 000 gratuites par mois, environ 250 à 500 consommées). **Privé?**
+
+### C2. Aperçus de branche publics
+
+Chaque envoi sur une autre branche que `main` produit un aperçu en ligne, brouillons compris. Son adresse en `workers.dev` est exclue des moteurs de recherche, mais publique : quiconque la connaît, ou la devine (nom de la branche, du Worker et du sous-domaine du compte), lit les brouillons. Cloudflare Access peut exiger une connexion, mais son activation (Zero Trust) demande une carte de paiement, même au forfait gratuit, sans prélèvement selon Cloudflare. Tes enregistrements faits directement sur `main` ne créent aucun aperçu : seules les branches de travail (celles de Claude Code, par exemple) en produisent.
+
+**Recommandation** : aperçus publics au lancement, sans carte; Access plus tard si des brouillons sensibles passent par des branches. **Oui?**
+
+### C3. Sonde de disponibilité : UptimeRobot
+
+Forfait gratuit, sans carte, usage commercial admis depuis 2026 (conditions lues par extraits, à relire à l'inscription) : deux sondes toutes les 5 minutes, sur l'accueil et sur la nouvelle route `/api/sante`, qui dit si les formulaires peuvent fonctionner. Pas d'alerte d'expiration du certificat, que Cloudflare renouvelle seul. Plus complet mais plus technique : Grafana Cloud, gratuit aussi (ARCHITECTURE, section 15.6).
+
+**Recommandation** : UptimeRobot. **Oui?**
+
+### C4. La branche `main`
+
+La mise en ligne suppose une branche `main`, branche par défaut du dépôt, que suivent Workers Builds et les tâches planifiées. Je travaille sur `claude/zealous-lamport-nbfijd` et ne crée ni ne pousse `main` sans ton accord.
+
+**Recommandation** : la créer au moment de la mise en ligne, toi-même (guide de l'auteur, section 41, étape 1) ou en me le demandant. **Oui?**
+
+### C5. Ce qui reste à fournir pour la mise en ligne
+
+Le nom et le domaine du site (1), le courriel de contact, les adresses des comptes sociaux (11), le nom et le titre du responsable de la protection des renseignements personnels (15); les comptes Cloudflare, Brevo et UptimeRobot, plus Umami pour la mesure d'audience; les textes des pages légales, validés (guide de l'auteur, section 40). Avant l'ouverture, une vérification à la main avec un lecteur d'écran (ARCHITECTURE, section 27).

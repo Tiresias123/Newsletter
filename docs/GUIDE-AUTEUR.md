@@ -1,6 +1,6 @@
 # Guide de l'auteur
 
-Ce guide explique comment faire vivre le site sans toucher au code. Il grandit à chaque phase : les passages marqués « (phase N) » décrivent des fonctions qui ne sont pas encore livrées. Tout se fait dans l'éditeur (section 3), qui remplit les fichiers décrits ici; ces fichiers restent modifiables avec un simple éditeur de texte.
+Ce guide explique comment faire vivre le site sans toucher au code. Toutes les fonctions qu'il décrit sont livrées; la mise en ligne elle-même, à faire une fois, est en section 41. Tout se fait dans l'éditeur (section 3), qui remplit les fichiers décrits ici; ces fichiers restent modifiables avec un simple éditeur de texte.
 
 ## Sommaire
 
@@ -44,6 +44,8 @@ Ce guide explique comment faire vivre le site sans toucher au code. Il grandit �
 38. Reconstruction nocturne, surveillance et alertes
 39. Les cours des cryptoactifs
 40. Les pages légales et de confiance
+41. Mettre le site en ligne
+42. Les vérifications automatiques
 
 ---
 
@@ -80,6 +82,12 @@ Ce guide explique comment faire vivre le site sans toucher au code. Il grandit �
 | savoir où ranger une clé secrète | section 31 |
 | compléter la politique de confidentialité, les mentions légales, la page À propos | Contenus › Pages (section 40) |
 | savoir si le site en ligne est à jour | section 38 |
+| mettre le site en ligne la première fois | section 41 |
+| voir une branche en ligne avant de publier | section 41, « Aperçus de branche » |
+| revenir à la version précédente du site en ligne | section 41, « Retour en arrière » |
+| être averti si le site ne répond plus | sonde de disponibilité (section 41, étape 10) |
+| savoir si les vérifications automatiques passent | section 42 |
+| essayer le site et ses formulaires sur mon ordinateur | `npm run trial` (section 31) |
 | corriger une coquille, ajouter une note de correction, dépublier, restaurer une version | section 29 |
 | savoir ce qui reste à vérifier | http://127.0.0.1:4321/a-verifier/, ou `npm run check` puis `docs/A-VERIFIER.md` (section 16) |
 | voir tous les blocs d'écriture et leur rendu | `npm run dev`, puis http://127.0.0.1:4321/exemple/ (section 20) |
@@ -105,12 +113,13 @@ Ce guide explique comment faire vivre le site sans toucher au code. Il grandit �
 | `npm run typecheck` | vérifie le code (utile après une modification technique) |
 | `npm run veille:fetch` | relève les publications des sources de la veille; `-- --diagnostic` essaie les sources sans rien enregistrer (section 37) |
 | `npm run surveillance` | vérifie que le site en ligne est à jour (section 38) |
-| `npx wrangler dev` | après `npm run build`, sert le site avec ses formulaires, pour un essai (section 31) |
+| `npm run trial` | construit une version d'aperçu, puis sert le site et ses formulaires en mode d'essai sur http://127.0.0.1:8791 : rien n'est envoyé (section 31) |
+| `npm run test:e2e` | lance les parcours de fumée dans Chromium, comme la vérification automatique de GitHub (section 42) |
 
 **Deux modes d'affichage.**
 
 - **Production** (`npm run build`) : seuls les contenus publiés existent. Les brouillons n'apparaissent nulle part : ni page, ni liste, ni flux.
-- **Aperçu** (`npm run dev`, ou `SITE_MODE=preview npm run build` pour une version d'aperçu) : les brouillons et les contenus programmés sont visibles, avec une pastille « Brouillon, non publié ». Un bandeau jaune le rappelle en haut de chaque page, et les pages portent la consigne `noindex`, qui les écarte des moteurs de recherche.
+- **Aperçu** (`npm run dev`, `npm run trial`, `SITE_MODE=preview npm run build`, et chaque aperçu de branche en ligne, section 41) : les brouillons et les contenus programmés sont visibles, avec une pastille « Brouillon, non publié ». Un bandeau jaune le rappelle en haut de chaque page, et les pages portent la consigne `noindex`, qui les écarte des moteurs de recherche.
 
 En mode `npm run dev` seulement, trois pages de travail existent : l'éditeur, http://127.0.0.1:4321/keystatic (section 3); le rapport « À vérifier » à jour, http://127.0.0.1:4321/a-verifier/ (section 16); et http://127.0.0.1:4321/exemple/, qui montre chaque bloc d'écriture et chacune de ses variantes (section 20).
 
@@ -140,7 +149,7 @@ L'éditeur est un ensemble de formulaires, en français, au-dessus des fichiers 
 
 1. Ouvrez GitHub Desktop : la liste des fichiers modifiés s'affiche, avec les changements en couleur.
 2. Relisez-les, écrivez un résumé (ex. « Publie l'article sur l'inscription des plateformes »), puis cliquez sur « Commit to main ».
-3. Cliquez sur « Push origin ». La construction du site en ligne démarre (branchement de l'hébergement : phase 5). Si une erreur bloquante subsiste, le site en ligne garde sa version précédente (section 17).
+3. Cliquez sur « Push origin ». La construction du site en ligne démarre et dure quelques minutes (section 41). Si une erreur bloquante subsiste, le site en ligne garde sa version précédente (section 17).
 
 **Créer, dupliquer, supprimer.** L'identifiant d'une nouvelle entrée (nom du fichier et fin de son adresse) est tiré du titre pendant la saisie; vérifiez-le avant le premier enregistrement. « Duplicate entry » crée une copie dont l'identifiant finit par « -copy », à renommer. La corbeille (« Delete entry ») supprime le fichier et ses images : pour retirer un contenu du site sans le perdre, repassez-le plutôt en brouillon (section 5).
 
@@ -172,7 +181,7 @@ Chaque contenu porte un statut (« Statut de publication », champ `status`) 
 - Un contenu qui n'est plus un brouillon doit avoir une date de publication. Une date de mise à jour antérieure à la date de publication est refusée.
 - Les infolettres ont leurs propres statuts : `brouillon`, puis `envoye`. Un numéro envoyé est publié dans l'archive à sa date d'envoi (`sentAt`).
 
-**Programmer une publication.** Choisissez le statut « Programmé », puis la date et l'heure de publication; sauvegardez et mettez en ligne comme d'habitude. Le contenu reste invisible jusqu'à l'heure dite. À chaque construction, le site publie la liste des heures de publication à venir (`/schedule.json`, sans titre ni adresse : rien ne fuit avant l'heure). Une tâche planifiée la consulte toutes les 15 minutes et relance la construction du site dès qu'une heure est passée : le contenu paraît au plus une vingtaine de minutes après l'heure choisie (tâche prête, branchée avec l'hébergement en phase 5; d'ici là, le contenu paraît à la mise en ligne suivante). Le rapport « À vérifier » liste les publications programmées. Un contenu programmé est vérifié comme s'il était déjà publié : un marqueur oublié bloque la construction dès sa mise en ligne, et non à l'heure dite, quand personne ne regarde.
+**Programmer une publication.** Choisissez le statut « Programmé », puis la date et l'heure de publication; sauvegardez et mettez en ligne comme d'habitude. Le contenu reste invisible jusqu'à l'heure dite. À chaque construction, le site publie la liste des heures de publication à venir (`/schedule.json`, sans titre ni adresse : rien ne fuit avant l'heure). Une tâche planifiée la consulte toutes les 15 minutes et relance la construction du site dès qu'une heure est passée : le contenu paraît au plus une vingtaine de minutes après l'heure choisie (une fois le site en ligne, section 41). Le rapport « À vérifier » liste les publications programmées. Un contenu programmé est vérifié comme s'il était déjà publié : un marqueur oublié bloque la construction dès sa mise en ligne, et non à l'heure dite, quand personne ne regarde.
 
 ## 6. Images
 
@@ -584,9 +593,10 @@ Le site se construit seul, sans aucun service. Pour l'infolettre, le formulaire 
 | Umami Cloud | mesure d'audience, sans témoin | Réglages › Services › Mesure d'audience (section 36) | aucun |
 | CoinGecko | cours du bandeau et des sections de marché | Réglages › Bandeau des cours (section 39) | `COINGECKO_API_KEY` |
 | Cloudflare Workers | hébergement, envoi des formulaires, publication programmée | aucun (fichier `wrangler.jsonc`) | `IP_HASH_SALT`, `DEPLOY_HOOK_URL`, `CONTACT_TO` (facultatif) |
-| GitHub Actions | veille officielle, surveillance, rapport hebdomadaire | aucun (dossier `.github/workflows/`) | aucun |
+| GitHub Actions | veille officielle, surveillance, rapport hebdomadaire, vérifications automatiques | aucun (dossier `.github/workflows/`) | aucun |
+| UptimeRobot | sonde de disponibilité (section 41, étape 10) | aucun | aucun |
 
-**Où vont les secrets.** Dans le tableau de bord de Cloudflare, sur la page du Worker du site, « Settings », puis « Variables and Secrets » : chaque secret y est ajouté en type « Secret », jamais « Text ». `COINGECKO_API_KEY` est une variable de construction : elle se déclare dans les réglages de construction (« Build »), puisque les cours sont lus pendant la construction. Le branchement de l'hébergement se fait en phase 5 : d'ici là, les formulaires affichent leurs messages mais n'envoient rien.
+**Où vont les secrets.** Dans le tableau de bord de Cloudflare, sur la page du Worker du site, « Settings », puis « Variables and Secrets », partie « Production » : chaque secret y est ajouté en type « Secret », jamais « Text ». `COINGECKO_API_KEY` est une variable de construction : elle se déclare dans les réglages de construction (« Build »), puisque les cours sont lus pendant la construction. La mise en ligne pas à pas, secrets compris, est en section 41; d'ici là, les formulaires affichent leurs messages mais n'envoient rien.
 
 | Secret | Ce que c'est | Si vous le perdez |
 |---|---|---|
@@ -599,16 +609,15 @@ Le site se construit seul, sans aucun service. Pour l'infolettre, le formulaire 
 
 **Comment un envoi est protégé.** Chaque envoi de formulaire passe, dans l'ordre : origine (le formulaire doit venir du site), taille maximale, champ piège invisible (un robot qui le remplit reçoit un faux succès), validation des champs, limitation de débit par adresse IP, vérification anti-robot (section 35), puis, pour l'infolettre, limitation par adresse courriel (après la vérification, pour qu'un tiers ne puisse pas bloquer l'adresse d'un lecteur). La limitation accepte 5 envois par minute depuis une même adresse IP (tout un réseau derrière un même routeur ou un même opérateur mobile compte pour une), et, pour l'infolettre, 5 par minute pour une même adresse courriel; au-delà, le lecteur lit « Trop d'envois en peu de temps ». Elle se règle dans `wrangler.jsonc` (`ratelimits`) et reste approximative, chaque centre de données de Cloudflare comptant de son côté. Cloudflare ne dit pas si elle est offerte en forfait gratuit : si le premier déploiement la refuse, on la retire, et Turnstile, le champ piège et le double consentement suffisent \[À VÉRIFIER au premier déploiement]. Rien de ce qui est envoyé n'est conservé par le site, et ses journaux ne contiennent ni adresse IP ni adresse courriel.
 
-**Essayer les formulaires sur votre ordinateur** (utile après une modification technique) :
+**Essayer le site et ses formulaires sur votre ordinateur** (utile après une modification technique) : `npm run trial`. La commande construit une version d'aperçu (brouillons compris), puis sert le site avec son Worker en mode d'essai sur http://127.0.0.1:8791 :
 
-1. Copiez `.dev.vars.example` en `.dev.vars`, à côté de `wrangler.jsonc` : ce fichier porte les secrets de l'essai et n'est jamais envoyé sur GitHub. Sa ligne `MEMORY_SERVICES=true` garde les inscriptions et les messages en mémoire : Brevo n'est pas appelé.
-2. Le temps de l'essai, saisissez la clé de site d'essai de Cloudflare `1x00000000000000000000AA` dans **Réglages › Services › Protection contre les robots** (la clé secrète d'essai est déjà dans le modèle). Le rapport « À vérifier » la signale, et la bloque une fois le site en ligne : remettez la vraie clé ensuite.
-3. `SITE_MODE=preview npm run build` (une construction d'aperçu tolère la clé d'essai, même une fois le site en ligne), puis `npx wrangler dev`, et ouvrez http://localhost:8787. La vérification anti-robot a besoin d'Internet.
-4. Pour le formulaire de contact, activez-le aussi le temps de l'essai (**Réglages › Services › Formulaire de contact**). La page Contact, encore en brouillon, n'existe que dans cette construction d'aperçu; en mémoire, aucune adresse de réception n'est exigée.
+- inscriptions et messages restent en mémoire : rien n'est envoyé, aucun secret n'est nécessaire;
+- la vérification anti-robot utilise la clé d'essai de Cloudflare, posée d'office par la construction d'aperçu : ne la saisissez pas dans les réglages. Le script de Turnstile demande Internet;
+- pour essayer le formulaire de contact, activez-le le temps de l'essai (**Réglages › Services › Formulaire de contact**); en mémoire, aucune adresse de réception n'est exigée;
+- la tâche planifiée se déclenche à la main avec `curl "http://127.0.0.1:8791/cdn-cgi/local/scheduled?cron=7,22,37,52+*+*+*+*"`;
+- Ctrl+C arrête l'essai.
 
-La tâche planifiée se déclenche à la main avec `curl "http://localhost:8787/cdn-cgi/local/scheduled?cron=7,22,37,52+*+*+*+*"`. N'ajoutez jamais les options `--ip 0.0.0.0` ni `--tunnel`, qui ouvriraient l'essai à d'autres ordinateurs.
-
-**Aperçus de branche** (phase 5) : les formulaires y restent en mémoire, sans vraie inscription ni message envoyé, et la tâche planifiée n'y tourne pas.
+N'ajoutez jamais les options `--ip 0.0.0.0` ni `--tunnel` à la commande `wrangler`, qui ouvriraient l'essai à d'autres ordinateurs. Les aperçus de branche en ligne fonctionnent de la même façon (section 41).
 
 ## 32. L'infolettre : ouvrir le compte Brevo et brancher l'inscription
 
@@ -667,7 +676,7 @@ Turnstile, le service anti-robots de Cloudflare, vérifie chaque envoi de formul
 2. Copiez la **clé de site** dans **Réglages › Services › Protection contre les robots › Clé de site**, et la **clé secrète** dans le secret `TURNSTILE_SECRET_KEY` (section 31).
 3. **Changer la clé secrète** (si elle a fuité) : « Rotate secret key » dans Cloudflare; l'ancienne reste valable deux heures, le temps de remplacer le secret.
 
-Sans ces deux clés, les formulaires refusent tout envoi : le rapport « À vérifier » le rappelle (section 16), et bloque la construction une fois le site en ligne, comme tout réglage manquant qui fait refuser les envois (modèle ou numéro de liste Brevo, aucune liste active, adresse d'expédition du contact). Les clés d'essai de Cloudflare (celles qui commencent par `1x0000`, `2x0000` ou `3x0000`) ne servent qu'aux essais sur votre ordinateur (section 31) : le rapport les bloque sur le site en ligne, et le Worker refuse la clé secrète d'essai hors essai local.
+Sans ces deux clés, les formulaires refusent tout envoi : le rapport « À vérifier » le rappelle (section 16), et bloque la construction une fois le site en ligne, comme tout réglage manquant qui fait refuser les envois (modèle ou numéro de liste Brevo, aucune liste active, adresse d'expédition du contact). Les clés d'essai de Cloudflare (celles qui commencent par `1x0000`, `2x0000` ou `3x0000`) ne servent qu'aux essais sur votre ordinateur (section 31) : le rapport les bloque sur le site en ligne, et le Worker refuse la clé secrète d'essai hors du mode d'essai (essai local, aperçus de branche).
 
 ## 36. La mesure d'audience : Umami
 
@@ -705,7 +714,7 @@ La page `/veille/` et la section d'accueil « veille » listent les publicatio
 - **Surveillance du site en ligne** (deux fois par jour ouvrable, dans la tâche « veille ») : si le site en ligne n'a pas été reconstruit depuis plus de 30 heures (reconstruction nocturne manquée), ou si votre dernier envoi n'est toujours pas en ligne une heure plus tard (le site en ligne indique le commit qu'il contient : un commit fait avant la reconstruction nocturne et envoyé après est aussi repéré), la tâche échoue et **GitHub vous écrit**. Cherchez alors la cause dans Cloudflare, Workers Builds, journal de la dernière construction (section 17). Cloudflare n'envoie en effet aucun courriel quand une construction échoue. Sur votre ordinateur : `npm run surveillance`.
 - **Rapport hebdomadaire** (chaque lundi, 8 h 13) : un ticket GitHub « Rapport « À vérifier » du… », avec l'étiquette « rapport », reprend le rapport complet, liens externes compris; celui de la semaine précédente est fermé. Lancé à la main sur une autre branche, il porte le nom de la branche et ne ferme rien. Le ticket vous est assigné : GitHub vous en avise, sur le site et, selon vos réglages de notification, par courriel.
 - **Tâches en échec** : GitHub envoie un courriel pour chaque tâche planifiée qui échoue.
-- **Sonde de disponibilité** (le site répond-il?) : branchée avec l'hébergement, en phase 5.
+- **Sonde de disponibilité** (le site répond-il?) : un service gratuit vérifie toutes les 5 minutes l'accueil et la route `/api/sante` du Worker, et vous écrit s'ils ne répondent plus (section 41, étape 10).
 
 ## 39. Les cours des cryptoactifs
 
@@ -729,3 +738,107 @@ Les pages À propos, Méthodologie, Politique éditoriale, Politique de correcti
 - **Témoins** : le site n'en dépose aucun et n'affiche donc pas de bandeau, par choix de conception (section 36) \[À VALIDER PAR L'AUTEUR]. Turnstile fonctionne dans son propre cadre, hébergé par Cloudflare, dont les témoins et le stockage ne sont pas documentés \[À VÉRIFIER]. Lisez l'addendum de confidentialité de Turnstile (https://www.cloudflare.com/turnstile-privacy-policy/) avant de rédiger la politique : Cloudflare y décrit les signaux qu'il traite (adresse IP, navigateur), possiblement aux États-Unis.
 - **Contact** : bloc « Formulaire de contact » (section 34).
 - Les textes proposés sont des gabarits : ils portent `[À VALIDER PAR L'AUTEUR]` et bloquent la mise en ligne tant qu'ils ne sont pas validés (section 15).
+
+## 41. Mettre le site en ligne
+
+À faire une fois, dans l'ordre. Comptez une demi-journée, plus l'attente du domaine (jusqu'à 24 heures). Tout est gratuit, sauf le domaine. Les libellés de GitHub et de Cloudflare peuvent varier légèrement; Claude Code peut vous accompagner à chaque étape.
+
+**Avant de commencer.**
+
+- Le nom du site, son domaine (acheté chez le registraire de votre choix), le courriel de contact et le responsable de la protection des renseignements sont choisis.
+- Brevo (section 32) et Turnstile (section 35) sont branchés; de même le formulaire de contact (section 34) et la mesure d'audience (section 36), si vous les voulez à l'ouverture.
+- Les contenus à publier sont prêts, sans marqueur (section 15), et le contenu de démonstration est retiré (section 18).
+
+Dès que la vraie adresse du site est saisie (étape 4), un marqueur de la configuration ou un réglage qui fait refuser les envois arrête la construction : c'est voulu, le site ne part pas incomplet.
+
+**1. Le dépôt GitHub.**
+
+1. **Visibilité** : le dépôt doit être **privé** (question 14 de `docs/QUESTIONS.md`) : « Settings », « General », tout en bas (« Danger Zone »), « Change visibility ». Un dépôt public montre à tous vos brouillons, vos notes, le rapport hebdomadaire et tout l'historique.
+2. **Branche de production** : le travail vit pour l'instant sur la branche `claude/zealous-lamport-nbfijd`, branche par défaut du dépôt. Créez la branche `main` à partir d'elle (page du dépôt, menu des branches, « View all branches », « New branch »), puis faites-en la branche par défaut (« Settings », « General », « Default branch »). Les tâches planifiées (veille, rapport hebdomadaire) ne tournent que sur la branche par défaut, et n'agissent que si c'est `main`.
+3. Dans GitHub Desktop, « Current branch » : `main`. Vos enregistrements y vont désormais (section 3). Claude Code travaille sur ses propres branches et vous propose ses changements par une demande de fusion (« pull request ») : il ne pousse jamais sur `main` sans votre accord.
+
+**2. Le domaine chez Cloudflare.**
+
+1. Créez le compte Cloudflare (forfait gratuit) et activez la double authentification.
+2. Ajoutez le domaine (« Add a domain »), forfait « Free ». Cloudflare relève les enregistrements DNS existants : gardez ceux du courriel (types MX et TXT); supprimez ceux du domaine lui-même et de `www` (types A, AAAA ou CNAME, souvent une page d'attente du registraire), qui empêcheraient d'y rattacher le site.
+3. Chez le registraire, désactivez DNSSEC s'il est actif, puis remplacez les serveurs de noms par les deux que donne Cloudflare, copiés exactement. Le domaine reste chez le registraire : activez son renouvellement automatique.
+4. Attendez le courriel de Cloudflare qui annonce le domaine actif (jusqu'à 24 heures, selon Cloudflare). DNSSEC peut ensuite être réactivé depuis Cloudflare.
+5. « SSL/TLS », « Edge Certificates » : activez « Always Use HTTPS » (une visite en `http` est renvoyée en `https`).
+
+**3. Le domaine dans `wrangler.jsonc`.** Ajoutez ces deux lignes juste au-dessus de la ligne `"preview_urls": true,`, avec votre domaine (sans `https://` ni barre oblique finale) :
+
+```jsonc
+  "routes": [{ "pattern": "votre-domaine.ca", "custom_domain": true }],
+  "workers_dev": false,
+```
+
+La première rattache le domaine au site : Cloudflare crée lui-même l'enregistrement DNS et le certificat. La seconde ferme l'adresse provisoire en `workers.dev`, qui doublerait le site; les adresses des aperçus de branche restent actives. Ce fichier fait foi : un domaine ajouté seulement dans le tableau de bord serait retiré au déploiement suivant. Le rapport « À vérifier » signale un domaine qui ne correspond pas à l'adresse du site.
+
+**4. L'adresse du site.** **Réglages › Identité du site › Adresse du site** : `https://votre-domaine.ca` (section 7); le cas échéant, le même domaine dans **Réglages › Services › Mesure d'audience › Domaines mesurés** (section 36). Lancez `npm run check` et corrigez chaque erreur bloquante. Enregistrez, puis envoyez sur GitHub (« Push origin ») : rien n'est encore construit, Cloudflare n'étant pas branché.
+
+**5. Brancher Workers Builds.**
+
+1. Dans Cloudflare, « Workers & Pages », « Create application », puis « Import a repository ». Connectez votre compte GitHub; quand GitHub le demande, limitez l'application « Cloudflare Workers & Pages » au seul dépôt du site (« Only select repositories »).
+2. Choisissez le dépôt, puis réglez :
+   - nom du Worker : `media-cryptoactifs`, exactement le `name` de `wrangler.jsonc`, faute de quoi la construction échoue;
+   - commande de construction (« Build command ») : `npm run build`;
+   - commande de déploiement (« Deploy command ») : `npx wrangler deploy`, la valeur proposée;
+   - variable de construction `COINGECKO_API_KEY`, seulement si les cours sont activés (section 39).
+3. « Save and Deploy ». La construction dure quelques minutes. Son journal (page du Worker, « Deployments », « View build history ») donne, en cas d'échec, le message en français de `check` (section 17). Réussie, elle publie le site sur votre domaine.
+
+**6. Les réglages de construction** (page du Worker, « Settings », « Build ») :
+
+- « Branch control » : branche de production `main`; cochez « Enable Preview Builds » (aperçus de branche, plus bas). La commande des aperçus reste `npx wrangler preview`.
+- « Build watch paths » : inclure `*`; exclure `docs/*` et `.github/*`, rien d'autre. La surveillance (section 38) attend en ligne, dans l'heure, tout autre changement.
+- « Build cache » : « Enable » (dépendances et images optimisées gardées d'une construction à l'autre).
+- « Deploy Hooks » : créez un Deploy Hook nommé « Tâche planifiée », branche `main`, et copiez son adresse dans le secret `DEPLOY_HOOK_URL` (étape 7). Cette adresse suffit à déclencher une construction : ne la collez nulle part ailleurs.
+
+**7. Les secrets** (page du Worker, « Settings », « Variables and Secrets », partie « Production ») : « Add », type « Secret », nom et valeur; « Add variable » pour le suivant; enfin « Deploy ». Il en faut quatre, plus un facultatif (section 31) : `NEWSLETTER_API_KEY`, `TURNSTILE_SECRET_KEY`, `IP_HASH_SALT`, `DEPLOY_HOOK_URL` et, au besoin, `CONTACT_TO`. Les aperçus de branche n'en demandent aucun.
+
+**8. L'adresse avec `www`** (conseillé), pour que `www.votre-domaine.ca` mène au site :
+
+1. « DNS », « Records », « Add record » : type `A`, nom `www`, adresse `192.0.2.1`, proxy activé (« Proxied »). Cette adresse fictive, celle de l'exemple de Cloudflare, ne reçoit jamais rien : Cloudflare répond avant.
+2. « Rules », « Redirect Rules » : une règle dont l'adresse demandée (« Wildcard pattern ») est `https://www.*`, l'adresse cible `https://${1}`, le code `301`, avec « Preserve query string » coché.
+
+**9. Les vérifications du premier déploiement.** Notez chaque résultat dans ARCHITECTURE, section 25.7.
+
+- Le site répond sur `https://votre-domaine.ca`, et `https://votre-domaine.ca/api/sante` affiche `{"ok":true}`. Sinon (`{"ok":false,"error":"indisponible"}`), un secret ou un réglage des services manque.
+- `https://votre-domaine.ca/schedule.json` contient un champ `commit` : Workers Builds fournit bien le commit construit, que la surveillance compare à `main` (section 38).
+- **Limitation de débit** : si le déploiement échoue sur `ratelimits` ou `FORM_LIMITER`, Cloudflare la refuse en forfait gratuit. Faites retirer les deux blocs `ratelimits` de `wrangler.jsonc` par Claude Code : la protection des formulaires tient sans eux (section 31).
+- Infolettre : protocole d'essai de Brevo (section 32, étape 8). Formulaire de contact, s'il est activé : un message d'essai.
+- Tâche planifiée : dans les réglages du Worker, l'expression `7,22,37,52 * * * *` figure parmi les déclencheurs (« Trigger Events »). Le lendemain matin, `schedule.json` montre une construction de la nuit (vers 5 h 07 UTC).
+- Veille : au premier passage qui trouve du nouveau, le commit « chore(veille): … » doit lancer une construction (« Deployments »). Sinon, faites appeler le Deploy Hook par la tâche « veille » (Claude Code).
+- Publication programmée : pour votre premier contenu programmé, notez l'heure prévue et l'heure de mise en ligne effective : l'écart attendu est d'une vingtaine de minutes au plus (section 5).
+- Performance : https://pagespeed.web.dev/ sur l'accueil et sur un article, mobile et ordinateur (section 42).
+
+**10. La sonde de disponibilité.** La surveillance de la section 38 vérifie que le site est à jour; la sonde vérifie qu'il répond, toutes les 5 minutes, et vous écrit sinon. Service proposé : UptimeRobot, forfait gratuit (50 sondes toutes les 5 minutes, alertes par courriel, sans carte de paiement; usage commercial permis depuis 2026 selon ses conditions \[À VÉRIFIER à l'inscription : conditions du jour et « Fair Use Policy »]).
+
+1. Créez le compte et activez la double authentification. Si une carte de paiement est demandée, arrêtez-vous : le choix vous revient.
+2. Deux sondes de type « HTTP(s) », toutes les 5 minutes, avec votre courriel comme contact d'alerte :
+   - « Site » : `https://votre-domaine.ca/`;
+   - « Formulaires » : `https://votre-domaine.ca/api/sante`, qui répond 200 quand le Worker peut recevoir les inscriptions et les messages, 503 sinon (secret manquant, réglage des services incomplet). Elle ne touche ni Brevo ni Turnstile.
+3. Essai : ajoutez une troisième sonde vers `https://votre-domaine.ca/api/essai`, qui répond 404 : le courriel d'alerte doit arriver (voyez aussi les indésirables). Supprimez-la ensuite.
+4. Connectez-vous au moins une fois tous les six mois : UptimeRobot désactive les comptes gratuits inactifs \[À VÉRIFIER].
+
+N'activez pas le réglage « Bot Fight Mode » de Cloudflare : il soumettrait la sonde et la surveillance à des défis, d'où de fausses alertes. Le certificat du domaine est renouvelé par Cloudflare sans intervention. Plus complet mais plus technique : Grafana Cloud, forfait gratuit (sondes à Montréal et à Toronto, alerte d'expiration du certificat), décrit dans ARCHITECTURE, section 15.6.
+
+**Aperçus de branche.** Chaque envoi sur une autre branche que `main` construit un aperçu : le site avec les brouillons et les contenus programmés, bandeau jaune compris, sans mesure d'audience ni tâche planifiée. Ses formulaires restent en mémoire (aucune inscription réelle, aucun message envoyé) et sa vérification anti-robot utilise la clé d'essai de Cloudflare, sans secret à fournir. L'adresse de l'aperçu, `<branche>-media-cryptoactifs.<votre-sous-domaine>.workers.dev`, figure dans la section « Previews » du Worker, et en commentaire de la demande de fusion s'il y en a une. Elle porte la consigne `noindex`, mais elle est **publique** : quiconque la connaît voit vos brouillons. Pour exiger une connexion : Cloudflare Access (page du Worker, onglet « Access », « Protect this Worker behind Access », « Previews only », avec votre adresse courriel). Access suppose d'activer Cloudflare Zero Trust, dont le forfait gratuit demande quand même une carte de paiement, sans prélèvement selon Cloudflare : à vous de choisir (`docs/QUESTIONS.md`). Le forfait gratuit garde 100 aperçus par Worker : au-delà, les plus anciens sont supprimés d'office.
+
+**Retour en arrière.** Si une mise en ligne casse le site : page du Worker, « Deployments », menu « ⋯ » de la version précédente, « Rollback ». Le retour est immédiat, sans construction. Annulez ensuite le commit fautif (section 29) : la construction suivante, au plus tard celle de la nuit, remettrait sinon la version cassée.
+
+**Plus tard (facultatif).**
+
+- **Moteurs de recherche** : Google Search Console et Bing Webmaster Tools (gratuits). Vérifiez le domaine par un enregistrement DNS chez Cloudflare, puis soumettez `https://votre-domaine.ca/sitemap-index.xml`.
+- **Protéger `main`** : « Settings », « Rules », « Rulesets », une règle sur `main` avec « Restrict deletions » et « Block force pushes ». N'exigez pas de demande de fusion : vos enregistrements et la tâche « veille » écrivent directement sur `main` (section 37).
+
+## 42. Les vérifications automatiques
+
+- **À chaque envoi sur GitHub** (sauf si seuls changent `docs/`, les fichiers `.md` de la racine ou le cache de la veille), la tâche « ci » vérifie en trois minutes environ :
+  - les types (`npm run typecheck`), les tests (`npm test`) et le format de l'éditeur;
+  - la construction de production et la taille du Worker (100 Kio au plus);
+  - des parcours de fumée dans Chromium, sur ordinateur et sur mobile : 22 pages principales, en clair et en sombre, sans erreur, sans défilement horizontal et sans défaut d'accessibilité (WCAG 2.2 AA, vérifiée par axe), plus l'inscription à l'infolettre en mode d'essai, la recherche, les menus et le thème.
+- **Le résultat** : coche verte ou croix rouge à côté du commit, sur GitHub. En cas d'échec, GitHub vous écrit (selon vos réglages de notification); le rapport des parcours (captures, traces) reste joint à l'exécution, onglet « Actions », pendant sept jours.
+- **Elle n'arrête pas la mise en ligne** : Cloudflare construit chaque envoi sur `main` avec ses propres garde-fous (`check`, contrôles du dossier `dist/`). Elle vise surtout les changements de code : Claude Code la fait passer avant de vous proposer une demande de fusion.
+- **Sur votre ordinateur** : `npm run test:e2e` lance les mêmes parcours, après une installation unique de Chromium (`npx playwright install chromium`).
+- **Performance** : l'audit Lighthouse de la phase 5 donne 98 à 100 en performance, 100 en accessibilité et en bonnes pratiques (ARCHITECTURE, section 27). Pour mesurer le site en ligne : https://pagespeed.web.dev/.
+- **Coût** : gratuit pour un dépôt public; pour un dépôt privé, environ 3 minutes par envoi sur les 2 000 minutes gratuites par mois, veille et rapport hebdomadaire compris : de quoi couvrir plus de 500 envois par mois.

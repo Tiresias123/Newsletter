@@ -1,7 +1,7 @@
 # Architecture
 
-> Phase 0, livrable 1 sur 3. Rédigé le 25 septembre 2026. Aucune ligne de code n'a été écrite.
-> Statut : proposition argumentée, en attente de validation de l'auteur (voir `docs/QUESTIONS.md`).
+> Phase 0, livrable 1 sur 3, rédigé le 25 septembre 2026; tenu à jour jusqu'à la phase 5 (28 septembre 2026).
+> Statut : validé par l'auteur (`docs/QUESTIONS.md`); décisions de chaque phase en section 25.
 > Référence : brief v2. Quand ce document s'en écarte, l'écart est signalé et justifié (section 25).
 > Convention : les faits tirés d'extraits de moteur de recherche, non recoupés sur une source primaire, sont marqués « (s) ». Les sites de la plupart des fournisseurs étaient inaccessibles depuis l'environnement de travail (section 26).
 
@@ -36,6 +36,7 @@
 24. Estimation d'effort par phase
 25. Écarts avec le brief et décisions prises par défaut
 26. Journal des vérifications
+27. Audit de la phase 5 : performance et accessibilité
 
 ---
 
@@ -253,8 +254,9 @@ Versions relevées le 25 septembre 2026 sur le registre npm (étiquette `latest`
 | Vitest | 5.0.2 | | tests unitaires | fonctions pures (formatage, schémas, graphe de contenu) et script `check` sur des jeux d'essai |
 | @astrojs/markdown-satteri | 0.4.2 | | réglage du processeur Markdown | seul moyen de désactiver la ponctuation « intelligente » de Sätteri |
 | js-yaml | 4.3.2 | | lecture des entêtes par le script `check` | même version que celle qu'emploie Astro, pour lire les fichiers à l'identique |
-| @playwright/test | 1.63.0 | 4 sept. 2026 | tests de fumée | avec @axe-core/playwright 4.13.0 pour l'accessibilité |
-| wrangler | 4.139.0 | 24 sept. 2026 | outil Cloudflare (développement local du Worker, secrets) | |
+| @playwright/test | 1.63.0 | 4 sept. 2026 | parcours de fumée (section 15.7) | Chromium installé par `npx playwright install` |
+| axe-core | 4.13.0 | 5 août 2026 | accessibilité des parcours de fumée | injecté dans la page, règles WCAG 2.2 A et AA |
+| wrangler | 4.143.0 | 28 sept. 2026 | outil Cloudflare (développement local du Worker, déploiement, aperçus) | Worker Previews exigent 4.135.0 ou plus |
 | @astrojs/cloudflare | 14.3.3 | 22 sept. 2026 | **seulement si le mode GitHub de Keystatic est activé** | ne vise plus que Workers (Cloudflare Pages n'est plus pris en charge depuis la v13); à régler alors : `imageService: 'compile'`, `session: false`, `prerenderEnvironment: 'node'` |
 
 **Écartés** :
@@ -320,11 +322,11 @@ L'arborescence du point 4.2 du brief est conservée, avec des ajustements signal
 │   ├── styles/                jetons → variables CSS, Tailwind
 │   └── content.config.ts      schémas Zod des collections (source de vérité)
 ├── worker/                    ★ le Worker : formulaires et tâche planifiée (section 15.1)
-├── scripts/                   check, postbuild, new-article, newsletter-draft, content-format, veille-fetch, surveillance; plus tard social-export
+├── scripts/                   check, postbuild, new-article, newsletter-draft, content-format, consent-version, veille-fetch, surveillance, trial-server, worker-size; plus tard social-export
 ├── exports/                   ★ courriels de l'infolettre produits par newsletter-draft, non versionnés
-├── tests/                     ★ tests unitaires et de fumée
+├── tests/                     ★ tests unitaires (Vitest) et parcours de fumée (tests/e2e/, Playwright)
 ├── docs/                      ARCHITECTURE, DA, QUESTIONS, GUIDE-AUTEUR, CHANGELOG; A-VERIFIER est produit par check et non versionné
-├── .github/workflows/         veille (et surveillance du site en ligne), rapport hebdomadaire; vérifications en phase 5
+├── .github/workflows/         veille (et surveillance du site en ligne), rapport hebdomadaire, intégration continue (ci)
 ├── keystatic.config.ts        point d'entrée de l'éditeur; configuration dans src/lib/editor/
 ├── astro.config.mjs
 ├── wrangler.jsonc             ★ configuration Cloudflare (fichiers statiques, Worker, tâche planifiée)
@@ -802,7 +804,7 @@ Vérifié le 25 septembre 2026. Les prix marqués « (s) » viennent d'extrait
   - La préautorisation reste désactivée, ce qui évite le témoin `cf_clearance`.
   - Le script n'est chargé qu'au premier contact avec le formulaire (focus d'un champ, ou pression sur le bouton après un remplissage automatique). Cloudflare recommande au contraire un chargement précoce : le site préfère qu'aucune connexion vers Cloudflare ne précède l'interaction.
   - Widget en mode `interaction-only`, taille `flexible` (compacte sous 300 pixels de large), thème du site, formulaire de rétroaction vers Cloudflare désactivé; un défi interactif est annoncé dans la zone de statut du formulaire.
-  - Clés d'essai de Cloudflare : acceptées par le Worker seulement en essai local (`MEMORY_SERVICES=true`); une clé de site d'essai est signalée par `check`, et bloquante une fois le site en ligne.
+  - Clés d'essai de Cloudflare : simulées par le Worker, sans appel réseau, seulement en mode d'essai (`MEMORY_SERVICES=true` : essai local, aperçus de branche), comme l'absence de clé secrète (`1x…` réussit, `2x…` et `3x…` échouent); hors de ce mode, une clé secrète d'essai est refusée. Les constructions d'aperçu posent d'office la clé de site d'essai; dans la configuration, une clé de site d'essai est signalée par `check`, et bloquante une fois le site en ligne.
 - **Champ piège** (invisible pour un humain, rempli par les robots) : réponse de succès, rien n'est enregistré.
 - **Limitation de débit** : liaison `ratelimits` de Cloudflare (`FORM_LIMITER`, `wrangler.jsonc`), 5 envois par 60 secondes et par clé. Clés : la route et une empreinte salée du préfixe de l'IP (adresse IPv4 entière, /64 en IPv6); pour l'infolettre, aussi une empreinte de l'adresse courriel, contre l'envoi répété de confirmations, comptée seulement après un défi Turnstile réussi (sinon un tiers pourrait, sans résoudre de défi, bloquer l'inscription d'une adresse). Le mécanisme est approximatif et propre à chaque centre de données, sans quota horaire possible (périodes de 10 ou 60 secondes seulement) : c'est un frein, pas un plafond. Sa disponibilité en forfait gratuit n'est pas documentée (seules des sources tierces l'affirment) : à constater au premier déploiement, sinon retirer la liaison. Turnstile, le champ piège et le double opt-in restent la protection principale; l'écart avec les points 8.5 et 8.8 du brief est signalé à l'auteur.
 - **Contact** : fonction `/api/contact` du Worker, qui valide, vérifie Turnstile et transmet le message par courriel transactionnel de Brevo (`POST /v3/smtp/email`) à l'adresse de l'auteur, avec le lecteur en adresse de réponse, sans rien stocker. Le formulaire s'active dans les réglages (`config/services.json`); désactivé, la page Contact affiche le courriel de contact.
@@ -946,7 +948,7 @@ Faits vérifiés le 25 septembre 2026 dans la documentation officielle (sources 
 - **Coût des requêtes.** Les requêtes vers les fichiers statiques sont gratuites et illimitées. Seules comptent celles qui exécutent du code : 100 000 par jour en gratuit, avec 10 ms de temps processeur par requête.
 - **Workers Builds** (un build à chaque poussée Git) : 3 000 minutes de build par mois en gratuit, un build à la fois, 20 minutes au plus par build. Le cache conserve les images déjà optimisées. Des « chemins surveillés » évitent de reconstruire quand seul `docs/` change.
 - **Deploy Hooks** : disponibles pour Workers depuis le 1er avril 2026. L'appel est idempotent : pas de doublon si un build est déjà en file.
-- **Aperçus par branche** (« Worker Previews »), lancés le 22 septembre 2026 : une URL stable par branche, en `noindex`, publique par défaut (protégeable par Cloudflare Access). Fonction très récente, à éprouver en phase 1.
+- **Aperçus par branche** (« Worker Previews »), lancés le 22 septembre 2026 : une URL stable par branche (`<aperçu>-<worker>.<sous-domaine>.workers.dev`, en-tête `X-Robots-Tag: noindex`), publique par défaut. Un aperçu n'hérite d'aucun réglage de production : variables, liaisons et observabilité viennent du bloc `previews` de `wrangler.jsonc`, les secrets d'une configuration de base distincte (`wrangler preview base-config secret put`); tâches planifiées et routes ne visent jamais un aperçu. 100 aperçus par Worker en gratuit, les plus anciens supprimés d'office. La protection par Cloudflare Access passe par Zero Trust, dont l'inscription demande une carte de paiement même au forfait gratuit. Lu dans la documentation le 28 septembre 2026, pas encore éprouvé faute de compte Cloudflare (section 25.7).
 - **Tâches planifiées** (Cron Triggers) : 5 par compte en gratuit, en UTC seulement, sans garantie écrite de ponctualité.
 - **Limites des fichiers statiques** : 20 000 fichiers par déploiement, 25 Mio par fichier, `_redirects` limité à 2 000 règles statiques et 100 dynamiques, `_headers` à 100 règles. Ces deux fichiers ne s'appliquent pas aux réponses produites par le Worker.
 - **Domaine personnalisé : les serveurs de noms doivent être chez Cloudflare.** Workers exige une zone Cloudflare active, même pour un sous-domaine; la configuration partielle est réservée aux offres Business et Entreprise. Le domaine peut être acheté chez n'importe quel registraire, y compris un registraire canadien pour un `.ca`, mais son DNS est délégué à Cloudflare.
@@ -962,7 +964,7 @@ Faits vérifiés le 25 septembre 2026 dans la documentation officielle (sources 
   - deux versions majeures en 2026;
   - une régression avec Keystatic.
 - L'adaptateur n'est ajouté que si le mode GitHub de Keystatic est activé (question A2).
-- **Coût** : les formulaires se testent en local avec `wrangler dev` après un build, et non avec `astro dev`.
+- **Coût** : les formulaires se testent en local après un build, avec `npm run trial` (construction d'aperçu, puis `wrangler dev` en mode d'essai), et non avec `astro dev`.
 
 **Alternatives écartées** (d'après des extraits de recherche, sites bloqués) :
 - Vercel gratuit : réservé à un usage personnel **non commercial** (s); publicité, affiliation ou promotion d'une activité professionnelle l'excluent (s). Tâches planifiées limitées à une par jour (s).
@@ -984,8 +986,8 @@ flowchart LR
 
 1. **Enregistrement.** L'auteur enregistre dans Keystatic et crée un commit, directement sur `main` pour publier, ou sur une branche pour obtenir un aperçu en ligne.
 2. **Contrôle et build.** Workers Builds exécute `check` (validation, marqueurs bloquants, URL disparues), le build, puis Pagefind. Toute erreur arrête le déploiement et la production reste sur la version précédente.
-3. **Mise en ligne** en 2 à 5 minutes (estimation, à mesurer en phase 1). Le brief annonçait 1 à 2 minutes : écart signalé en section 25.
-4. **Retour arrière.** Restaurer un commit dans GitHub (bouton « Revert »), ce qui reconstruit la version précédente. On peut aussi réactiver un déploiement antérieur dans le tableau de bord Cloudflare, en un clic et sans build. La procédure pas à pas figurera dans le guide de l'auteur.
+3. **Mise en ligne** en 2 à 5 minutes (estimation, à mesurer au premier déploiement). Le brief annonçait 1 à 2 minutes : écart signalé en section 25.
+4. **Retour arrière.** Restaurer un commit dans GitHub (bouton « Revert »), ce qui reconstruit la version précédente. On peut aussi réactiver un déploiement antérieur dans le tableau de bord Cloudflare, en un clic et sans build. La procédure pas à pas est dans le guide de l'auteur (section 41, « Retour en arrière »).
 
 **Règle de branche.**
 - L'auteur (Keystatic, GitHub Desktop) et la tâche de veille écrivent directement sur `main`. La barrière de qualité est le build : s'il échoue, rien n'est mis en ligne.
@@ -1001,7 +1003,7 @@ Fonctionnement :
 2. La tâche planifiée Cloudflare (`worker/scheduled.ts`, phase 4) s'exécute toutes les 15 minutes, à 7, 22, 37 et 52 minutes après l'heure, pour éviter les quarts d'heure ronds où les serveurs sont les plus chargés. Elle lit `schedule.json` par la liaison des fichiers statiques, sans passer par le réseau, décide d'après l'heure prévue du passage (`scheduledTime`) et n'appelle le Deploy Hook **que si une échéance est passée**. Une seule expression (`7,22,37,52 * * * *`) sert aussi à la reconstruction quotidienne, le forfait gratuit n'offrant que cinq tâches par compte.
 3. Le build suivant rend le contenu visible, puisque sa date est désormais passée.
 
-- **Latence attendue** : 0 à 15 minutes d'attente, plus la durée du build (2 à 5 minutes estimées), soit **au pire une vingtaine de minutes**, en moyenne une dizaine. Cloudflare n'offre pas de garantie écrite de ponctualité : la latence réelle sera mesurée après la mise en ligne (phase 5).
+- **Latence attendue** : 0 à 15 minutes d'attente, plus la durée du build (2 à 5 minutes estimées), soit **au pire une vingtaine de minutes**, en moyenne une dizaine. Cloudflare n'offre pas de garantie écrite de ponctualité : la latence réelle sera mesurée à la première publication programmée du site en ligne (guide de l'auteur, section 41, étape 9).
 - **Coût** : quelques builds par mois. Une reconstruction horaire systématique consommerait 720 builds par mois : on l'évite.
 - **Reconstruction quotidienne** au passage de 5 h 07 UTC, soit 1 h 07 à Montréal en heure avancée et 0 h 07 en heure normale : toujours après minuit (4 h 07 UTC tomberait la veille en hiver). Elle rafraîchit les sections qui dépendent du jour (« À surveiller », statuts d'agenda) et les cours de marché si le module est actif. Un appel pendant qu'un build attend encore n'en crée pas un second (`already_exists`, journalisé). Si le Deploy Hook échoue ou si le passage de 5 h 07 manque, la reconstruction est relancée aux passages suivants, pendant deux heures, tant que le `/schedule.json` en ligne date d'avant 5 h 07.
 - **Fréquence** : réglée dans `wrangler.jsonc`, donc par une modification de configuration et non dans `config/` (écart avec le « paramétrable » du point 8.2, signalé en section 25).
@@ -1013,9 +1015,9 @@ Fonctionnement :
 |---|---|---|
 | `veille` | 2 fois par jour ouvrable (fuseau America/Toronto, désormais pris en charge par GitHub) | `veille:fetch`, commit du cache seulement s'il a changé, ce qui déclenche un build |
 | `rapport` | chaque lundi | `check` complet (liens externes compris), rapport « À vérifier » publié dans un ticket GitHub : notification par courriel |
-| `ci` | à chaque demande de fusion qui touche le code (`src/`, `worker/`, `scripts/`, `tests/`, fichiers de configuration du projet) | types, tests unitaires, build, tests de fumée |
+| `ci` | à chaque envoi sur GitHub, sauf s'il ne touche que la documentation ou le cache de la veille | types, tests unitaires, format de l'éditeur, build, taille du Worker, parcours de fumée (section 15.7) |
 
-**Coût estimé** : environ 44 exécutions de veille d'environ une minute chacune, 4 rapports de quelques minutes, et 10 à 20 vérifications de code de 5 à 8 minutes, soit **100 à 250 minutes par mois**, sur les 2 000 gratuites d'un dépôt privé.
+**Coût estimé** : environ 44 exécutions de veille d'environ une minute chacune, 4 rapports de quelques minutes, et une vérification de code par envoi (2 min 15 s mesurées, facturées 3 minutes), pour 60 à 150 envois : **250 à 500 minutes par mois**, sur les 2 000 gratuites d'un dépôt privé. Un dépôt public ne consomme aucune minute.
 
 **Si les retards de GitHub devenaient gênants pour la veille**, la tâche planifiée Cloudflare peut lancer ces tâches à distance (appel `workflow_dispatch` avec un jeton limité). Un seul planificateur, plus régulier que GitHub Actions d'après les témoignages mais sans garantie écrite, au prix d'un secret de plus.
 
@@ -1035,8 +1037,25 @@ Marge confortable. Si la durée de build grandit avec le contenu : builds incr�
 
 - **Échec de build** : Workers Builds n'envoie aucun courriel (absent du catalogue des notifications de Cloudflare au 28 septembre 2026). Le build en échec apparaît comme vérification rouge sur le commit, dans GitHub. Surtout, la **surveillance de fraîcheur** (`npm run surveillance`, `src/lib/check/deployment.ts`, livrée en phase 4) lit le `/schedule.json` du site en ligne, deux fois par jour ouvrable, dans la tâche `veille` : si le dernier build a plus de 30 heures (reconstruction nocturne manquée), ou si le dernier commit de `main` qui touche le site n'est pas en ligne une heure après sa date, la tâche échoue et GitHub écrit à l'auteur. Ce commit est daté par sa fusion (`git log --first-parent`), et comparé au commit construit que nomme `/schedule.json` (`git merge-base --is-ancestor`) : un commit fait avant la reconstruction nocturne et poussé après est ainsi repéré. Sans commit construit connu (build local, historique trop court), les dates sont comparées. Une file Cloudflare Queues abonnée à `build.failed` (gratuite depuis février 2026) donnerait une alerte immédiate, au prix d'un secret de plus : écartée en v1.
 - **Échec d'une tâche GitHub** : courriel automatique de GitHub.
-- **Disponibilité** : un service de sonde externe gratuit (choix en phase 5), qui vérifie l'accueil et `/api/newsletter` toutes les 5 minutes.
+- **Disponibilité** (choix de la phase 5) : une sonde externe gratuite interroge toutes les 5 minutes l'accueil (fichier statique) et `/api/sante`. Cette route du Worker répond 200 quand les formulaires actifs peuvent fonctionner (fournisseur, service d'envoi, adresse de réception et sel configurés), 503 sinon, sans appeler aucun fournisseur : 288 requêtes Worker par jour, sur les 100 000 gratuites. Une route dédiée évite d'exiger un code 405 de `/api/newsletter`, que la plupart des forfaits gratuits ne savent pas attendre. Étude du 28 septembre 2026 (fournisseurs Terraform et code source officiels; tarifs et conditions par extraits, sites des fournisseurs inaccessibles) :
+  - **Retenu : UptimeRobot**, forfait gratuit : 50 sondes toutes les 5 minutes, alertes par courriel, sans carte (extrait); usage commercial admis depuis 2026, après une interdiction de décembre 2024 à 2026 (conditions lues par extraits, à relire à l'inscription); méthode imposée en gratuit (HEAD pour une sonde HTTP), codes 2xx et 3xx tenus pour un succès; compte désactivé après six mois sans connexion (extrait). Pas d'alerte d'expiration du certificat en gratuit : Cloudflare renouvelle lui-même le certificat d'un domaine de Worker, à partir de 30 jours avant l'échéance d'un certificat de 3 mois.
+  - **Plus complet, plus technique : Grafana Cloud**, forfait gratuit (Synthetic Monitoring) : 100 000 exécutions par mois, codes attendus et contrôle du corps, alerte d'expiration du certificat; sondes de Montréal et de Toronto présentes dans le code de l'application (offre gratuite à vérifier); licence couvrant les « internal business operations » (extrait); au-delà du quota, les vérifications s'arrêtent sans facturation. Deux vérifications depuis deux sondes toutes les 5 minutes : environ 36 % du quota.
+  - **Écartés** : Better Stack (gratuit présenté pour des projets personnels, carte exigée selon certaines sources), StatusCake (compte gratuit « for your own personal use »), HetrixTools (conditions connues par extraits seulement, connexion exigée tous les 90 jours), Checkly (sonde d'adresse sans contrôle du corps), Freshping (fermé en mars 2026), Upptime (tâches GitHub planifiées retardées ou abandonnées), UptimeFlare (même infrastructure que le site), Cloudflare Health Checks (forfait Pro).
+  - « Bot Fight Mode » de Cloudflare reste désactivé : il soumettrait la sonde et la surveillance de fraîcheur à des défis.
 - **Rapport hebdomadaire** (`.github/workflows/rapport.yml`, livré en phase 4) : chaque lundi à 8 h 13, heure de Montréal, `check` complet avec les liens externes; le rapport est publié dans un ticket GitHub (étiquette « rapport »), qui ferme celui de la semaine précédente. Lancé à la main sur une autre branche, il nomme la branche dans son titre et ne ferme aucun ticket. Le ticket est assigné au propriétaire du dépôt, que GitHub en avise (par courriel selon ses réglages de notification).
+
+### 15.7 Intégration continue et parcours de fumée (phase 5)
+
+- **Tâche `ci`** (`.github/workflows/ci.yml`) : à chaque envoi sur GitHub, sauf s'il ne touche que la documentation (`docs/`, fichiers `.md` de la racine) ou le cache de la veille; aussi à la demande. Pas de déclencheur `pull_request` : une demande de fusion affiche le résultat de l'envoi de son dernier commit, sans second passage. Un nouvel envoi sur la même branche annule la vérification en cours.
+  - Étapes : `npm ci`, types, tests unitaires, `content:format --verifier`, construction de production, taille du Worker (`npm run worker:size`, plafond du projet de 100 Kio), Chromium (`npx playwright install --with-deps chromium`), parcours de fumée.
+  - En cas d'échec, le rapport Playwright (captures, traces) reste joint à l'exécution pendant sept jours. Durée mesurée : 2 min 15 s.
+  - Elle ne conditionne pas le déploiement : Workers Builds construit chaque envoi sur `main` avec ses propres garde-fous (`check`, contrôles de `dist/`).
+- **Parcours de fumée** (`tests/e2e/`, Playwright 1.63.0) : `scripts/trial-server.ts` construit le site en mode aperçu (brouillons compris, pour couvrir tous les gabarits), puis lance `wrangler dev` en mode d'essai (`MEMORY_SERVICES=true`) sur `127.0.0.1:8791`. Les pages passent donc par le vrai Worker, avec les en-têtes de `dist/_headers`, CSP à empreintes comprise. Deux profils : ordinateur (Desktop Chrome) et mobile (Pixel 7, 412 pixels de large).
+  - 22 pages principales, une par gabarit (accueil, listes, article, guide, rubriques, fiches, lexique, auteur, agenda, veille, recherche, infolettre, numéro, contact, confidentialité), et la page 404 : statut, CSP présente, `main` et `h1`, aucun défilement horizontal, aucune erreur de console, de script ou de réseau (une violation de la CSP en est une), aucune violation d'accessibilité en thème clair puis sombre.
+  - Accessibilité : axe-core 4.13.0, injecté par `page.evaluate` (non soumis à la CSP de la page), règles WCAG 2.0, 2.1 et 2.2 de niveaux A et AA. L'analyse attend la fin des transitions de thème, qui fausseraient les contrastes.
+  - Parcours : inscription à l'infolettre (message de succès de `config/newsletter.json`, consentement exigé), routes du Worker (405, 404, en-têtes, sonde de disponibilité), recherche Pagefind, tiroir mobile et touche Échap, recherche au clavier (Ctrl+K), bascule et mémoire du thème.
+  - Turnstile : les constructions d'aperçu posent la clé de site d'essai de Cloudflare (`1x00000000000000000000AA`), le Worker simule les clés d'essai en mode d'essai, et le script de Cloudflare est remplacé par un double local (`page.route`) : les parcours ne dépendent d'aucun service extérieur.
+- **En local** : `npm run test:e2e` lance le même serveur, ou réutilise celui de `npm run trial`; `PLAYWRIGHT_CHROMIUM` désigne un Chromium déjà installé.
 
 ---
 
@@ -1044,8 +1063,8 @@ Marge confortable. Si la durée de build grandit avec le contenu : builds incr�
 
 ### 16.1 Sécurité
 
-- **Surface d'attaque minimale** : pas de base de données, pas de serveur d'application permanent, deux routes serveur (`/api/newsletter`, `/api/contact`).
-- **Worker** (`worker/`, 89 Kio, 26 Kio compressé) :
+- **Surface d'attaque minimale** : pas de base de données, pas de serveur d'application permanent, trois routes serveur (`/api/newsletter`, `/api/contact`, et `/api/sante`, en lecture seule, pour la sonde de disponibilité).
+- **Worker** (`worker/`, 89,5 Kio, 26,7 Kio compressé; plafond de 100 Kio contrôlé par la tâche `ci`) :
   - origine vérifiée (le formulaire vient du site), corps plafonné pendant la lecture même sans `Content-Length` (8 Kio pour l'infolettre, 24 Kio pour le contact), seuls les formulaires encodés acceptés;
   - validation stricte de chaque champ par des règles sans dépendance (`worker/validate.ts`) : Zod et ses traductions portaient le Worker à 879 Kio;
   - vérification de Turnstile côté serveur, limitation de débit (section 12.1);
@@ -1059,7 +1078,7 @@ Marge confortable. Si la durée de build grandit avec le contenu : builds incr�
   - `/_astro/*` (fichiers à empreinte) : cache d'un an, immuable;
   - limites de Cloudflare (100 règles, 2 000 caractères par ligne, une étoile par règle) contrôlées après le build, Wrangler ne l'analysant qu'au déploiement. Vérifié en local avec `wrangler dev` : recherche Pagefind, formulaires et pages sans violation de CSP.
 
-  La CSP intégrée d'Astro n'est pas activée au lancement : elle ne se teste pas en développement et gère mal certains styles en ligne. Elle sera réévaluée en phase 5.
+  La CSP intégrée d'Astro n'est pas activée : elle ne se teste pas en développement et gère mal certains styles en ligne. Réévaluée en phase 5 et écartée : la CSP à empreintes de `scripts/postbuild.ts` est éprouvée par les parcours de fumée, qui vérifient sa présence sur chaque page et échouent à la moindre violation (section 15.7).
 - **Section `custom-html` de l'accueil** : contenu échappé à l'affichage, aucun script exécuté.
 - **Éditeur en ligne** (si activé) : authentification GitHub, accès limité aux comptes ayant l'écriture sur le dépôt. La GitHub App est restreinte à ce seul dépôt, avec les permissions minimales. Protection supplémentaire facultative par Cloudflare Access.
 - **Secrets** : uniquement chez Cloudflare et dans les secrets GitHub Actions, avec analyse des secrets activée sur GitHub.
@@ -1070,7 +1089,7 @@ Marge confortable. Si la durée de build grandit avec le contenu : builds incr�
   - une injection de script intersites (XSS) de gravité modérée (corrigée en 7.1.0).
 
   Rester sur la dernière version corrective n'est pas optionnel. En pratique, la majeure précédente n'a pas reçu ces correctifs, malgré la politique écrite.
-- **Dépôt privé** (il l'est; question 14).
+- **Dépôt privé** (question 14). Constaté **public** le 28 septembre 2026, alors qu'il était privé le 25 : à rétablir par l'auteur (section 25.7).
 
 ### 16.2 Sauvegarde (point 8.8 du brief)
 
@@ -1089,7 +1108,7 @@ Marge confortable. Si la durée de build grandit avec le contenu : builds incr�
 | Compte du fournisseur de newsletter | Brevo ou Cyberimpact | abonnés, envois | double authentification | exports mensuels |
 | Compte Umami | Umami | mesure d'audience | | données d'audience perdues, sans effet sur le site |
 | Registraire du domaine | au choix | nom de domaine | renouvellement annuel | risque majeur : renouvellement automatique conseillé |
-| Sonde de disponibilité | au choix | alerte en cas de panne | | à recréer |
+| Sonde de disponibilité | UptimeRobot (gratuit) | alerte en cas de panne | connexion au moins tous les six mois | à recréer (section 15.6) |
 | `TURNSTILE_SECRET_KEY` | secret Cloudflare | vérification anti-pourriel | au besoin | régénérer dans Cloudflare |
 | `NEWSLETTER_API_KEY` | secret Cloudflare | inscription | annuel conseillé | régénérer chez le fournisseur |
 | `IP_HASH_SALT` | secret Cloudflare | empreinte des IP (preuve de consentement) et clés de débit | jamais (sinon les empreintes changent) | en créer un nouveau; les anciennes empreintes restent valables comme preuves |
@@ -1099,7 +1118,7 @@ Marge confortable. Si la durée de build grandit avec le contenu : builds incr�
 | `KEYSTATIC_GITHUB_CLIENT_ID`, `KEYSTATIC_GITHUB_CLIENT_SECRET`, `KEYSTATIC_SECRET` + `PUBLIC_KEYSTATIC_GITHUB_APP_SLUG` | secrets Cloudflare, variable de build | éditeur en ligne | au besoin | recréer la GitHub App |
 | `COINGECKO_API_KEY` | variable de build | données de marché | | nouvelle clé CoinGecko |
 
-**Au lancement : 6 comptes et 4 secrets** (5 avec `CONTACT_TO`). `MEMORY_SERVICES=true`, qui garde inscriptions et messages en mémoire, n'est qu'une variable d'essai local (`.dev.vars`, jamais versionné) et des aperçus (`previews.vars` de `wrangler.jsonc`), jamais un réglage de production. Les secrets locaux vont dans `.dev.vars` : sans ce fichier, Wrangler injecterait le `.env` du projet dans le Worker.
+**Au lancement : 6 comptes et 4 secrets** (5 avec `CONTACT_TO`). `MEMORY_SERVICES=true`, qui garde inscriptions et messages en mémoire, n'est qu'une variable d'essai (`npm run trial`, ou `.dev.vars`, jamais versionné) et des aperçus (`previews.vars` de `wrangler.jsonc`), jamais un réglage de production. Dans ce mode, aucun secret n'est exigé (sel fixe, clés d'essai de Turnstile simulées). Les secrets locaux vont dans `.dev.vars` : sans ce fichier, Wrangler injecterait le `.env` du projet dans le Worker.
 
 ---
 
@@ -1192,7 +1211,7 @@ En famille A, le coût vient presque entièrement de la **newsletter**, qui dép
 | Dérive entre schémas Zod et formulaires Keystatic | moyenne | moyen | Contenu d'amorçage enregistré par l'éditeur et validé à chaque build (section 4.3) |
 | Relation rompue par renommage de slug | moyenne | faible | Le build échoue avec un message clair; `check` propose la correction |
 | Tâches planifiées GitHub en retard ou abandonnées | élevée | faible | Réservées à la veille et au rapport; publication confiée à Cloudflare |
-| Ponctualité des tâches planifiées Cloudflare non garantie par écrit | faible | moyen | Mesure après la mise en ligne (phase 5); tolérance d'une vingtaine de minutes acceptée à la question 2 |
+| Ponctualité des tâches planifiées Cloudflare non garantie par écrit | faible | moyen | Mesure à la première publication programmée (guide de l'auteur, section 41); tolérance d'une vingtaine de minutes acceptée à la question 2 |
 | Croissance du dépôt par les images | faible à 3 ans | faible | Compression à l'import, limite de poids dans `check`; au-delà de 1 Go, stockage objet |
 | Durée de build | faible | faible | Environ 6 000 pages en 75 secondes selon les mesures publiées pour Astro 7; builds incrémentaux si nécessaire, une fois stabilisés |
 | Plafond de 20 000 fichiers par déploiement en Workers gratuit (index Pagefind, variantes d'images et images Open Graph de chaque page comptent) | faible à 2 ans, moyenne au-delà | moyen | Trois largeurs d'image au plus; décompte des fichiers dans `check`, alerte à 15 000; au besoin Workers payant (100 000 fichiers, 5 $ US par mois), ou une image Open Graph commune pour les pages de liste, écart à soumettre à l'auteur |
@@ -1471,11 +1490,29 @@ Prises pendant la construction des gabarits, dans le cadre fixé par l'auteur (�
 - **Pages légales et de confiance** : gabarits en brouillon avec marqueurs; blocs de page `FormulaireContact`, `ResponsableProtection` et `InventaireDonnees` alimentés par la configuration (`services.json`, `legal.json`).
 - **Hors de la phase 4** : branchement de l'hébergement (Workers Builds, domaine, secrets, `SITE_MODE` des aperçus déduit de la branche), sonde de disponibilité et mesure de la ponctualité des tâches, en phase 5.
 
+### 25.7 Décisions de la phase 5
+
+**Sources.** Documentation de Cloudflare (dépôt `cloudflare/cloudflare-docs`, état du 28 septembre 2026 : Workers Builds, Previews, Access, domaines personnalisés, secrets, retours arrière, redirections, DNS), spécification OpenAPI de l'API de Cloudflare (droits des jetons), registre npm. Pour la sonde de disponibilité, une étude par une instance automatisée (fournisseurs Terraform et code source officiels; tarifs et conditions par extraits, les sites des fournisseurs restant inaccessibles). Essais : Lighthouse 13.5.0 et parcours Playwright en local, tâche `ci` sur GitHub Actions.
+
+- **Mode du site déduit de la branche** (`src/lib/site-mode.ts`) : `SITE_MODE` (`preview` ou `production`) l'emporte; sinon, dans Workers Builds, toute branche autre que `main` (`WORKERS_CI_BRANCH`) construit un aperçu. `check`, `postbuild`, les redirections et l'affichage suivent le même mode.
+- **Aperçus autonomes, sans aucun secret.** En mode d'essai, le sel des empreintes est fixe (rien n'est conservé), les clés d'essai de Turnstile sont simulées et l'absence de clé secrète vaut réussite; les constructions d'aperçu posent la clé de site d'essai. Un aperçu ne peut donc ni inscrire un vrai lecteur, ni entamer le quota de Brevo, ni exiger un secret propre aux aperçus.
+- **Essai local** : `npm run trial` (`scripts/trial-server.ts`) remplace la procédure `.dev.vars` du guide : construction d'aperçu, puis Worker en mode d'essai sur `127.0.0.1:8791`, jamais exposé au réseau.
+- **Intégration continue et parcours de fumée** : section 15.7. `axe-core` injecté directement, sans la surcouche `@axe-core/playwright` : une dépendance de moins.
+- **Performance** : l'image principale de l'accueil est demandée en priorité (`fetchpriority="high"`, sans chargement différé). Rien d'autre n'est corrigé (section 27) : intégrer aux pages la feuille de style bloquante (12 Ko) alourdirait chaque page pour 150 ms estimés en mobile simulé.
+- **CSP intégrée d'Astro** : écartée (section 16.1).
+- **Domaine** : déclaré dans `wrangler.jsonc` (`routes` avec `custom_domain`, `workers_dev: false`), qui fait foi, puisque Wrangler remplace à chaque déploiement les routes réglées dans le tableau de bord. Le jeton créé par Workers Builds peut rattacher un domaine (droit « Workers Scripts Write », d'après la spécification de l'API). Une fois l'adresse du site saisie, `check` signale un domaine absent de `wrangler.jsonc` ou une adresse `workers.dev` restée ouverte, et bloque un `wrangler.jsonc` illisible (`src/lib/check/hosting.ts`). `preview_urls: true` garde les aperçus.
+- **Sonde de disponibilité** : route `/api/sante` et UptimeRobot gratuit (section 15.6).
+- **Procédure de mise en ligne** : guide de l'auteur, section 41. Branche `main`, zone Cloudflare, domaine, Workers Builds, avec des chemins surveillés alignés sur la surveillance de fraîcheur (`docs/*` et `.github/*` exclus, rien d'autre), cache de build, Deploy Hook, secrets, `www`, vérifications du premier déploiement, sonde, aperçus, retour arrière.
+- **Tâche `ci`** sans déclencheur `pull_request`, qui doublerait chaque exécution.
+- **Constat : dépôt public.** Le 28 septembre 2026, l'API de GitHub donne le dépôt `public`, alors que la question 14 retenait un dépôt privé (vérifié privé le 25 septembre). Tout l'historique est donc lisible par tous, brouillons, documents de travail et `docs/references/` compris; les tickets du rapport hebdomadaire le seraient aussi. GitHub Pages, activé le même jour (une publication réussie, puis des échecs de Jekyll), ne l'est plus. Rien n'a été changé : décision de l'auteur (`docs/QUESTIONS.md`).
+- **À constater au premier déploiement** (guide, section 41, étape 9) : limitation de débit acceptée en forfait gratuit; `WORKERS_CI_COMMIT_SHA` fourni (champ `commit` de `/schedule.json`); construction lancée par un commit de la tâche `veille` (poussé avec le jeton `GITHUB_TOKEN`, dont GitHub ne relaie pas les événements aux autres tâches GitHub, sans que rien n'indique qu'il en prive le webhook de Cloudflare); ponctualité de la publication programmée; durée d'une construction.
+- **Non fait** : aucun compte n'a été créé et aucun déploiement n'a eu lieu, faute de compte Cloudflare et de domaine. Résultats du premier déploiement à consigner ici.
+
 ---
 
 ## 26. Journal des vérifications
 
-Vérifications du **25 septembre 2026** (phases 0 à 3); celles de la phase 4, du **28 septembre 2026**, sont décrites en section 25.6, et l'état des flux de la veille en section 14.1.
+Vérifications du **25 septembre 2026** (phases 0 à 3); celles des phases 4 et 5, du **28 septembre 2026**, sont décrites en sections 25.6 et 25.7, l'état des flux de la veille en section 14.1, et l'audit de la phase 5 en section 27.
 
 ### 26.1 Conditions d'accès
 
@@ -1528,6 +1565,36 @@ Aucune affirmation n'a été réfutée. Les corrections sont intégrées au text
 - **Umami Cloud** : quota gratuit, sort des événements au-delà, accès à l'API (Pro selon les extraits), hôte de collecte d'un compte de région UE. **Plausible** : tarifs.
 - **CoinGecko** : usage commercial du forfait gratuit, attribution.
 - **Vercel et Netlify** : conditions des forfaits gratuits (pour mémoire).
-- **Cloudflare** : disponibilité du mécanisme de limitation de débit en forfait gratuit (à constater au premier déploiement), conditions de Turnstile concernant les témoins (addendum de confidentialité illisible en phase 4). L'absence d'alerte courriel d'échec de build est constatée (section 15.6).
+- **Cloudflare** : disponibilité du mécanisme de limitation de débit en forfait gratuit, présence de `WORKERS_CI_COMMIT_SHA`, construction lancée par un commit de la tâche `veille` (à constater au premier déploiement, guide de l'auteur, section 41, étape 9); conditions de Turnstile concernant les témoins (addendum de confidentialité illisible en phase 4). L'absence d'alerte courriel d'échec de build est constatée (section 15.6).
+- **Sonde de disponibilité** : conditions du jour d'UptimeRobot (usage commercial, « Fair Use Policy », inactivité), et, si Grafana Cloud est préféré, sondes canadiennes et règles d'inactivité du forfait gratuit.
 - **Veille** : URL exactes de chaque flux, lues par le mode diagnostic depuis GitHub Actions (section 25.6).
 - **Cryptoast** : menu, recherche et pages actuels, si l'analyse doit aller plus loin que les captures fournies.
+
+---
+
+## 27. Audit de la phase 5 : performance et accessibilité
+
+Mesures du 28 septembre 2026, Lighthouse 13.5.0 dans Chromium, profil mobile (réseau et processeur ralentis par simulation) et profil ordinateur, sur le site servi en local par `wrangler dev` : même Worker et mêmes en-têtes qu'en ligne, sans le réseau de Cloudflare.
+
+**Pages d'aperçu**, brouillons compris, neuf gabarits (accueil, article, dossier, traitement fiscal, lexique, terme, veille, recherche, infolettre) :
+
+| Axe | Mobile | Ordinateur |
+|---|---|---|
+| Performance | 98 à 100 | 100 |
+| Accessibilité | 100 | 100 |
+| Bonnes pratiques | 100 | 100 |
+| Référencement | 66 à 69 | 66 à 69 |
+
+Le référencement d'un aperçu est bas par construction (`noindex`, `robots.txt` fermé). **Accueil de production**, sans contenu publié : 99, 100, 100 et 100 sur mobile, 100 partout sur ordinateur.
+
+**Cibles du brief** (point 8.9) :
+
+- Lighthouse de 95 et plus sur les quatre axes, en mobile : atteint (production).
+- LCP sous 2 s : de 1,5 à 2,1 s en mobile simulé, 0,4 à 0,5 s sur ordinateur. L'article d'exemple dépasse de 0,1 s; son plus grand élément est le chapô (texte). À remesurer en ligne, où le réseau et le cache de Cloudflare jouent.
+- CLS sous 0,05 : 0 partout, sauf 0,01 sur la page de recherche (ordinateur).
+- INP sous 200 ms : non mesurable en laboratoire; temps de blocage total de 0 ms sur toutes les pages, JavaScript limité aux îlots prévus.
+- Budget de 300 Ko hors images sur l'accueil : 112 à 119 Ko transférés, dont 73 Ko de polices; 174 Ko sur l'article, qui charge aussi la police serif.
+
+**Correction apportée** : l'image principale de l'accueil, son plus grand élément, était chargée en différé; elle est désormais demandée en priorité. **Constat laissé** : la feuille de style (12 Ko) bloque le rendu, pour 150 ms estimés en mobile simulé (section 25.7).
+
+**Accessibilité** : 22 pages et la page 404, en clair et en sombre, sur ordinateur et sur mobile : aucune violation axe-core des règles WCAG 2.2 de niveaux A et AA, aucun défilement horizontal à 412 pixels de large. Vérifiés aussi : fermeture du tiroir mobile par Échap, ouverture de la recherche au clavier. Restent à vérifier à la main avant l'ouverture, faute d'outil automatique : lecture par un lecteur d'écran (NVDA, VoiceOver), zoom à 200 %, préférence de mouvement réduit.
