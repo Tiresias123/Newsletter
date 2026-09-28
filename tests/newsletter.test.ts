@@ -10,12 +10,12 @@ import { articleData, createFixture, NOW, testConfig, type Fixture } from './hel
 let fixture: Fixture;
 afterEach(() => fixture?.cleanup());
 
-function graphOf(setup: (f: Fixture) => void) {
+function graphOf(setup: (f: Fixture) => void, now = NOW) {
   fixture = createFixture();
   setup(fixture);
   const content = loadContent(fixture.root);
   expect(content.problems).toEqual([]);
-  return buildGraph(content.raw, testConfig(), { now: NOW, includeDrafts: false, timezone: 'America/Toronto' });
+  return buildGraph(content.raw, testConfig(), { now, includeDrafts: false, timezone: 'America/Toronto' });
 }
 
 const issue = (data: Record<string, unknown>) => ({ subject: 'Numéro de test', issueNumber: 1, status: 'brouillon', list: 'generale', ...data });
@@ -44,6 +44,11 @@ describe('prochain numéro', () => {
     });
     expect(nextIssue(graph)).toMatchObject({ id: '2026-001', issueNumber: 1, articles: ['semaine'], since: '2026-09-18' });
   });
+
+  it("remonte sept jours de calendrier, même au passage à l'heure d'été", () => {
+    // 15 mars 2026, 0 h 30 à Montréal : une semaine plus tôt, c'est le 8 mars (et non le 7).
+    expect(nextIssue(graphOf(() => {}, new Date('2026-03-15T04:30:00Z'))).since).toBe('2026-03-08');
+  });
 });
 
 describe('courriel', () => {
@@ -61,11 +66,30 @@ describe('courriel', () => {
     expect(intro.text).toContain('- un lien (https://example.com/articles/a/)');
   });
 
+  it("rend les échappements de l'éditeur, les sauts de ligne forcés et les listes numérotées", () => {
+    const intro = markdownToEmail(
+      'R\\&D et 5 \\* 3 : [A\\&B](https://ex.ca/?a=1\\&b=2) et [x](https://ex.ca/a_\\(b\\)).\n\nLigne\\\nSuite\n\n1. Un\n2. Deux\n\n## Voir [le guide](/guides/g/)',
+      'https://example.com',
+      styles,
+    );
+    expect(intro.html).toContain('R&amp;D et 5 * 3');
+    expect(intro.html).toContain('<a href="https://ex.ca/?a=1&amp;b=2" style="a">A&amp;B</a>');
+    expect(intro.html).toContain('<a href="https://ex.ca/a_(b)" style="a">x</a>');
+    expect(intro.html).toContain('Ligne<br>Suite');
+    expect(intro.html).toContain('<ol start="1" style="l"><li>Un</li><li>Deux</li></ol>');
+    expect(intro.text).toContain('1. Un\n2. Deux');
+    expect(intro.text).toContain('VOIR LE GUIDE (https://example.com/guides/g/)');
+  });
+
   it('porte l’expéditeur, le désabonnement et les articles du numéro, en HTML et en texte', () => {
     const graph = graphOf((f) => {
       f.mdx('content/articles/recent.mdx', articleData({ status: 'publie', publishedAt: '2026-09-24' }));
-      f.mdx('content/newsletters/2026-001.mdx', issue({ articles: ['recent', 'absent'], preheader: 'Aperçu' }));
+      f.mdx('content/newsletters/2026-001.mdx', issue({ status: 'envoye', sentAt: '2026-09-25', articles: ['recent', 'absent'], preheader: 'Aperçu' }));
+      f.mdx('content/newsletters/2026-002.mdx', issue({ issueNumber: 2 }));
     });
+    const draft = graph.get('newsletters', '2026-002');
+    if (!draft) throw new Error('numéro absent');
+    expect(issueEmail(graph, draft, markdownToEmail('Bonjour.', 'https://example.com', styles)).problems[0]).toMatch(/^numéro pas encore archivé/);
     const entry = graph.get('newsletters', '2026-001');
     if (!entry) throw new Error('numéro absent');
     const { data, problems } = issueEmail(graph, entry, markdownToEmail('Bonjour.', 'https://example.com', styles));

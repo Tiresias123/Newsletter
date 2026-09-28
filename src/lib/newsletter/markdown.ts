@@ -1,5 +1,5 @@
-// Mot d'introduction d'un numéro (corps MDX) converti pour le courriel : paragraphes, intertitres, listes,
-// gras, italique et liens. Les blocs (composants MDX) ne passent pas dans un courriel : ils sont retirés et
+// Mot d'introduction d'un numéro (corps MDX) converti pour le courriel : paragraphes, intertitres, listes à
+// puces et numérotées, gras, italique et liens (une citation devient un paragraphe). Les blocs (composants MDX) ne passent pas dans un courriel : ils sont retirés et
 // signalés. Les adresses internes deviennent absolues.
 import { frenchTypography } from '../typo.ts';
 
@@ -10,38 +10,50 @@ export function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// Échappements Markdown (« \* », « \< ») rendus à leur caractère.
-const unescapeMarkdown = (value: string) => value.replace(/\\([\\`*_{}[\]()#+\-.!<>|])/g, '$1');
+// Pendant la mise en forme, chaque lien, caractère échappé (« \\* », « \\& ») ou saut de ligne forcé (« \\ » en fin
+// de ligne) est remplacé par un caractère de la zone privée d'Unicode, que ni la typographie ni l'emphase ne touchent.
+const LINK = 0xe000;
+const ESCAPED = 0xe800;
+const BREAK = String.fromCharCode(0xf000);
+const TOKENS = /[\ue000-\uf000]/g;
+const ESCAPABLE = /\\([!-/:-@[-`{-~])/g;
 
-// Chaque lien est remplacé par un caractère de la zone privée d'Unicode le temps de la mise en forme.
-const TOKEN = 0xe000;
-const TOKENS = /[\ue000-\uf8ff]/g;
+// Échappements Markdown rendus à leur caractère (adresses et textes des liens).
+const unescapeMarkdown = (value: string) => value.replace(ESCAPABLE, '$1');
 
 const absoluteUrl = (href: string, siteUrl: string) => (href.startsWith('/') ? `${siteUrl.replace(/\/$/, '')}${href}` : href);
+const emphasis = (text: string, open: [string, string], close: [string, string]) =>
+  text.replace(/\*\*([^*]+)\*\*/g, `${open[0]}$1${close[0]}`).replace(/(^|[^*\w])[*_]([^*_]+)[*_](?=[^*\w]|$)/g, `$1${open[1]}$2${close[1]}`);
 
-function inline(source: string, siteUrl: string, styles: EmailStyles): { html: string; text: string } {
+// upper : intertitre de la version texte, en capitales (sauf les adresses).
+function inline(source: string, siteUrl: string, styles: EmailStyles, upper = false): { html: string; text: string } {
   const links: Array<{ label: string; href: string }> = [];
-  // Liens mis de côté avant l'échappement, pour ne pas toucher à leurs adresses.
-  const withTokens = source.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g, (_m, label: string, href: string) => {
-    links.push({ label: frenchTypography(unescapeMarkdown(label)), href: absoluteUrl(href, siteUrl) });
-    return String.fromCharCode(TOKEN + links.length - 1);
-  });
-  const typed = frenchTypography(unescapeMarkdown(withTokens));
-  const format = (text: string) =>
-    escapeHtml(text)
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/(^|[^*\w])[*_]([^*_]+)[*_](?=[^*\w]|$)/g, '$1<em>$2</em>');
-  const html = format(typed).replace(TOKENS, (token) => {
-    const link = links[token.charCodeAt(0) - TOKEN] as { label: string; href: string };
-    return `<a href="${escapeHtml(link.href)}" style="${styles.link}">${escapeHtml(link.label)}</a>`;
-  });
-  const text = typed
-    .replace(TOKENS, (token) => {
-      const link = links[token.charCodeAt(0) - TOKEN] as { label: string; href: string };
-      return `${link.label} (${link.href})`;
+  const escaped: string[] = [];
+  const withTokens = source
+    .replace(/\[((?:\\.|[^\]\\])+)\]\(((?:\\.|[^)\s\\])+)(?:\s+"[^"]*")?\)/g, (_m, label: string, href: string) => {
+      links.push({ label: frenchTypography(unescapeMarkdown(label)), href: absoluteUrl(unescapeMarkdown(href), siteUrl) });
+      return String.fromCharCode(LINK + links.length - 1);
     })
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/(^|[^*\w])[*_]([^*_]+)[*_](?=[^*\w]|$)/g, '$1$2');
+    .replace(ESCAPABLE, (_m, char: string) => {
+      escaped.push(char);
+      return String.fromCharCode(ESCAPED + escaped.length - 1);
+    });
+  const typed = frenchTypography(withTokens);
+  const restore = (text: string, link: (l: { label: string; href: string }) => string, char: (c: string) => string, br: string) =>
+    text.replace(TOKENS, (token) => {
+      const code = token.charCodeAt(0);
+      if (token === BREAK) return br;
+      if (code >= ESCAPED) return char(escaped[code - ESCAPED] ?? '');
+      return link(links[code - LINK] as { label: string; href: string });
+    });
+  const html = restore(
+    emphasis(escapeHtml(typed), ['<strong>', '<em>'], ['</strong>', '</em>']),
+    (l) => `<a href="${escapeHtml(l.href)}" style="${styles.link}">${escapeHtml(l.label)}</a>`,
+    escapeHtml,
+    '<br>',
+  );
+  const plain = emphasis(upper ? typed.toUpperCase() : typed, ['', ''], ['', '']);
+  const text = restore(plain, (l) => `${upper ? l.label.toUpperCase() : l.label} (${l.href})`, (c) => c, '\n');
   return { html, text };
 }
 
@@ -63,15 +75,21 @@ export function markdownToEmail(body: string, siteUrl: string, styles: EmailStyl
     const lines = block.split('\n').map((l) => l.trim());
     const heading = /^#{1,6}\s+(.*)$/.exec(block);
     if (heading && lines.length === 1) {
-      const part = inline(heading[1] ?? '', siteUrl, styles);
+      const part = inline(heading[1] ?? '', siteUrl, styles, true);
       html.push(`<h2 style="${styles.heading}">${part.html}</h2>`);
-      text.push(part.text.toUpperCase());
+      text.push(part.text);
     } else if (lines.every((l) => /^[-*+]\s+/.test(l))) {
       const items = lines.map((l) => inline(l.replace(/^[-*+]\s+/, ''), siteUrl, styles));
       html.push(`<ul style="${styles.list}">${items.map((i) => `<li>${i.html}</li>`).join('')}</ul>`);
       text.push(items.map((i) => `- ${i.text}`).join('\n'));
+    } else if (lines.every((l) => /^\d+[.)]\s+/.test(l))) {
+      const items = lines.map((l) => ({ n: parseInt(l, 10), ...inline(l.replace(/^\d+[.)]\s+/, ''), siteUrl, styles) }));
+      html.push(`<ol start="${items[0]?.n ?? 1}" style="${styles.list}">${items.map((i) => `<li>${i.html}</li>`).join('')}</ol>`);
+      text.push(items.map((i) => `${i.n}. ${i.text}`).join('\n'));
     } else {
-      const part = inline(lines.join(' '), siteUrl, styles);
+      // Citation : un paragraphe ordinaire. Ligne finie par « \ » : saut de ligne forcé.
+      const joined = lines.map((l) => l.replace(/^>\s?/, '')).map((l, i, all) => (i < all.length - 1 && /(?<!\\)\\$/.test(l) ? `${l.slice(0, -1)}${BREAK}` : `${l} `)).join('').trim();
+      const part = inline(joined, siteUrl, styles);
       html.push(`<p style="${styles.paragraph}">${part.html}</p>`);
       text.push(part.text);
     }

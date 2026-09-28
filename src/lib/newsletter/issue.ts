@@ -1,6 +1,6 @@
 // Numéros de l'infolettre (ARCHITECTURE, section 11.4) : choix des articles du prochain numéro, puis données
 // du courriel d'un numéro rédigé. Sans accès aux fichiers : les scripts lisent et écrivent, ce module décide.
-import { calendarDateInZone } from '../dates.ts';
+import { addDays, calendarDateInZone } from '../dates.ts';
 import type { Entry, Graph } from '../content/graph.ts';
 import { formatDate } from '../format.ts';
 import { t } from '../i18n.ts';
@@ -23,7 +23,7 @@ export function nextIssue(graph: Graph): NextIssue {
   const issueNumber = Math.max(0, ...all.map((n) => n.data.issueNumber)) + 1;
   const sent = sentIssues(graph);
   const lastSent = sent.map((n) => n.data.sentAt).filter((d): d is string => Boolean(d)).sort().at(-1);
-  const fallback = calendarDateInZone(new Date(graph.ctx.now.getTime() - FIRST_ISSUE_DAYS * 86_400_000), graph.ctx.timezone);
+  const fallback = addDays(today, -FIRST_ISSUE_DAYS);
   const since = lastSent ?? fallback;
   const already = new Set(sent.flatMap((n) => n.data.articles));
   const articles = graph
@@ -43,6 +43,8 @@ export function issueEmail(graph: Graph, issue: Entry<'newsletters'>, intro: Con
   const { site, newsletter, legal, ads } = graph.config;
   const d = issue.data;
   const problems: string[] = [];
+  // Le lien « Lire ce numéro dans votre navigateur » mène à l'archive, construite une fois le numéro envoyé.
+  if (!issue.visibility.visible) problems.push("numéro pas encore archivé : passez-le à « Envoyé » avec sa date d'envoi et mettez-le en ligne avant l'envoi, sinon le lien « Lire ce numéro dans votre navigateur » mènera à une page introuvable.");
   const articles = d.articles.flatMap((id) => {
     const article = graph.get('articles', id);
     if (!article?.visibility.listed) {

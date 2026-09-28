@@ -32,7 +32,7 @@ async function draft() {
     issueNumber: next.issueNumber,
     status: 'brouillon',
     articles: next.articles,
-    list: 'generale',
+    list: (config.newsletter.lists.find((l) => l.enabled) ?? config.newsletter.lists[0])?.id,
   };
   // Écrit comme l'éditeur l'écrirait : un premier enregistrement dans l'éditeur ne changera rien.
   const entry = await entryFile('newsletters', next.id, data, "[À COMPLÉTER PAR L'AUTEUR] Mot d'introduction du numéro.\n");
