@@ -12,6 +12,10 @@ const MAX_BYTES = 24 * 1024;
 const site = siteJson as typeof siteJson & { contactEmail?: string };
 export const MESSAGE_MAX = 5000;
 
+// Adresse de réception : secret CONTACT_TO, sinon courriel de contact du site. En mémoire (essai local, aperçus),
+// rien ne part : elle n'est pas exigée (domaine réservé).
+export const contactRecipient = (env: Env) => env.CONTACT_TO || site.contactEmail || (trialMode(env) ? 'essai@exemple.invalid' : undefined);
+
 const RULES = {
   // Une seule ligne : le nom entre dans l'objet du courriel.
   name: text(1, 100, /^[^\r\n]*$/),
@@ -32,8 +36,7 @@ export async function handleContact(request: Request, env: Env, mailer: Mailer |
   if (form.fields.site_web) return ok();
   const fields = validate(form.fields, RULES);
   if (!fields) return fail(400, 'invalide');
-  // En mémoire (essai local, aperçus), rien ne part : l'adresse de réception n'est pas exigée (domaine réservé).
-  const to = env.CONTACT_TO || site.contactEmail || (trialMode(env) ? 'essai@exemple.invalid' : undefined);
+  const to = contactRecipient(env);
   const salt = saltOf(env);
   if (!mailer || !to || !salt) {
     console.error('contact : service d’envoi, adresse de réception ou sel absents de la configuration du Worker');

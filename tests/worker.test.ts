@@ -330,6 +330,24 @@ describe('routage et tâche planifiée', () => {
     expect((await worker.fetch(new Request(`${ORIGIN}/api/inconnue`), baseEnv())).status).toBe(404);
   });
 
+  it('répond à la sonde de disponibilité : 200 si les formulaires peuvent marcher, 503 sinon', async () => {
+    const health = (method: string, env: Env) => worker.fetch(new Request(`${ORIGIN}/api/sante`, { method }), env);
+    const ready = await health('GET', { ASSETS: baseEnv().ASSETS, MEMORY_SERVICES: 'true' });
+    expect(ready.status).toBe(200);
+    expect(await ready.json()).toEqual({ ok: true });
+    expect(ready.headers.get('cache-control')).toBe('no-store');
+    // Secrets absents du site en ligne (sel, clé de Brevo) : l'inscription serait refusée.
+    const missing = await health('GET', { ASSETS: baseEnv().ASSETS });
+    expect(missing.status).toBe(503);
+    expect(await missing.json()).toEqual({ ok: false, error: 'indisponible' });
+    const head = await health('HEAD', { ASSETS: baseEnv().ASSETS, MEMORY_SERVICES: 'true' });
+    expect(head.status).toBe(200);
+    expect(await head.text()).toBe('');
+    const post = await health('POST', baseEnv());
+    expect(post.status).toBe(405);
+    expect(post.headers.get('allow')).toBe('GET, HEAD');
+  });
+
   it('relance un build quand une publication programmée vient d’échoir, et chaque nuit à 5 h 07 UTC', async () => {
     const hooks: string[] = [];
     vi.stubGlobal('fetch', async (input: RequestInfo | URL) => (hooks.push(String(input)), Response.json({ success: true, result: { already_exists: hooks.length > 1 } })));

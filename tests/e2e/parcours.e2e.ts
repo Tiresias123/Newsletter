@@ -34,11 +34,13 @@ test('inscription refusée sans consentement : le navigateur bloque l’envoi', 
   expect(posted).toBe(false);
 });
 
-test('le Worker répond aux routes /api/ : méthode refusée, route inconnue', async ({ request }) => {
+test('le Worker répond aux routes /api/ : méthode refusée, route inconnue, sonde de disponibilité', async ({ request }) => {
   const get = await request.get('/api/newsletter');
   expect(get.status()).toBe(405);
   expect(get.headers()['content-security-policy']).toContain("default-src 'none'");
   expect((await request.get('/api/inconnue')).status()).toBe(404);
+  // Mode d'essai : fournisseur en mémoire et sel fixe, les formulaires peuvent marcher.
+  expect(await (await request.get('/api/sante')).json()).toEqual({ ok: true });
 });
 
 test('recherche : des résultats pour un terme du site', async ({ page }) => {

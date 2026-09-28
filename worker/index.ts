@@ -1,6 +1,6 @@
 // Worker du site (ARCHITECTURE 15.1) : sert les pages statiques de dist/ et ne s'exécute que pour /api/*
-// (formulaires) et pour la tâche planifiée (publication programmée, reconstruction nocturne). Les réglages
-// publics viennent de config/ (intégrés au déploiement), les secrets de Cloudflare.
+// (formulaires, sonde de disponibilité) et pour la tâche planifiée (publication programmée, reconstruction
+// nocturne). Les réglages publics viennent de config/ (intégrés au déploiement), les secrets de Cloudflare.
 import newsletterConfig from '../config/newsletter.json' with { type: 'json' };
 import servicesConfig from '../config/services.json' with { type: 'json' };
 import siteConfig from '../config/site.json' with { type: 'json' };
@@ -8,8 +8,8 @@ import { MemoryMailer, type Mailer } from '../src/lib/contact/mailer.ts';
 import { MemoryProvider } from '../src/lib/newsletter/memory.ts';
 import type { NewsletterProvider } from '../src/lib/newsletter/provider.ts';
 import { BrevoMailer, BrevoProvider } from '../src/lib/providers/brevo.ts';
-import { handleContact } from './contact.ts';
-import { fail, trialMode, type Env } from './http.ts';
+import { contactRecipient, handleContact } from './contact.ts';
+import { fail, ok, saltOf, trialMode, type Env } from './http.ts';
 import { handleNewsletter } from './newsletter.ts';
 import { runScheduled, type ScheduledEvent } from './scheduled.ts';
 
@@ -40,9 +40,21 @@ export function contactMailer(env: Env): Mailer | undefined {
   return new BrevoMailer(env.NEWSLETTER_API_KEY, { email: contact.senderEmail, name: contact.senderName || siteConfig.name });
 }
 
+// GET /api/sante, pour la sonde de disponibilité (guide de l'auteur, section 41) : 200 si le Worker peut recevoir
+// les formulaires actifs (fournisseur, service d'envoi, adresse de réception et sel configurés), 503 sinon. Aucun
+// appel aux fournisseurs : la route ne coûte rien et ne révèle rien de plus que les formulaires eux-mêmes.
+function health(request: Request, env: Env): Response {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return fail(405, 'methode', { allow: 'GET, HEAD' });
+  const contact = (servicesConfig.contact as ContactSettings).enabled;
+  const ready = Boolean(saltOf(env) && newsletterProvider(env, request) && (!contact || (contactMailer(env) && contactRecipient(env))));
+  const response = ready ? ok() : fail(503, 'indisponible');
+  return request.method === 'HEAD' ? new Response(null, response) : response;
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
+    if (pathname === '/api/sante' || pathname === '/api/sante/') return health(request, env);
     if (pathname === '/api/newsletter' || pathname === '/api/newsletter/') return handleNewsletter(request, env, newsletterProvider(env, request));
     if (pathname === '/api/contact' || pathname === '/api/contact/') return handleContact(request, env, contactMailer(env));
     if (pathname.startsWith('/api/')) return fail(404, 'introuvable');
