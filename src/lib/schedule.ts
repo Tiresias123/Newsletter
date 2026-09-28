@@ -4,7 +4,7 @@
 // instants vient de passer ; le build suivant rend le contenu visible, puisque sa date est échue.
 import type { Graph } from './content/graph.ts';
 import { COLLECTION_NAMES } from './content/collections.ts';
-import type { Schedule } from './schedule-rules.ts';
+import { COMMIT_SHA, type Schedule } from './schedule-rules.ts';
 
 // Règles partagées avec le Worker : format du fichier et décision de relance.
 export { isRebuildDue, parseSchedule, RETRY_WINDOW_MS, SCHEDULE_PATH, type Schedule } from './schedule-rules.ts';
@@ -19,6 +19,8 @@ export function scheduledInstants(graph: Graph): Date[] {
   return [...new Set(times)].sort((a, b) => a - b).map((time) => new Date(time));
 }
 
-export function buildSchedule(graph: Graph): Schedule {
-  return { version: 1, builtAt: graph.ctx.now.toISOString(), publications: scheduledInstants(graph).map((d) => d.toISOString()) };
+// `commit` : commit construit (WORKERS_CI_COMMIT_SHA dans Workers Builds), que la surveillance compare à main.
+export function buildSchedule(graph: Graph, commit?: string): Schedule {
+  const sha = commit?.toLowerCase();
+  return { version: 1, builtAt: graph.ctx.now.toISOString(), publications: scheduledInstants(graph).map((d) => d.toISOString()), ...(sha && COMMIT_SHA.test(sha) ? { commit: sha } : {}) };
 }

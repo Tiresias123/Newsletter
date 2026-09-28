@@ -7,15 +7,18 @@ export const SCHEDULE_PATH = '/schedule.json';
 // planifiée) : au-delà, la reconstruction nocturne prend le relais, sans épuiser le quota de builds.
 export const RETRY_WINDOW_MS = 2 * 60 * 60 * 1000;
 
-export type Schedule = { version: 1; builtAt: string; publications: string[] };
+// `commit` : commit construit, quand le build le connaît (Workers Builds), pour la surveillance du site en ligne.
+export type Schedule = { version: 1; builtAt: string; publications: string[]; commit?: string };
+
+export const COMMIT_SHA = /^[0-9a-f]{40}$/;
 
 // Lecture défensive du fichier publié : un fichier absent ou mal formé ne relance jamais de build.
 export function parseSchedule(value: unknown): Schedule | undefined {
   if (typeof value !== 'object' || value === null) return undefined;
-  const { version, builtAt, publications } = value as Record<string, unknown>;
+  const { version, builtAt, publications, commit } = value as Record<string, unknown>;
   if (version !== 1 || typeof builtAt !== 'string' || Number.isNaN(Date.parse(builtAt))) return undefined;
   if (!Array.isArray(publications) || !publications.every((p) => typeof p === 'string' && !Number.isNaN(Date.parse(p)))) return undefined;
-  return { version, builtAt, publications };
+  return { version, builtAt, publications, ...(typeof commit === 'string' && COMMIT_SHA.test(commit) ? { commit } : {}) };
 }
 
 // Décision de la tâche planifiée : une publication est échue depuis le dernier build, dans la fenêtre de relance.

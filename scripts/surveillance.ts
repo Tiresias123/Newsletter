@@ -3,7 +3,7 @@
 // Sans adresse réelle (site pas encore en ligne), rien à surveiller.
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { deploymentStatus } from '../src/lib/check/deployment.ts';
+import { deploymentStatus, type LastChange } from '../src/lib/check/deployment.ts';
 import { PLACEHOLDER_URL } from '../src/lib/check/index.ts';
 import { getConfig } from '../src/lib/config/index.ts';
 import { parseSchedule, SCHEDULE_PATH } from '../src/lib/schedule-rules.ts';
@@ -24,19 +24,33 @@ async function online() {
   }
 }
 
-function lastCommit(): Date | undefined {
+const git = (...args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+
+// Dernier commit de main qui change le site : la documentation et les tâches GitHub ne déclenchent pas de build.
+// --first-parent : une fusion porte sa propre date, pas celle des commits de la branche fusionnée.
+function lastChange(built: string | undefined): LastChange | undefined {
   try {
-    // Dernier envoi qui change le site : la documentation et les tâches GitHub ne déclenchent pas de build.
-    const iso = execFileSync('git', ['log', '-1', '--format=%cI', '--', '.', ':(exclude)docs', ':(exclude).github'], { cwd: root, encoding: 'utf8' }).trim();
-    return iso ? new Date(iso) : undefined;
+    const [sha = '', iso = ''] = git('log', '-1', '--first-parent', '--format=%H %cI', '--', '.', ':(exclude)docs', ':(exclude).github').split(' ');
+    return sha && iso ? { date: new Date(iso), online: built ? contains(built, sha) : undefined } : undefined;
   } catch {
     return undefined;
   }
 }
 
-const status = deploymentStatus(await online(), lastCommit(), new Date());
+// Le commit construit contient-il `sha` ? Inconnu quand il manque à l'historique récupéré par la tâche.
+function contains(built: string, sha: string): boolean | undefined {
+  try {
+    git('merge-base', '--is-ancestor', sha, built);
+    return true;
+  } catch (error) {
+    return (error as { status?: number }).status === 1 ? false : undefined;
+  }
+}
+
+const schedule = await online();
+const status = deploymentStatus(schedule, lastChange(schedule?.commit), new Date());
 if (status.ok) {
-  console.log(`Surveillance : site en ligne à jour (build du ${status.builtAt.toISOString()}).`);
+  console.log(`Surveillance : site en ligne à jour (build du ${status.builtAt.toISOString()}${schedule?.commit ? `, commit ${schedule.commit.slice(0, 7)}` : ''}).`);
 } else {
   console.error(`Surveillance : ${status.problem}.`);
   process.exitCode = 1;
