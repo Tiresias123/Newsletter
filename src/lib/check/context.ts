@@ -4,6 +4,10 @@ import type { Entry, Graph, Severity } from '../content/graph.ts';
 
 export type CheckMode = 'production' | 'apercu';
 
+// Tant que l'adresse du site vaut celle d'exemple, le site n'est pas en ligne : les marqueurs de la
+// configuration sont signalés sans bloquer. Ils bloquent dès que l'adresse réelle est saisie.
+export const PLACEHOLDER_URL = 'https://example.com';
+
 // Ajoute un problème : fichier, champ (chemin de données ou texte libre comme « ligne 12 »), message, règle, gravité.
 export type Add = (file: string, where: PropertyKey[] | string, message: string, rule: string, severity: Severity) => void;
 

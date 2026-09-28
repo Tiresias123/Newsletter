@@ -9,12 +9,13 @@ import { describePath } from '../errors.ts';
 import { formatNumber } from '../format.ts';
 import { t } from '../i18n.ts';
 import { contrastChecks } from '../theme/tokens.ts';
-import type { Add, CheckMode, Context } from './context.ts';
+import { PLACEHOLDER_URL, type Add, type CheckMode, type Context } from './context.ts';
 import { checkExternalLinks } from './external.ts';
 import { checkFreshness, lastCommitDates } from './freshness.ts';
 import { loadContent } from './load.ts';
 import { findMarkers, markersIn } from './markers.ts';
 import { checkArchives, checkBodiesAndLinks, checkImages } from './references.ts';
+import { checkServices } from './services.ts';
 import { checkVeille } from './veille.ts';
 import { collectRedirects, resolveRedirects, siteUrls } from '../redirects.ts';
 
@@ -29,9 +30,7 @@ export type CheckOptions = {
 };
 export type CheckResult = { mode: CheckMode; generatedAt: Date; timezone: string; problems: GraphProblem[] };
 
-// Tant que l'adresse du site vaut celle d'exemple, le site n'est pas en ligne : les marqueurs de la
-// configuration sont signalés sans bloquer. Ils bloquent dès que l'adresse réelle est saisie.
-export const PLACEHOLDER_URL = 'https://example.com';
+export { PLACEHOLDER_URL } from './context.ts';
 // Parties de la configuration affichées sur le site (les notes de la veille, internes, n'en font pas partie).
 const DISPLAYED_CONFIG = ['site', 'navigation', 'homepage', 'newsletter', 'legal', 'messages'] as const;
 
@@ -73,6 +72,7 @@ export async function runCheck({ root, mode = 'production', now = new Date(), ex
   checkArchives(ctx);
   checkFreshness(graph, entries, lastCommitDates(root), add);
   checkLaunch(ctx);
+  checkServices(ctx);
   checkVeille(ctx, now);
   checkRedirects(ctx);
   if (externalLinks) {
