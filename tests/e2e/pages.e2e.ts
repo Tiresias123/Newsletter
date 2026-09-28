@@ -33,6 +33,8 @@ for (const path of PAGES) {
     const errors = watchErrors(page);
     const response = await page.goto(path);
     expect(response?.status()).toBe(200);
+    // CSP du site appliquée (dist/_headers) : sans elle, l'absence de violation ne prouverait rien.
+    expect(response?.headers()['content-security-policy']).toContain("script-src 'self'");
     await expect(page.locator('main')).toHaveCount(1);
     await expect(page.locator('h1').first()).toBeAttached();
     expect(await horizontalOverflow(page)).toBeLessThanOrEqual(0);
