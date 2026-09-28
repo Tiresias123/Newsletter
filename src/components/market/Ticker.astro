@@ -1,0 +1,34 @@
+---
+// Bandeau des cours au-dessus de l'en-tête (DA section 8.3) : valeurs et heure du dernier build, sans
+// rafraîchissement ni défilement automatique. Absent du HTML s'il n'y a pas de données.
+import { getConfig } from '../../lib/config/index.ts';
+import { formatDateTime, formatMoney } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import { getMarket } from '../../lib/market/index.ts';
+import QuoteChange from './QuoteChange.astro';
+
+const { ticker, site } = getConfig();
+const market = ticker.enabled ? await getMarket() : undefined;
+---
+
+{
+  market && (
+    <aside aria-label={t('market.tickerLabel')} class="border-b border-subtle bg-muted text-sm print:hidden">
+      <div class="page-container flex min-h-9 items-center gap-6 overflow-x-auto whitespace-nowrap py-1.5">
+        <ul class="flex items-center gap-6">
+          {market.quotes.map((quote) => (
+            <li class="flex items-center gap-2">
+              <abbr title={quote.label} class="font-semibold no-underline">{quote.symbol}</abbr>
+              <span class="tabular-nums">{formatMoney(quote.price, { decimals: quote.price >= 100 ? 0 : 2 })}</span>
+              <QuoteChange change={quote.change24h} />
+            </li>
+          ))}
+        </ul>
+        <p class="ml-auto text-meta">
+          <a href="https://www.coingecko.com/" rel="noopener" class="hover:underline">{t('market.source')}</a>,{' '}
+          {formatDateTime(market.fetchedAt, t('market.time', { time: '{time}' }), site.timezone)}
+        </p>
+      </div>
+    </aside>
+  )
+}

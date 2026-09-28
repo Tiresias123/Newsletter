@@ -1,6 +1,6 @@
 ---
 // Accueil composé depuis config/homepage.json : chaque section active, dans l'ordre, vers son composant.
-// Les sections de marché (market-brief, trending-assets) n'affichent rien tant que leurs données n'existent pas (phase 4).
+// Les sections de marché (market-brief, trending-assets) n'affichent rien sans données de CoinGecko.
 import type { Graph } from '../../lib/content/graph.ts';
 import {
   contentBlockItems,
@@ -18,6 +18,7 @@ import DossiersStrip from './DossiersStrip.astro';
 import Essentials from './Essentials.astro';
 import HeroSelection from './HeroSelection.astro';
 import LexiqueSpotlight from './LexiqueSpotlight.astro';
+import MarketSection from './MarketSection.astro';
 import MostRead from './MostRead.astro';
 import NewsletterCta from './NewsletterCta.astro';
 import PartnerBlock from './PartnerBlock.astro';
@@ -62,6 +63,10 @@ const cta = (value: { label: string; url: string }) => (value.label && value.url
         return <PartnerBlock id={id} partnerId={section.partnerId} />;
       case 'custom-html':
         return <CustomText {...common} content={section.content} />;
+      case 'market-brief':
+        return <MarketSection {...common} variant="brief" />;
+      case 'trending-assets':
+        return <MarketSection {...common} variant="grid" count={section.count} />;
       default:
         return null;
     }

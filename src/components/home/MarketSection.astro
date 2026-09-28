@@ -1,0 +1,38 @@
+---
+// Sections de marché de l'accueil : « market-brief » (deux premiers actifs, cartes larges) et « trending-assets »
+// (grille compacte). Rien n'est affiché sans données (ARCHITECTURE 12.3).
+import { getConfig } from '../../lib/config/index.ts';
+import { formatDateTime } from '../../lib/format.ts';
+import { t } from '../../lib/i18n.ts';
+import { getMarket } from '../../lib/market/index.ts';
+import MarketCard from '../market/MarketCard.astro';
+import HomeSection from './HomeSection.astro';
+
+interface Props {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  variant: 'brief' | 'grid';
+  count?: number;
+}
+
+const { id, title, subtitle, variant, count = 6 } = Astro.props;
+const market = await getMarket();
+const quotes = market ? market.quotes.slice(0, variant === 'brief' ? 2 : count) : [];
+---
+
+{
+  market && quotes.length > 0 && (
+    <HomeSection id={id} title={title} subtitle={subtitle}>
+      <div class:list={['grid gap-4', variant === 'brief' ? 'sm:grid-cols-2' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-6']}>
+        {quotes.map((quote) => (
+          <MarketCard quote={quote} size={variant === 'brief' ? 'large' : 'compact'} />
+        ))}
+      </div>
+      <p class="mt-3 text-sm text-meta">
+        <a href="https://www.coingecko.com/" rel="noopener" class="hover:underline">{t('market.source')}</a>,{' '}
+        {formatDateTime(market.fetchedAt, t('market.asOf', { date: '{date}', time: '{time}' }), getConfig().site.timezone)}
+      </p>
+    </HomeSection>
+  )
+}

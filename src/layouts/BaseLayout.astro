@@ -11,6 +11,7 @@ import PreviewBanner from '../components/layout/PreviewBanner.astro';
 import SearchModal from '../components/search/SearchModal.astro';
 import SeoHead from '../components/layout/SeoHead.astro';
 import SkipLink from '../components/layout/SkipLink.astro';
+import Ticker from '../components/market/Ticker.astro';
 import { getConfig } from '../lib/config/index.ts';
 import { relativeDateMessages } from '../lib/i18n.ts';
 import type { SeoProps } from '../lib/seo/meta.ts';
@@ -51,6 +52,7 @@ const bodyFont = FONT_VARIABLES[fonts.body] ?? '--font-inter';
   <body class="min-h-dvh bg-bg text-text antialiased">
     <SkipLink />
     <PreviewBanner />
+    <Ticker />
     <Header />
     <AnnouncementBar />
     <main id="contenu" tabindex="-1" class="outline-none">
