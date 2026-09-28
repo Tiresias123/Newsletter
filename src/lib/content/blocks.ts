@@ -1,6 +1,6 @@
 // Contrat des blocs utilisables dans le corps MDX (brief 6.14 et 6.15, ARCHITECTURE 7.15) : nom du composant,
 // propriétés attendues, valeurs permises. Le script check refuse tout écart ; les composants
-// (src/components/mdx/) et l'éditeur (phase 3) suivent ce même contrat.
+// (src/components/mdx/) et l'éditeur (src/lib/editor/components.ts) suivent ce même contrat.
 
 export const CALLOUT_VARIANTS = [
   'important',

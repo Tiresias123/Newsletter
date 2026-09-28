@@ -26,22 +26,25 @@ export type CollectionDefinition = {
   directory: string;
   extension: 'mdx' | 'json';
   schema: (ctx: SchemaContext) => z.ZodType;
+  // Dossier des images de la collection, sous content/images/ : une entrée y range les siennes dans
+  // <dossier>/<identifiant>/ (disposition qu'impose l'éditeur, ARCHITECTURE section 4.3).
+  images?: string;
 };
 
 export const COLLECTIONS = {
-  articles: { directory: 'content/articles', extension: 'mdx', schema: articleSchema },
-  dossiers: { directory: 'content/dossiers', extension: 'mdx', schema: dossierSchema },
-  guides: { directory: 'content/guides', extension: 'mdx', schema: guideSchema },
-  juridictions: { directory: 'content/juridictions', extension: 'mdx', schema: jurisdictionSchema },
-  organismes: { directory: 'content/organismes', extension: 'mdx', schema: organismeSchema },
-  textes: { directory: 'content/textes', extension: 'mdx', schema: texteSchema },
-  traitements: { directory: 'content/traitements-fiscaux', extension: 'mdx', schema: traitementSchema },
-  lexique: { directory: 'content/lexique', extension: 'mdx', schema: lexiqueSchema },
-  newsletters: { directory: 'content/newsletters', extension: 'mdx', schema: newsletterSchema },
-  pages: { directory: 'content/pages', extension: 'mdx', schema: pageSchema },
+  articles: { directory: 'content/articles', extension: 'mdx', schema: articleSchema, images: 'articles' },
+  dossiers: { directory: 'content/dossiers', extension: 'mdx', schema: dossierSchema, images: 'dossiers' },
+  guides: { directory: 'content/guides', extension: 'mdx', schema: guideSchema, images: 'guides' },
+  juridictions: { directory: 'content/juridictions', extension: 'mdx', schema: jurisdictionSchema, images: 'juridictions' },
+  organismes: { directory: 'content/organismes', extension: 'mdx', schema: organismeSchema, images: 'organismes' },
+  textes: { directory: 'content/textes', extension: 'mdx', schema: texteSchema, images: 'textes' },
+  traitements: { directory: 'content/traitements-fiscaux', extension: 'mdx', schema: traitementSchema, images: 'traitements-fiscaux' },
+  lexique: { directory: 'content/lexique', extension: 'mdx', schema: lexiqueSchema, images: 'lexique' },
+  newsletters: { directory: 'content/newsletters', extension: 'mdx', schema: newsletterSchema, images: 'newsletters' },
+  pages: { directory: 'content/pages', extension: 'mdx', schema: pageSchema, images: 'pages' },
   sources: { directory: 'content/sources', extension: 'json', schema: sourceSchema },
   agenda: { directory: 'content/agenda', extension: 'json', schema: agendaSchema },
-  auteurs: { directory: 'content/auteurs', extension: 'json', schema: auteurSchema },
+  auteurs: { directory: 'content/auteurs', extension: 'json', schema: auteurSchema, images: 'auteurs' },
   categories: { directory: 'content/taxonomies/categories', extension: 'json', schema: categorySchema },
   themes: { directory: 'content/taxonomies/themes', extension: 'json', schema: themeSchema },
   formats: { directory: 'content/taxonomies/formats', extension: 'json', schema: formatSchema },

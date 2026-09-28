@@ -32,6 +32,13 @@ export function tagSlug(tag: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+// Identifiant tiré d'un titre (éditeur, npm run new:article) : sans marqueurs ni accents, « & » dit « et »,
+// 80 caractères au plus, coupé entre deux mots.
+export function slugFromTitle(title: string): string {
+  const slug = tagSlug(title.replace(/\[[^\]]*\]/g, ' ').replace(/&/g, ' et '));
+  return slug.length <= 80 ? slug : slug.slice(0, 81).replace(/-[^-]*$/, '');
+}
+
 // Adresse de la page d'une entrée, pour les collections qui en ont une.
 export function entryUrl(collection: CollectionName, id: string): string | undefined {
   switch (collection) {
