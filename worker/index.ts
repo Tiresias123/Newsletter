@@ -12,6 +12,7 @@ import { contactRecipient, handleContact } from './contact.ts';
 import { fail, ok, saltOf, trialMode, type Env } from './http.ts';
 import { handleNewsletter } from './newsletter.ts';
 import { runScheduled, type ScheduledEvent } from './scheduled.ts';
+import { turnstileReady } from './security.ts';
 
 type NewsletterSettings = { provider: string; doubleOptInTemplateId?: number; confirmationUrl?: string; lists: Array<{ id: string; providerId?: number }> };
 type ContactSettings = { enabled: boolean; senderEmail?: string; senderName?: string };
@@ -41,12 +42,14 @@ export function contactMailer(env: Env): Mailer | undefined {
 }
 
 // GET /api/sante, pour la sonde de disponibilité (guide de l'auteur, section 41) : 200 si le Worker peut recevoir
-// les formulaires actifs (fournisseur, service d'envoi, adresse de réception et sel configurés), 503 sinon. Aucun
-// appel aux fournisseurs : la route ne coûte rien et ne révèle rien de plus que les formulaires eux-mêmes.
+// les formulaires actifs (fournisseur, service d'envoi, adresse de réception, sel et clé secrète de Turnstile en
+// place), 503 sinon. Présence des réglages seulement, pas leur validité : aucun appel aux fournisseurs, la route
+// ne coûte rien et ne révèle rien de plus que les formulaires eux-mêmes.
 function health(request: Request, env: Env): Response {
   if (request.method !== 'GET' && request.method !== 'HEAD') return fail(405, 'methode', { allow: 'GET, HEAD' });
   const contact = (servicesConfig.contact as ContactSettings).enabled;
-  const ready = Boolean(saltOf(env) && newsletterProvider(env, request) && (!contact || (contactMailer(env) && contactRecipient(env))));
+  const forms = saltOf(env) && turnstileReady(env) && newsletterProvider(env, request);
+  const ready = Boolean(forms && (!contact || (contactMailer(env) && contactRecipient(env))));
   const response = ready ? ok() : fail(503, 'indisponible');
   return request.method === 'HEAD' ? new Response(null, response) : response;
 }

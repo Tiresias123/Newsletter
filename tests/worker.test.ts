@@ -10,7 +10,7 @@ import type { Env, RateLimiter } from '../worker/http.ts';
 import worker from '../worker/index.ts';
 import { handleNewsletter } from '../worker/newsletter.ts';
 import { isNightly, runScheduled } from '../worker/scheduled.ts';
-import { fingerprint, ipPrefix, SITEVERIFY_URL, verifyTurnstile } from '../worker/security.ts';
+import { fingerprint, ipPrefix, SITEVERIFY_URL, turnstileReady, verifyTurnstile } from '../worker/security.ts';
 import { email, oneOf, optional, text, validate } from '../worker/validate.ts';
 
 const ORIGIN = 'https://site.test';
@@ -346,6 +346,15 @@ describe('routage et tâche planifiée', () => {
     const post = await health('POST', baseEnv());
     expect(post.status).toBe(405);
     expect(post.headers.get('allow')).toBe('GET, HEAD');
+  });
+
+  it('ne tient la clé secrète de Turnstile pour prête que vraie, ou en mode d’essai', () => {
+    const TEST_KEY = '1x0000000000000000000000000000000AA';
+    expect(turnstileReady({})).toBe(false);
+    expect(turnstileReady({ TURNSTILE_SECRET_KEY: TEST_KEY })).toBe(false);
+    expect(turnstileReady({ TURNSTILE_SECRET_KEY: '0x4AAAAAAAvraie' })).toBe(true);
+    expect(turnstileReady({ MEMORY_SERVICES: 'true' })).toBe(true);
+    expect(turnstileReady({ MEMORY_SERVICES: 'true', TURNSTILE_SECRET_KEY: TEST_KEY })).toBe(true);
   });
 
   it('relance un build quand une publication programmée vient d’échoir, et chaque nuit à 5 h 07 UTC', async () => {

@@ -22,6 +22,11 @@ async function siteverify(secret: string, token: string, ip: string, attempt: st
   }
 }
 
+// Clé secrète en place : en mode d'essai, toujours (réponse simulée); sinon, une vraie clé, ni absente ni
+// d'essai. Sa validité ne se voit qu'à un vrai envoi (clé révoquée après une rotation, par exemple).
+export const turnstileReady = (env: Pick<Env, 'TURNSTILE_SECRET_KEY' | 'MEMORY_SERVICES'>): boolean =>
+  trialMode(env) || (Boolean(env.TURNSTILE_SECRET_KEY) && !TEST_SECRET.test(env.TURNSTILE_SECRET_KEY ?? ''));
+
 // Jeton valable 300 secondes et une seule fois : la vérification se fait à chaque envoi, côté serveur. Une
 // seconde tentative, avec la même clé d'idempotence, si Cloudflare ne répond pas ou signale une erreur interne.
 export async function verifyTurnstile(env: Pick<Env, 'TURNSTILE_SECRET_KEY' | 'MEMORY_SERVICES'>, token: string, expected: { ip: string; hostname: string; action: string }): Promise<boolean> {
