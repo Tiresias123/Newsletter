@@ -7,8 +7,9 @@ const require = createRequire(import.meta.url);
 const AXE = readFileSync(require.resolve('axe-core/axe.min.js'), 'utf8');
 
 // Script servi à la place de celui de Turnstile, à la même adresse (la CSP du site l'autorise) : il rend un
-// jeton factice, comme la clé d'essai de Cloudflare, et en donne un nouveau après chaque réinitialisation.
-const FAKE_TURNSTILE = `
+// jeton factice, comme la clé d'essai de Cloudflare, en donne un nouveau après chaque réinitialisation, puis
+// appelle le rappel que nomme le paramètre onload, comme le vrai script.
+const fakeTurnstileScript = (onload: string) => `
   (() => {
     const widgets = new Map();
     const issue = (id) => setTimeout(() => widgets.get(id)?.callback?.('XXXX.DUMMY.TOKEN.XXXX'), 50);
@@ -18,12 +19,19 @@ const FAKE_TURNSTILE = `
       remove(id) { widgets.delete(id); },
       getResponse() { return 'XXXX.DUMMY.TOKEN.XXXX'; },
     };
-    window.onTurnstileReady?.();
+    window[${JSON.stringify(onload)}]?.();
   })();
 `;
 
+// Seule l'adresse documentée du script (chargement explicite, rappel nommé) reçoit le double : toute autre
+// requête vers Cloudflare échoue, et avec elle le parcours (adresse mal écrite, paramètre oublié).
 export async function fakeTurnstile(page: Page): Promise<void> {
-  await page.route('https://challenges.cloudflare.com/turnstile/**', (route) => route.fulfill({ contentType: 'text/javascript', body: FAKE_TURNSTILE }));
+  await page.route('https://challenges.cloudflare.com/**', (route) => {
+    const address = new URL(route.request().url());
+    const onload = address.searchParams.get('onload');
+    if (address.pathname !== '/turnstile/v0/api.js' || address.searchParams.get('render') !== 'explicit' || !onload) return route.abort();
+    return route.fulfill({ contentType: 'text/javascript', body: fakeTurnstileScript(onload) });
+  });
 }
 
 // Erreurs de la page : exceptions, messages d'erreur de la console (dont les violations de la CSP), ressources

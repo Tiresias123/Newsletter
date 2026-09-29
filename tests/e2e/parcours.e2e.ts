@@ -1,16 +1,26 @@
 // Parcours principaux : inscription à l'infolettre (Worker en mode d'essai, faux Turnstile), recherche, menu
 // mobile, bascule du thème, route du Worker. Textes lus dans la configuration, comme sur le site.
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import newsletter from '../../config/newsletter.json' with { type: 'json' };
 import { frenchTypography } from '../../src/lib/typo.ts';
 import { axeViolations, fakeTurnstile, watchErrors } from './helpers.ts';
+import { SEARCH_TERM } from './site.ts';
+
+// Adresse IP et adresse courriel propres à chaque passage : la limitation de débit du Worker d'essai (5 envois par
+// minute et par clé) ne joue pas entre des passages rapprochés.
+async function freshSender(page: Page): Promise<string> {
+  const n = 1 + Math.floor(Math.random() * 254);
+  await page.route('**/api/newsletter', (route) => route.continue({ headers: { ...route.request().headers(), 'cf-connecting-ip': `198.51.100.${n}` } }));
+  return `lecteur-${n}-${Date.now()}@exemple.ca`;
+}
 
 test('inscription à l’infolettre depuis sa page : succès en mode d’essai', async ({ page }) => {
   const errors = watchErrors(page);
   await fakeTurnstile(page);
+  const email = await freshSender(page);
   await page.goto('/newsletter/');
   const form = page.locator('main form[action="/api/newsletter"]').first();
-  await form.getByLabel(newsletter.texts.emailLabel).fill('lecteur@exemple.ca');
+  await form.getByLabel(newsletter.texts.emailLabel).fill(email);
   await form.getByRole('checkbox').check();
   const sent = page.waitForResponse((response) => response.url().endsWith('/api/newsletter'));
   await form.getByRole('button', { name: newsletter.texts.button }).click();
@@ -25,13 +35,14 @@ test('inscription refusée sans consentement : le navigateur bloque l’envoi', 
   await page.goto('/newsletter/');
   const form = page.locator('main form[action="/api/newsletter"]').first();
   await form.getByLabel(newsletter.texts.emailLabel).fill('lecteur@exemple.ca');
-  let posted = false;
-  page.on('request', (request) => {
-    if (request.url().endsWith('/api/newsletter')) posted = true;
-  });
+  // Un envoi part après la préparation du jeton : on l'attend deux secondes.
+  const posted = page.waitForRequest((request) => request.url().endsWith('/api/newsletter'), { timeout: 2000 }).then(
+    () => true,
+    () => false,
+  );
   await form.getByRole('button', { name: newsletter.texts.button }).click();
   await expect(form.getByRole('checkbox')).toHaveJSProperty('validity.valid', false);
-  expect(posted).toBe(false);
+  expect(await posted).toBe(false);
 });
 
 test('le Worker répond aux routes /api/ : méthode refusée, route inconnue, sonde de disponibilité', async ({ request }) => {
@@ -44,8 +55,9 @@ test('le Worker répond aux routes /api/ : méthode refusée, route inconnue, so
 });
 
 test('recherche : des résultats pour un terme du site', async ({ page }) => {
+  test.skip(!SEARCH_TERM, 'aucun article à chercher');
   const errors = watchErrors(page);
-  await page.goto('/recherche/?q=stablecoins');
+  await page.goto(`/recherche/?q=${encodeURIComponent(SEARCH_TERM)}`);
   await expect(page.locator('[data-search-results] a').first()).toBeVisible();
   expect(errors).toEqual([]);
 });

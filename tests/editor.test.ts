@@ -62,10 +62,13 @@ describe.each(singletonFiles)('$path', ({ name, path }) => {
   });
 });
 
-describe("aller-retour qui changerait plus que l'écriture (refusé par npm run content:format)", () => {
-  const path = 'content/articles/exemple-plateformes-ce-qui-change.mdx';
-  const slug = 'exemple-plateformes-ce-qui-change';
-  const text = readFileSync(path, 'utf8');
+// Articles munis d'une couverture rangée dans leur dossier : l'essai porte sur le premier, sans dépendre d'un
+// contenu particulier, que l'auteur peut renommer ou supprimer.
+const covered = files.filter((f) => f.name === 'articles' && existsSync(`content/images/articles/${f.slug}/cover/src.webp`) && readFileSync(f.path, 'utf8').includes(`${f.slug}/cover/src.webp`));
+
+describe.skipIf(covered.length === 0)("aller-retour qui changerait plus que l'écriture (refusé par npm run content:format)", () => {
+  const { path, slug } = covered[0] ?? { path: '', slug: '' };
+  const text = path ? readFileSync(path, 'utf8') : '';
   const changes = async (edit: (text: string) => string, files = entryFilesOnDisk('articles', slug)) => {
     const changed = edit(text);
     files.set(path, new TextEncoder().encode(changed));
@@ -79,7 +82,8 @@ describe("aller-retour qui changerait plus que l'écriture (refusé par npm run 
     files.delete(cover);
     files.set(`content/images/articles/${slug}/couverture.webp`, bytes);
     expect(await changes((t) => t.replace('cover/src.webp', 'couverture.webp'), files)).not.toEqual([]);
-    expect(await changes((t) => t.replace(`${slug}/cover/src.webp`, 'exemple-avis-21-332-synthese/cover/src.webp'))).not.toEqual([]);
+    const other = covered[1];
+    if (other) expect(await changes((t) => t.replace(`${slug}/cover/src.webp`, `${other.slug}/cover/src.webp`))).not.toEqual([]);
   });
 
   it('refuse les notes collées et les notes de bas de page Markdown', async () => {
