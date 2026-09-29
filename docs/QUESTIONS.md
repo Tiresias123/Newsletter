@@ -269,9 +269,9 @@ Le site n'affiche pas de bandeau, puisque la mesure d'audience ne dépose aucun 
 
 ### C1. Le dépôt est public **[urgent, irréversible pour ce qui a déjà été lu]**
 
-Constaté le 28 septembre 2026 : le dépôt `Tiresias123/Newsletter` est public, alors que la question 14 retenait un dépôt privé (il l'était le 25 septembre). Tout l'historique est lisible par n'importe qui : brouillons, documents de travail, brief, PDF de référence de `docs/references/`; une fois la tâche hebdomadaire active, les rapports « À vérifier » le seraient aussi. GitHub Pages, activé le même jour, est depuis désactivé. Ce qui a pu être lu ou copié pendant que le dépôt était public ne se rappelle pas.
+Constaté le 28 septembre 2026 : le dépôt `Tiresias123/Newsletter` est public, alors que la question 14 retenait un dépôt privé (il l'était le 25 septembre). Tout l'historique est lisible par n'importe qui : brouillons, documents de travail, brief, PDF de référence de `docs/references/`; une fois la tâche hebdomadaire active, les rapports « À vérifier » le seraient aussi. GitHub Pages, activé le même jour, est depuis désactivé. Ce qui a pu être lu ou copié pendant que le dépôt était public ne peut plus être retiré.
 
-**Recommandation** : le repasser en privé dès maintenant : « Settings », « General », « Danger Zone », « Change visibility », « Make private » (guide de l'auteur, section 41, étape 1). Rien dans le site n'en dépend; seules comptent alors les minutes de GitHub Actions (2 000 gratuites par mois, environ 250 à 500 consommées). **Privé?**
+**Recommandation** : le repasser en privé dès maintenant : « Settings », « General », « Danger Zone », « Change visibility », « Make private » (guide de l'auteur, section 41, étape 1). Rien dans le site n'en dépend. En contrepartie, sur l'offre gratuite de GitHub, un dépôt privé compte ses minutes de GitHub Actions (2 000 par mois, environ 300 à 600 consommées), et perd l'analyse des secrets et l'application des règles de protection de branche, réservées aux offres payantes. **Privé?**
 
 ### C2. Aperçus de branche publics
 
@@ -281,7 +281,7 @@ Chaque envoi sur une autre branche que `main` produit un aperçu en ligne, broui
 
 ### C3. Sonde de disponibilité : UptimeRobot
 
-Forfait gratuit, sans carte, usage commercial admis depuis 2026 (conditions lues par extraits, à relire à l'inscription) : deux sondes toutes les 5 minutes, sur l'accueil et sur la nouvelle route `/api/sante`, qui dit si les formulaires peuvent fonctionner. Pas d'alerte d'expiration du certificat, que Cloudflare renouvelle seul. Plus complet mais plus technique : Grafana Cloud, gratuit aussi (ARCHITECTURE, section 15.6).
+Forfait gratuit, sans carte, usage commercial admis depuis 2026 (conditions lues par extraits, à relire à l'inscription) : deux sondes toutes les 5 minutes, sur l'accueil et sur la nouvelle route `/api/sante`, qui dit si les réglages des formulaires sont en place (secrets compris, clé secrète de Turnstile ni absente ni d'essai). Pas d'alerte d'expiration du certificat, que Cloudflare renouvelle seul. Plus complet mais plus technique : Grafana Cloud, gratuit aussi (ARCHITECTURE, section 15.6).
 
 **Recommandation** : UptimeRobot. **Oui?**
 

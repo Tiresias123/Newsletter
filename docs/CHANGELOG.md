@@ -6,11 +6,12 @@ Le site a été construit en six phases, du 25 au 28 septembre 2026, d'après le
 
 ### Ajouts
 
-- Parcours de fumée Playwright sur 22 pages principales et la page 404, sur ordinateur et sur mobile, en clair et en sombre : erreurs, défilement horizontal, CSP, accessibilité WCAG 2.2 AA (axe-core). Parcours de l'inscription à l'infolettre, de la recherche, des menus et du thème.
+- Parcours de fumée Playwright sur une trentaine de pages tirées du contenu et la page 404, sur ordinateur et sur mobile, en clair et en sombre : erreurs, défilement horizontal, CSP, accessibilité WCAG 2.2 AA (axe-core). Parcours de l'inscription à l'infolettre, de la recherche, des menus et du thème.
 - Intégration continue GitHub Actions (tâche `ci`) : types, tests, format de l'éditeur, construction, taille du Worker, parcours de fumée.
 - `npm run trial` : le site et ses formulaires en local, en mode d'essai, sans secret. `npm run test:e2e`, `npm run worker:size`.
-- Route `/api/sante` du Worker, pour la sonde de disponibilité.
-- Rapport « À vérifier » : domaine du site absent de `wrangler.jsonc`, adresse `workers.dev` restée ouverte, `wrangler.jsonc` illisible.
+- Route `/api/sante` du Worker, pour la sonde de disponibilité : présence des réglages des formulaires, clé secrète de Turnstile comprise.
+- Adresses `workers.dev` (aperçus, adresse de chaque version déployée) écartées des moteurs de recherche.
+- Rapport « À vérifier » : domaine du site non rattaché dans `wrangler.jsonc`, adresse `workers.dev` restée ouverte, `wrangler.jsonc` illisible.
 - Guide de l'auteur : mise en ligne pas à pas (section 41) et vérifications automatiques (section 42). ARCHITECTURE : intégration continue (section 15.7), sonde de disponibilité (section 15.6), audit de performance et d'accessibilité (section 27).
 
 ### Changements
@@ -22,6 +23,7 @@ Le site a été construit en six phases, du 25 au 28 septembre 2026, d'après le
 ### Corrections
 
 - Test de la date d'un commit indépendant du format du fuseau.
+- Suites de la revue : tests indépendants du contenu de démonstration, `npm run trial` et `npm run worker:size` sous Windows, essai isolé des secrets locaux, procédure de mise en ligne remise dans l'ordre (Brevo et Turnstile après la zone Cloudflare), Cloudflare Access sans ouverture à tout un domaine de messagerie.
 
 ## Phase 4 : services (28 septembre 2026)
 
@@ -29,7 +31,7 @@ Le site a été construit en six phases, du 25 au 28 septembre 2026, d'après le
 
 - Worker Cloudflare : inscription à l'infolettre (Brevo, double consentement, preuve de consentement), formulaire de contact, Turnstile, limitation de débit, tâche planifiée (publication programmée, reconstruction nocturne).
 - Formulaires sans rechargement, Turnstile chargé au premier contact.
-- Mesure d'audience Umami, sans témoin, derrière un contrat.
+- Mesure d'audience Umami, sans témoin, branchée par une interface commune : le service peut changer sans toucher aux pages.
 - Pages légales et de confiance en brouillon; en-têtes de sécurité et CSP à empreintes.
 - Veille officielle : collecte des fils, santé des sources, diagnostic, tâche GitHub.
 - Surveillance de la fraîcheur du site en ligne et rapport hebdomadaire.
