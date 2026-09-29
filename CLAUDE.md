@@ -17,7 +17,7 @@ Site média sur la réglementation et la fiscalité des cryptoactifs au Canada e
 - `npm test` (Vitest), `npm run typecheck` (`astro check`).
 - `npm run new:article -- "Titre"` (options après `--`), `npm run newsletter:draft` (`-- --html` pour le courriel), `npm run content:format` (remet `content/` et `config/` au format de l'éditeur).
 - `npm run veille:fetch` (`-- --diagnostic` : essai des sources sans écrire), `npm run surveillance` (fraîcheur du site en ligne).
-- `npm run trial` : construction d'aperçu, puis Worker en mode d'essai sur http://127.0.0.1:8791 (formulaires en mémoire, aucun secret, `/cdn-cgi/local/scheduled` pour la tâche planifiée). À la main, `npx wrangler dev` après `npm run build`, secrets dans `.dev.vars` (modèle `.dev.vars.example`). Jamais `--ip 0.0.0.0` ni `--tunnel`.
+- `npm run trial` : construction d'aperçu, puis Worker en mode d'essai sur http://127.0.0.1:8791 (formulaires en mémoire, aucun secret, `/cdn-cgi/local/scheduled` pour la tâche planifiée). À la main, `npx wrangler dev` après `SITE_MODE=preview npm run build`, secrets dans `.dev.vars` (modèle `.dev.vars.example`). Jamais `--ip 0.0.0.0` ni `--tunnel`.
 - `npm run test:e2e` : parcours de fumée Playwright (`tests/e2e/`, fichiers `*.e2e.ts`) sur le serveur de `npm run trial`; `PLAYWRIGHT_CHROMIUM` désigne un Chromium local. `npm run worker:size` : taille du Worker.
 
 Avant tout commit : `npm test`, `npm run typecheck` et `npm run build` passent sans avertissement; `npm run test:e2e` aussi pour un changement de page, de style ou du Worker. La tâche `ci` de GitHub les refait à chaque envoi.

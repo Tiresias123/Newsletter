@@ -1,13 +1,15 @@
-# Secrets du Worker pour un essai local (npx wrangler dev, après npm run build). Copier en .dev.vars : ce fichier
-# n'est jamais versionné. En production, ces valeurs sont des secrets du Worker dans Cloudflare.
+# Secrets du Worker pour un essai à la main (npx wrangler dev, après SITE_MODE=preview npm run build). Copier en
+# .dev.vars : ce fichier n'est jamais versionné. Pour essayer le site et ses formulaires, npm run trial suffit :
+# il n'a besoin d'aucun secret et ne lit pas ce fichier. En production, ces valeurs sont des secrets du Worker.
 
-# Essai local seulement, jamais en production : inscriptions et messages de contact gardés en mémoire, sans
-# appeler Brevo. Seul ce mode admet les clés d'essai de Turnstile.
+# Mode d'essai, jamais en production : inscriptions et messages de contact gardés en mémoire, sans appeler
+# Brevo. Seul ce mode admet les clés d'essai de Turnstile.
 MEMORY_SERVICES=true
 
-# Clé secrète d'essai de Turnstile qui accepte toujours le jeton factice de la clé de site d'essai
-# 1x00000000000000000000AA (à saisir dans config/services.json le temps de l'essai). En production, la clé
-# secrète du widget du site. La vérification appelle challenges.cloudflare.com : il faut un accès réseau.
+# Facultative en mode d'essai. Absente, ou clé d'essai 1x…, la vérification réussit, simulée sans appel à
+# Cloudflare; 2x… : échec; 3x… : jeton déjà utilisé. La construction d'aperçu pose d'office la clé de site
+# d'essai 1x00000000000000000000AA : ne la saisissez jamais dans config/services.json. Le navigateur charge
+# tout de même le script du widget depuis challenges.cloudflare.com. En production, la clé secrète du widget.
 TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 
 # Sel des empreintes (adresse IP de la preuve de consentement, clés de débit) : une suite aléatoire d'au moins
