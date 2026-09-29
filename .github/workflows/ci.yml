@@ -1,16 +1,15 @@
-# Intégration continue (brief, phase 5 ; ARCHITECTURE 15.7) : à chaque envoi qui touche le site, et à la
-# demande, les contrôles exigés avant un commit (CLAUDE.md), la taille du Worker et les parcours de fumée.
+# Intégration continue (brief, phase 5 ; ARCHITECTURE 15.7) : à chaque envoi sur GitHub, et à la demande, les
+# contrôles exigés avant un commit (CLAUDE.md), la taille du Worker et les parcours de fumée.
 # Environ trois minutes par exécution : gratuites pour un dépôt public, sur les 2 000 minutes par mois d'un
 # dépôt privé.
 name: ci
 
 on:
   push:
-    # Documentation et cache de la veille : rien à vérifier qui change le site (le cache est relu par la
-    # construction de Cloudflare, qui échouerait de toute façon).
+    # Exclu : le cache de la veille, que seule la tâche « veille » enregistre, sur main. La construction de
+    # Cloudflare le relit et échoue s'il est illisible; les parcours de fumée n'y ajouteraient rien. Tout autre
+    # envoi est vérifié, documentation comprise : chaque commit de tête porte ainsi un résultat.
     paths-ignore:
-      - 'docs/**'
-      - '*.md'
       - 'data/veille/cache.json'
   # Pas de déclencheur pull_request : une demande de fusion affiche le résultat de l'envoi de son dernier
   # commit, sans second passage.
