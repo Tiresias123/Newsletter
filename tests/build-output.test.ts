@@ -69,8 +69,15 @@ describe('en-têtes des fichiers statiques', () => {
     expect(csp).toContain("connect-src 'self' https://cloud.umami.is https://gateway.umami.is;");
     expect(csp).not.toContain("script-src 'self' 'unsafe-inline'");
     expect(csp.match(/sha256-/g)).toHaveLength(2);
+    // Le widget Turnstile s'affiche dans un cadre de Cloudflare, même en mode « interaction-only ».
+    expect(csp).toContain('frame-src https://challenges.cloudflare.com ');
     expect(headersFile({ hashes: [] })).toContain("frame-ancestors 'none'");
     expect(headersFile({ hashes: [] })).not.toContain('umami');
+  });
+
+  it('écarte des moteurs de recherche les adresses workers.dev, pas le domaine du site', async () => {
+    const { headersFile } = await import('../src/lib/security/headers.ts');
+    expect(headersFile({ hashes: [] })).toContain('\nhttps://:version.:subdomain.workers.dev/*\n  X-Robots-Tag: noindex\n');
   });
 
   it('respecte les limites du fichier _headers de Cloudflare', async () => {

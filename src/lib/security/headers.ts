@@ -63,6 +63,10 @@ export function headersFile(sources: CspSources): string {
     // Fichiers à empreinte (scripts, styles, polices, images optimisées) : jamais modifiés, gardés un an.
     '/_astro/*',
     '  Cache-Control: public, max-age=31536000, immutable',
+    // Adresses workers.dev (aperçus de branche, adresse de chaque version déployée) : écartées des moteurs de
+    // recherche. Un paramètre ne franchit pas de point : le domaine du site n'est pas visé.
+    'https://:version.:subdomain.workers.dev/*',
+    '  X-Robots-Tag: noindex',
   ];
   return `${all.join('\n')}\n`;
 }
